@@ -3,9 +3,9 @@
   "message": "成功",
   "data": {
     "serverTime": {
-      "currentDateTime": "2025-06-15 10:09:43",
+      "currentDateTime": "2025-06-15 11:36:20",
       "currentDate": "2025-06-15",
-      "timestamp": 1749953383890
+      "timestamp": 1749958580643
     },
     "currentWeekInfo": {
       "academicYear": "2024-2025",
@@ -20,11 +20,12 @@
     },
     "bookingLimits": {
       "advanceBookingDays": 7,
-      "continuousBookingDays": 7,
-      "canContinuousBooking": false,
+      "continuousBookingDays": 3,
+      "canContinuousBooking": true,
+      "isUnlimited": false,
       "minBookingDate": "2025-06-15",
       "maxBookingDate": "2025-06-22",
-      "minBookingTime": "10:09:43",
+      "minBookingTime": "11:36:20",
       "availableDates": [
         {
           "date": "2025-06-15",
@@ -32,7 +33,7 @@
           "dayName": "周日",
           "weekNumber": 15,
           "isToday": true,
-          "minTime": "10:09:43"
+          "minTime": "11:36:20"
         },
         {
           "date": "2025-06-16",
@@ -273,5 +274,5 @@
       "semesterEndDate": "2025-07-13"
     }
   },
-  "timestamp": "2025-06-15T10:09:43.891"
+  "timestamp": "2025-06-15T11:36:20.644"
 }

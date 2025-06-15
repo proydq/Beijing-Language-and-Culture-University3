@@ -1,6 +1,7 @@
 package com.proshine.system.service.impl;
 
 import com.proshine.system.dto.BookingTimeConfigDTO;
+import com.proshine.system.dto.BookingTimeRuleDto;
 import com.proshine.system.dto.request.BookingTimeValidationRequest;
 import com.proshine.system.dto.response.BookingTimeValidationResponse;
 import com.proshine.system.entity.*;
@@ -32,6 +33,9 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
     private BookingPersonnelPermissionRepository bookingPersonnelPermissionRepository;
     
     @Autowired
+    private BookingTimeRuleService bookingTimeRuleService;
+    
+    @Autowired
     private ContinuousBookingSettingService continuousBookingSettingService;
     
     @Autowired
@@ -60,23 +64,54 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
             LocalDateTime now = LocalDateTime.now();
             LocalDate today = now.toLocalDate();
             
-            // 2. 获取用户权限配置（如果roomId不为空）
+            // 2. 获取用户预约时间规则配置
             int advanceBookingDays = 365; // 默认值：不限制（设为365天）
-            if (roomId != null) {
-                BookingPersonnelPermission permission = getPermission(userId, roomId);
-                if (permission != null && permission.getAdvanceBookingDays() != null) {
-                    advanceBookingDays = permission.getAdvanceBookingDays();
+            try {
+                // 优先从BookingTimeRule系统获取
+                List<BookingTimeRuleDto> rules = bookingTimeRuleService.getBookingTimeRulesByUserId(userId);
+                if (rules != null && !rules.isEmpty()) {
+                    // 如果用户有多个规则，取第一个规则的天数
+                    BookingTimeRuleDto firstRule = rules.get(0);
+                    if (firstRule.getAdvanceBookingDays() != null) {
+                        advanceBookingDays = firstRule.getAdvanceBookingDays();
+                        log.info("使用BookingTimeRule系统配置，用户ID: {}, 提前预约天数: {}, 规则名称: {}", 
+                            userId, advanceBookingDays, firstRule.getRuleName());
+                    }
+                } else if (roomId != null) {
+                    // 降级到原BookingPersonnelPermission系统
+                    BookingPersonnelPermission permission = getPermission(userId, roomId);
+                    if (permission != null && permission.getAdvanceBookingDays() != null) {
+                        advanceBookingDays = permission.getAdvanceBookingDays();
+                        log.info("降级使用BookingPersonnelPermission系统配置，用户ID: {}, 房间ID: {}, 提前预约天数: {}", 
+                            userId, roomId, advanceBookingDays);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("获取预约时间规则失败，使用默认值，用户ID: {}", userId, e);
+                // 如果获取规则失败，降级到原系统
+                if (roomId != null) {
+                    try {
+                        BookingPersonnelPermission permission = getPermission(userId, roomId);
+                        if (permission != null && permission.getAdvanceBookingDays() != null) {
+                            advanceBookingDays = permission.getAdvanceBookingDays();
+                        }
+                    } catch (Exception ex) {
+                        log.warn("降级获取BookingPersonnelPermission也失败，使用默认值365天", ex);
+                    }
                 }
             }
             
             // 3. 获取教室连续预约设置（如果roomId不为空）
             int continuousBookingDays = 7; // 默认值：7天
             boolean canContinuousBooking = true;
+            boolean isUnlimited = false; // 默认值：非无限制
             
             if (roomId != null) {
                 ContinuousBookingSetting setting = continuousBookingSettingService.getByRoomId(roomId);
                 if (setting != null) {
                     canContinuousBooking = Boolean.TRUE.equals(setting.getCanContinuous());
+                    isUnlimited = Boolean.TRUE.equals(setting.getIsUnlimited());
+                    // 始终返回数据库原值，前端根据isUnlimited判断显示
                     if (canContinuousBooking && setting.getContinuousDays() != null) {
                         continuousBookingDays = setting.getContinuousDays();
                     }
@@ -122,6 +157,7 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
                 .advanceBookingDays(advanceBookingDays)
                 .continuousBookingDays(continuousBookingDays)
                 .canContinuousBooking(canContinuousBooking)
+                .isUnlimited(isUnlimited)
                 .minBookingDate(today.format(DATE_FORMATTER))
                 .maxBookingDate(maxBookingDate.format(DATE_FORMATTER))
                 .minBookingTime(now.format(TIME_FORMATTER))
@@ -179,9 +215,35 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
             
             // 2. 验证提前预约天数
             if (errorCode == null) {
-                BookingPersonnelPermission permission = getPermission(userId, request.getRoomId());
-                int advanceDays = permission != null && permission.getAdvanceBookingDays() != null 
-                    ? permission.getAdvanceBookingDays() : 365;
+                int advanceDays = 365; // 默认值
+                try {
+                    // 优先从BookingTimeRule系统获取
+                    List<BookingTimeRuleDto> rules = bookingTimeRuleService.getBookingTimeRulesByUserId(userId);
+                    if (rules != null && !rules.isEmpty()) {
+                        BookingTimeRuleDto firstRule = rules.get(0);
+                        if (firstRule.getAdvanceBookingDays() != null) {
+                            advanceDays = firstRule.getAdvanceBookingDays();
+                        }
+                    } else {
+                        // 降级到原BookingPersonnelPermission系统
+                        BookingPersonnelPermission permission = getPermission(userId, request.getRoomId());
+                        if (permission != null && permission.getAdvanceBookingDays() != null) {
+                            advanceDays = permission.getAdvanceBookingDays();
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("验证时获取预约时间规则失败，使用默认值，用户ID: {}", userId, e);
+                    // 降级到原系统
+                    try {
+                        BookingPersonnelPermission permission = getPermission(userId, request.getRoomId());
+                        if (permission != null && permission.getAdvanceBookingDays() != null) {
+                            advanceDays = permission.getAdvanceBookingDays();
+                        }
+                    } catch (Exception ex) {
+                        log.warn("降级获取BookingPersonnelPermission也失败，使用默认值365天", ex);
+                    }
+                }
+                
                 LocalDate maxDate = LocalDate.now().plusDays(advanceDays);
                 
                 if (endTime.toLocalDate().isAfter(maxDate)) {
@@ -198,14 +260,22 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
                 ContinuousBookingSetting setting = continuousBookingSettingService.getByRoomId(request.getRoomId());
                 
                 if (setting != null && Boolean.TRUE.equals(setting.getCanContinuous())) {
-                    int maxContinuousDays = setting.getContinuousDays() != null ? setting.getContinuousDays() : 7;
-                    if (duration > maxContinuousDays) {
-                        details.setPassContinuousDays(false);
-                        errorCode = "EXCEED_CONTINUOUS_DAYS";
-                        errorMessage = String.format("超出允许的连续预约天数（%d天）", maxContinuousDays);
-                        suggestion = String.format("单次预约不能超过%d天", maxContinuousDays);
+                    // 如果是无限制预约，跳过天数验证
+                    if (Boolean.TRUE.equals(setting.getIsUnlimited())) {
+                        // 无限制预约，不验证天数限制
+                        log.debug("房间{}设置为无限制预约，跳过连续预约天数验证", request.getRoomId());
+                    } else {
+                        // 按指定天数限制验证
+                        int maxContinuousDays = setting.getContinuousDays() != null ? setting.getContinuousDays() : 7;
+                        if (duration > maxContinuousDays) {
+                            details.setPassContinuousDays(false);
+                            errorCode = "EXCEED_CONTINUOUS_DAYS";
+                            errorMessage = String.format("超出允许的连续预约天数（%d天）", maxContinuousDays);
+                            suggestion = String.format("单次预约不能超过%d天", maxContinuousDays);
+                        }
                     }
                 } else if (setting != null && !Boolean.TRUE.equals(setting.getCanContinuous())) {
+                    // 不允许连续预约
                     if (duration > 1) {
                         details.setPassContinuousDays(false);
                         errorCode = "NO_CONTINUOUS_BOOKING";

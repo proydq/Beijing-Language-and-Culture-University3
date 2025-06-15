@@ -78,6 +78,7 @@ public class BookingTimeConfigDTO {
         private Integer advanceBookingDays;
         private Integer continuousBookingDays;
         private Boolean canContinuousBooking;
+        private Boolean isUnlimited;
         private String minBookingDate;
         private String maxBookingDate;
         private String minBookingTime;
