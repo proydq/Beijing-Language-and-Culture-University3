@@ -28,15 +28,6 @@
     </div>
 
     <div class="main-container">
-      <!-- 左侧导航 -->
-      <div class="sidebar">
-        <!-- 添加首页导航 -->
-        <div class="nav-item" @click="goToHome">
-          <el-icon><home /></el-icon>
-          <span>首页</span>
-        </div>
-      </div>
-
       <!-- 右侧主内容 -->
       <div class="main-content">
         <!-- 面包屑导航 -->
@@ -790,30 +781,6 @@ export default {
   height: calc(100vh - 70px);
 }
 
-.sidebar {
-  width: 200px;
-  background: white;
-  border-right: 1px solid #e8e8e8;
-  padding: 15px;
-  flex-shrink: 0;
-}
-
-.nav-item {
-  padding: 12px 15px;
-  cursor: pointer;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  transition: all 0.3s;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-item:hover {
-  background-color: #f0f2f5;
-  color: #4A90E2;
-}
 
 .main-content {
   flex: 1;
