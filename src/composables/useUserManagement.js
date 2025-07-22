@@ -12,7 +12,9 @@ export function useUserManagement() {
   const detailDialogVisible = ref(false)
   const editDialogVisible = ref(false)
   const isEdit = ref(false)
-  const editFormRef = ref()
+  const formRef = ref()
+  const avatarList = ref([])
+  const faceList = ref([])
   
   // 分页数据
   const currentPage = ref(1)
@@ -27,16 +29,37 @@ export function useUserManagement() {
     status: ''
   })
 
-  const editForm = reactive({
+  const userForm = reactive({
+    avatar: '',
+    faceImage: '',
     realName: '',
     gender: '',
     phone: '',
-    jobNumber: '',
     department: '',
+    jobNumber: '',
     position: '',
     jobTitle: '',
+    cardNumber: '',
+    attendanceNumber: '',
     status: '正常'
   })
+
+  const departments = ref([
+    { label: '技术部', value: '技术部' },
+    { label: '行政部', value: '行政部' }
+  ])
+
+  const positions = ref([
+    { label: '前端工程师', value: '前端工程师' },
+    { label: '后端工程师', value: '后端工程师' },
+    { label: '人事专员', value: '人事专员' }
+  ])
+
+  const titles = ref([
+    { label: '初级工程师', value: '初级工程师' },
+    { label: '中级工程师', value: '中级工程师' },
+    { label: '高级工程师', value: '高级工程师' }
+  ])
 
   // 模拟数据
   const treeData = ref([
@@ -156,16 +179,22 @@ export function useUserManagement() {
   const logTotal = ref(3)
 
   // 表单验证规则
-  const editRules = {
-    realName: [
-      { required: true, message: '请输入姓名', trigger: 'blur' }
-    ],
+  const formRules = {
+    avatar: [{ required: true, message: '请上传头像', trigger: 'change' }],
+    faceImage: [{ required: true, message: '请上传人脸识别照片', trigger: 'change' }],
+    realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+    gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
     phone: [
       { required: true, message: '请输入手机号', trigger: 'blur' },
       { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
     ],
-    jobNumber: [
-      { required: true, message: '请输入工号', trigger: 'blur' }
+    department: [{ required: true, message: '请选择部门', trigger: 'change' }],
+    jobNumber: [{ required: true, message: '请输入工号', trigger: 'blur' }],
+    position: [{ required: true, message: '请选择职务', trigger: 'change' }],
+    jobTitle: [{ required: true, message: '请选择职称', trigger: 'change' }],
+    cardNumber: [{ required: true, message: '请输入一卡通编号', trigger: 'blur' }],
+    attendanceNumber: [
+      { required: true, message: '请输入无感考勤编号', trigger: 'blur' }
     ]
   }
 
@@ -237,18 +266,18 @@ export function useUserManagement() {
     console.log('导入用户')
   }
 
+  const resetForm = () => {
+    Object.keys(userForm).forEach(key => {
+      userForm[key] = ''
+    })
+    avatarList.value = []
+    faceList.value = []
+    formRef.value?.resetFields()
+  }
+
   const handleAdd = () => {
     isEdit.value = false
-    Object.assign(editForm, {
-      realName: '',
-      gender: '',
-      phone: '',
-      jobNumber: '',
-      department: '',
-      position: '',
-      jobTitle: '',
-      status: '正常'
-    })
+    resetForm()
     editDialogVisible.value = true
   }
 
@@ -263,7 +292,9 @@ export function useUserManagement() {
 
   const handleEdit = (row) => {
     isEdit.value = true
-    Object.assign(editForm, row)
+    Object.assign(userForm, row)
+    avatarList.value = userForm.avatar ? [{ url: userForm.avatar }] : []
+    faceList.value = userForm.faceImage ? [{ url: userForm.faceImage }] : []
     editDialogVisible.value = true
   }
 
@@ -277,13 +308,32 @@ export function useUserManagement() {
     })
   }
 
+  const handleDialogClose = () => {
+    editDialogVisible.value = false
+    resetForm()
+  }
+
   const handleSaveUser = async () => {
     try {
-      await editFormRef.value.validate()
+      await formRef.value.validate()
       ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
-      editDialogVisible.value = false
+      handleDialogClose()
     } catch (error) {
       console.log('表单验证失败:', error)
+    }
+  }
+
+  const handleAvatarChange = (file, fileList) => {
+    avatarList.value = fileList.slice(-1)
+    if (file.raw) {
+      userForm.avatar = URL.createObjectURL(file.raw)
+    }
+  }
+
+  const handleFaceChange = (file, fileList) => {
+    faceList.value = fileList.slice(-1)
+    if (file.raw) {
+      userForm.faceImage = URL.createObjectURL(file.raw)
     }
   }
 
@@ -311,14 +361,16 @@ export function useUserManagement() {
     detailDialogVisible,
     editDialogVisible,
     isEdit,
-    editFormRef,
+    formRef,
+    avatarList,
+    faceList,
     currentPage,
     pageSize,
     total,
     
     // 表单数据
     searchForm,
-    editForm,
+    userForm,
     
     // 模拟数据
     treeData,
@@ -326,7 +378,10 @@ export function useUserManagement() {
     tableData,
     
     // 表单验证规则
-    editRules,
+    formRules,
+    departments,
+    positions,
+    titles,
     
     // 基础方法
     goToHome,
@@ -356,6 +411,9 @@ export function useUserManagement() {
     handleView,
     handleEdit,
     handleDelete,
+    handleDialogClose,
+    handleAvatarChange,
+    handleFaceChange,
     handleSaveUser,
     handleSizeChange,
     handleCurrentChange
