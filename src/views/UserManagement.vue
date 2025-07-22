@@ -29,7 +29,7 @@
 
     <div class="main-container">
       <!-- 左侧组织架构树 -->
-      <div class="sidebar">
+      <div class="sidebar" v-if="activeTab === 'userList'">
         <!-- 搜索框 -->
         <div class="search-header">
           <el-input
