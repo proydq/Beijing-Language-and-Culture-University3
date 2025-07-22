@@ -23,27 +23,29 @@
     </div>
 
     <!-- 用户表格 -->
-    <el-table 
-      :data="tableData" 
+    <el-table
+      :data="tableData"
       style="width: 100%;"
       border
       stripe
     >
-      <el-table-column prop="realName" label="姓名" width="100" />
-      <el-table-column prop="gender" label="性别" width="80" />
-      <el-table-column prop="phone" label="手机号" width="130" />
-      <el-table-column prop="jobNumber" label="工号" width="120" />
-      <el-table-column prop="department" label="所属部门" width="120" />
-      <el-table-column prop="position" label="职务" width="120" />
-      <el-table-column prop="jobTitle" label="职称" width="120" />
-      <el-table-column prop="status" label="状态" width="80">
+      <el-table-column type="index" label="序号" width="60" />
+      <el-table-column prop="avatar" label="头像" width="80" />
+      <el-table-column prop="status" label="人脸识别" width="80">
         <template #default="{ row }">
           <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
             {{ row.status }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="160" />
+      <el-table-column prop="realName" label="姓名" width="100" />
+      <el-table-column prop="gender" label="性别" width="80" />
+      <el-table-column prop="phone" label="手机号" width="130" />
+      <el-table-column prop="department" label="所属部门" width="120" />
+      <el-table-column prop="jobNumber" label="工号" width="120" />
+      <el-table-column prop="position" label="职务" width="120" />
+      <el-table-column prop="jobTitle" label="职称" width="120" />
+      <el-table-column prop="createTime" label="账号添加时间" width="160" />
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button type="text" size="small" @click="handleView(row)">查看</el-button>
