@@ -114,6 +114,47 @@ export function useUserManagement() {
     }
   ])
 
+  // 同步相关数据
+  const syncDialogVisible = ref(false)
+  const syncProgress = ref(0)
+  const syncDuration = ref(0)
+  const syncSummary = ref([
+    { object: '用户信息', auto: '否', lastTime: '2023-07-20 10:00:00' }
+  ])
+  const syncLogDialogVisible = ref(false)
+  const syncLogData = ref([
+    {
+      id: 1,
+      object: '用户信息',
+      status: '成功',
+      reason: '',
+      startTime: '2023-07-20 10:00:00',
+      endTime: '2023-07-20 10:00:30',
+      duration: 0.5
+    },
+    {
+      id: 2,
+      object: '用户信息',
+      status: '失败',
+      reason: '网络异常',
+      startTime: '2023-07-19 09:00:00',
+      endTime: '2023-07-19 09:00:20',
+      duration: 0.33
+    },
+    {
+      id: 3,
+      object: '用户信息',
+      status: '成功',
+      reason: '',
+      startTime: '2023-07-18 08:00:00',
+      endTime: '2023-07-18 08:00:25',
+      duration: 0.42
+    }
+  ])
+  const logCurrentPage = ref(1)
+  const logPageSize = ref(10)
+  const logTotal = ref(3)
+
   // 表单验证规则
   const editRules = {
     realName: [
@@ -164,8 +205,32 @@ export function useUserManagement() {
     })
   }
 
-  const handleSync = () => {
-    ElMessage.success('同步成功')
+  let syncTimer = null
+  const startSync = () => {
+    syncProgress.value = 0
+    syncDuration.value = 0
+    syncDialogVisible.value = true
+    if (syncTimer) clearInterval(syncTimer)
+    syncTimer = setInterval(() => {
+      if (syncProgress.value < 100) {
+        syncProgress.value += 20
+        syncDuration.value += 1
+      } else {
+        clearInterval(syncTimer)
+      }
+    }, 1000)
+  }
+
+  const showSyncLogs = () => {
+    syncLogDialogVisible.value = true
+  }
+
+  const handleSyncCommand = (cmd) => {
+    if (cmd === 'syncNow') {
+      startSync()
+    } else if (cmd === 'viewLogs') {
+      showSyncLogs()
+    }
   }
 
   const handleImport = () => {
@@ -230,6 +295,14 @@ export function useUserManagement() {
     currentPage.value = page
   }
 
+  const handleLogSizeChange = (size) => {
+    logPageSize.value = size
+  }
+
+  const handleLogCurrentChange = (page) => {
+    logCurrentPage.value = page
+  }
+
   return {
     // 基础数据
     activeTab,
@@ -265,7 +338,18 @@ export function useUserManagement() {
     // 用户管理方法
     handleSearch,
     handleReset,
-    handleSync,
+    syncDialogVisible,
+    syncProgress,
+    syncDuration,
+    syncSummary,
+    syncLogDialogVisible,
+    syncLogData,
+    logCurrentPage,
+    logPageSize,
+    logTotal,
+    handleSyncCommand,
+    handleLogSizeChange,
+    handleLogCurrentChange,
     handleImport,
     handleAdd,
     handleExport,

@@ -124,10 +124,18 @@
                     <el-icon><plus /></el-icon>
                     新增用户
                   </el-button>
-                  <el-button type="success" @click="handleSync">
-                    <el-icon><refresh /></el-icon>
-                    同步
-                  </el-button>
+                  <el-dropdown @command="handleSyncCommand">
+                    <el-button type="success">
+                      <el-icon><refresh /></el-icon>
+                      同步<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="syncNow">立即同步</el-dropdown-item>
+                        <el-dropdown-item command="viewLogs">查看同步记录</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                   <el-button type="warning" @click="handleImport">
                     <el-icon><upload /></el-icon>
                     导入
@@ -166,12 +174,11 @@
                     <el-table-column prop="createTime" label="账号添加时间" width="160" />
                     <el-table-column label="操作" width="200" fixed="right">
                     <template #default="{ row }">
-                      <el-button type="text" size="small" @click="handleView(row)">查看</el-button>
                       <el-button type="text" size="small" @click="handleEdit(row)">编辑</el-button>
-                      <el-button 
-                        type="text" 
-                        size="small" 
-                        @click="handleDelete(row)" 
+                      <el-button
+                        type="text"
+                        size="small"
+                        @click="handleDelete(row)"
                         style="color: #f56c6c;"
                       >
                         删除
@@ -667,6 +674,38 @@
           <el-button type="primary" @click="handleTitleSubmit">确定</el-button>
         </div>
       </template>
+    </el-dialog>
+    <!-- 同步进度对话框 -->
+    <el-dialog v-model="syncDialogVisible" title="同步进度" width="600px">
+      <el-progress :percentage="syncProgress" :status="syncProgress < 100 ? 'active' : 'success'" />
+      <p style="margin-top: 10px;">本次同步耗时 {{ syncDuration }} 秒</p>
+      <el-table :data="syncSummary" border stripe style="margin-top: 20px;">
+        <el-table-column prop="object" label="同步对象" />
+        <el-table-column prop="auto" label="是否自动同步" />
+        <el-table-column prop="lastTime" label="最近一次同步时间" />
+      </el-table>
+    </el-dialog>
+
+    <!-- 同步记录对话框 -->
+    <el-dialog v-model="syncLogDialogVisible" title="同步记录" width="600px">
+      <el-table :data="syncLogData" border stripe style="width: 100%; margin-bottom: 20px;">
+        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="object" label="同步对象" />
+        <el-table-column prop="status" label="同步状态" />
+        <el-table-column prop="reason" label="失败原因" />
+        <el-table-column prop="startTime" label="开始时间" />
+        <el-table-column prop="endTime" label="结束时间" />
+        <el-table-column prop="duration" label="同步时长(分钟)" />
+      </el-table>
+      <el-pagination
+        v-model:current-page="logCurrentPage"
+        v-model:page-size="logPageSize"
+        :page-sizes="[10, 20, 50]"
+        :total="logTotal"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleLogSizeChange"
+        @current-change="handleLogCurrentChange"
+      />
     </el-dialog>
   </div>
 </template>
