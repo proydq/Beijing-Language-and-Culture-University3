@@ -46,7 +46,7 @@
       />
 
       <!-- 设置 -->
-      <SettingsManagement 
+      <SettingsManagement
         v-else-if="activeMainTab === 'settings'"
         :settings-data="settingsData"
         @save-settings="handleSaveSettings"
@@ -58,6 +58,13 @@
         <p>请从导航菜单选择要使用的功能模块</p>
       </div>
     </div>
+
+    <BookRoomDialog
+      v-model="bookDialogVisible"
+      :room="selectedRoom"
+      @confirm="handleBookingConfirm"
+      @cancel="handleBookingCancel"
+    />
   </div>
 </template>
 
@@ -72,6 +79,7 @@ import MainNavigation from '@/components/RoomBooking/Layout/MainNavigation.vue'
 import DashboardContent from '@/components/RoomBooking/Dashboard/DashboardContent.vue'
 import BookingManagement from '@/components/RoomBooking/Booking/BookingManagement.vue'
 import ApprovalManagement from '@/components/RoomBooking/Approval/ApprovalManagement.vue'
+import BookRoomDialog from '@/components/RoomBooking/Booking/BookRoomDialog.vue'
 
 // 延迟加载其他组件（可选优化）
 const RecordsManagement = defineAsyncComponent(() => import('@/components/RoomBooking/Records/RecordsManagement.vue'))
@@ -85,6 +93,7 @@ export default {
     DashboardContent,
     BookingManagement,
     ApprovalManagement,
+    BookRoomDialog,
     RecordsManagement,
     SettingsManagement,
     Document
@@ -92,6 +101,8 @@ export default {
   setup() {
     // 主导航状态
     const activeMainTab = ref('dashboard')
+    const bookDialogVisible = ref(false)
+    const selectedRoom = ref(null)
 
     // 各种数据状态
     const stats = ref({
@@ -277,7 +288,19 @@ export default {
     }
 
     const handleBookRoom = (room) => {
-      ElMessage.info(`预约房间: ${room.name}`)
+      selectedRoom.value = room
+      bookDialogVisible.value = true
+    }
+
+    const handleBookingConfirm = (data) => {
+      ElMessage.success('预约提交成功')
+      bookDialogVisible.value = false
+      selectedRoom.value = null
+    }
+
+    const handleBookingCancel = () => {
+      bookDialogVisible.value = false
+      selectedRoom.value = null
     }
 
     const handleApprovalSubmit = (approval) => {
@@ -333,9 +356,13 @@ export default {
       handleEdit,
       handleApprove,
       handleBookRoom,
+      handleBookingConfirm,
+      handleBookingCancel,
       handleApprovalSubmit,
       handleApprovalReject,
-      handleSaveSettings
+      handleSaveSettings,
+      bookDialogVisible,
+      selectedRoom
     }
   }
 }
