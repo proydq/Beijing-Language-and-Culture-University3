@@ -450,11 +450,40 @@
 
               <!-- 表格容器 -->
               <div class="title-table-container">
-                <div style="padding: 15px 20px; border-bottom: 1px solid #e8e8e8;">
-                  <el-button type="primary" @click="handleAddTitle">
-                    <el-icon><plus /></el-icon>
-                    新增职称
-                  </el-button>
+                <div
+                  style="
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #e8e8e8;
+                    display: flex;
+                    justify-content: space-between;
+                  "
+                >
+                  <div style="display: flex; gap: 10px; margin-left: auto;">
+                    <el-button type="primary" @click="handleAddTitle">
+                      <el-icon><plus /></el-icon>
+                      新增职称
+                    </el-button>
+                    <el-button type="warning" @click="handleImport">
+                      <el-icon><upload /></el-icon>
+                      导入
+                    </el-button>
+                    <el-button type="info" @click="handleExport">
+                      <el-icon><download /></el-icon>
+                      导出
+                    </el-button>
+                    <el-dropdown @command="handleSyncCommand">
+                      <el-button type="success">
+                        <el-icon><refresh /></el-icon>
+                        同步<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="syncNow">立即同步</el-dropdown-item>
+                          <el-dropdown-item command="viewLogs">查看同步记录</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
                 </div>
 
                 <el-table :data="titleTableData" style="width: 100%;" border stripe>
