@@ -103,33 +103,40 @@
 
           <!-- 管理员表格 -->
           <div class="admin-table">
-            <el-table :data="adminTableData" style="width: 100%" stripe>
-              <el-table-column prop="name" label="姓名" width="100" />
-              <el-table-column prop="gender" label="性别" width="80" />
-              <el-table-column prop="phone" label="手机号" width="130" />
-              <el-table-column prop="department" label="所属部门" width="120" />
-              <el-table-column label="所属角色" width="150">
-                <template #default="scope">
-                  <el-tag :color="scope.row.roleColor" effect="dark" style="color: white;">
-                    {{ scope.row.roleName }}
+            <el-table :data="adminTableData" style="width: 100%" border stripe>
+              <el-table-column type="index" label="序号" />
+              <el-table-column label="头像">
+                <template #default="{ row }">
+                  <el-image :src="row.avatar" style="width: 40px; height: 40px" />
+                </template>
+              </el-table-column>
+              <el-table-column prop="name" label="姓名" :formatter="formatValue" />
+              <el-table-column prop="gender" label="性别" :formatter="formatValue" />
+              <el-table-column prop="phone" label="手机号" :formatter="formatValue" />
+              <el-table-column prop="department" label="所属部门" :formatter="formatValue" />
+              <el-table-column label="所属角色">
+                <template #default="{ row }">
+                  <el-tag :color="row.roleColor" effect="dark" style="color: white;">
+                    {{ formatValue(row.roleName) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="accountNumber" label="后台登录账号" width="150" />
-              <el-table-column prop="addTime" label="添加时间" width="120" />
-              <el-table-column prop="loginStrategy" label="登录策略" width="120" />
-              <el-table-column prop="wechatPhone" label="微信绑定手机" width="130" />
-              <el-table-column prop="wechatBindTime" label="微信绑定时间" width="130" />
-              <el-table-column label="操作" width="200">
-                <template #default="scope">
-                  <el-button type="primary" size="small" @click="handleEditAdmin(scope.row)">编辑</el-button>
-                  <el-button 
-                    :type="scope.row.status === 'disabled' ? 'success' : 'danger'" 
-                    size="small" 
-                    @click="handleToggleStatus(scope.row)"
-                  >
-                    {{ scope.row.status === 'disabled' ? '解除禁用' : '删除' }}
-                  </el-button>
+              <el-table-column prop="accountNumber" label="后台登录账号" :formatter="formatValue" />
+              <el-table-column label="管理员账号状态">
+                <template #default="{ row }">
+                  <el-tag :type="getStatusTagType(row.status)">
+                    {{ getStatusText(row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="addTime" label="添加时间" :formatter="formatValue" />
+              <el-table-column prop="wechatNickname" label="微信昵称" :formatter="formatValue" />
+              <el-table-column prop="wechatPhone" label="微信绑定手机" :formatter="formatValue" />
+              <el-table-column prop="wechatBindTime" label="微信绑定时间" :formatter="formatValue" />
+              <el-table-column label="操作">
+                <template #default="{ row }">
+                  <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+                  <el-button type="warning" size="small" @click="handleDisable(row)">禁用</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -266,6 +273,7 @@ export default {
     const adminTableData = ref([
       {
         id: 1,
+        avatar: 'https://via.placeholder.com/40',
         name: '张三',
         gender: '男',
         phone: '13111311131',
@@ -273,14 +281,15 @@ export default {
         roleName: '默认超级管理员',
         roleColor: '#ff0000',
         accountNumber: 'k3456789',
+        status: 'normal',
         addTime: '2021.12.02',
-        loginStrategy: '小顾子',
+        wechatNickname: '小顾子',
         wechatPhone: '13111311131',
-        wechatBindTime: '2021.12.02',
-        status: 'normal'
+        wechatBindTime: '2021.12.02'
       },
       {
         id: 2,
+        avatar: 'https://via.placeholder.com/40',
         name: '张四',
         gender: '女',
         phone: '13211321132',
@@ -288,14 +297,15 @@ export default {
         roleName: '会议系统管理员',
         roleColor: '#ff9900',
         accountNumber: 'k3456788',
+        status: 'normal',
         addTime: '2021.12.02',
-        loginStrategy: '小顾子涵',
+        wechatNickname: '小顾子涵',
         wechatPhone: '15787887788',
         wechatBindTime: '2021.12.02',
-        status: 'normal'
       },
       {
         id: 3,
+        avatar: 'https://via.placeholder.com/40',
         name: '张五',
         gender: '男',
         phone: '13311331133',
@@ -303,14 +313,15 @@ export default {
         roleName: '互动系统管理员',
         roleColor: '#ff9966',
         accountNumber: 'k3456787',
+        status: 'normal',
         addTime: '2021.12.02',
-        loginStrategy: '小顾子回家',
+        wechatNickname: '小顾子回家',
         wechatPhone: '13311331133',
         wechatBindTime: '2021.12.02',
-        status: 'normal'
       },
       {
         id: 4,
+        avatar: 'https://via.placeholder.com/40',
         name: '张五',
         gender: '男',
         phone: '13311331133',
@@ -318,13 +329,29 @@ export default {
         roleName: '门禁系统管理员',
         roleColor: '#ffcc00',
         accountNumber: 'k3456787',
+        status: 'disabled',
         addTime: '2021.12.02',
-        loginStrategy: '/',
+        wechatNickname: '/',
         wechatPhone: '/',
         wechatBindTime: '/',
-        status: 'disabled'
       }
     ])
+
+    const formatValue = (_, __, value) => {
+      return value ? value : '/'
+    }
+
+    const getStatusTagType = (status) => {
+      if (status === 'disabled') return 'danger'
+      if (status === 'normal') return 'success'
+      return 'warning'
+    }
+
+    const getStatusText = (status) => {
+      if (status === 'disabled') return '禁用'
+      if (status === 'normal') return '正常'
+      return '/'
+    }
 
     // 返回首页
     const goToHome = () => {
@@ -364,25 +391,41 @@ export default {
       adminDialogVisible.value = true
     }
 
-    const handleToggleStatus = (row) => {
-      const action = row.status === 'disabled' ? '解除禁用' : '删除'
-      const actionType = row.status === 'disabled' ? 'success' : 'warning'
-      
+    const handleDelete = (row) => {
       ElMessageBox.confirm(
-        `确认要${action}管理员"${row.name}"吗？`,
+        `确认要删除管理员\"${row.name}\"吗？`,
         '提示',
         {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: actionType,
+          type: 'danger',
         }
-      ).then(() => {
-        // 切换状态
-        row.status = row.status === 'disabled' ? 'normal' : 'disabled'
-        ElMessage.success(`${action}成功`)
-      }).catch(() => {
-        // 取消操作
-      })
+      )
+        .then(() => {
+          const index = adminTableData.value.findIndex((item) => item.id === row.id)
+          if (index !== -1) {
+            adminTableData.value.splice(index, 1)
+          }
+          ElMessage.success('删除成功')
+        })
+        .catch(() => {})
+    }
+
+    const handleDisable = (row) => {
+      ElMessageBox.confirm(
+        `确认要禁用管理员\"${row.name}\"吗？`,
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      )
+        .then(() => {
+          row.status = 'disabled'
+          ElMessage.success('已禁用')
+        })
+        .catch(() => {})
     }
 
     const handleSizeChange = (val) => {
@@ -466,11 +509,15 @@ export default {
       handleReset,
       handleAddAdmin,
       handleEditAdmin,
-      handleToggleStatus,
+      handleDelete,
+      handleDisable,
       handleSizeChange,
       handleCurrentChange,
       handleAdminDialogClose,
-      handleAdminSubmit
+      handleAdminSubmit,
+      formatValue,
+      getStatusTagType,
+      getStatusText
     }
   }
 }
