@@ -50,78 +50,91 @@
         <!-- 标签页 -->
         <el-tabs v-model="activeTab" class="management-tabs">
           <el-tab-pane label="房屋列表" name="house">
-            <!-- 搜索筛选区域 -->
-            <div class="search-area">
-              <el-form :model="searchForm" :inline="true">
-                <el-form-item label="房间号码:">
-                  <el-input v-model="searchForm.roomNumber" placeholder="请输入房间号码" />
-                </el-form-item>
-                <el-form-item label="房屋名称:">
-                  <el-input v-model="searchForm.roomName" placeholder="请输入房屋名称" />
-                </el-form-item>
-                <el-form-item label="房屋类型:">
-                  <el-select v-model="searchForm.roomType" placeholder="请选择房屋类型">
-                    <el-option label="全部" value="" />
-                    <el-option label="教室" value="教室" />
-                    <el-option label="会议室" value="会议室" />
-                    <el-option label="实验室" value="实验室" />
-                    <el-option label="办公室" value="办公室" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="handleSearch">
+            <div class="house-page-wrapper">
+              <div class="building-panel">
+                <h3 class="panel-title">楼栋架构</h3>
+                <el-input v-model="buildingKeyword" placeholder="请输入关键字" class="tree-search" clearable>
+                  <template #suffix>
                     <el-icon><search /></el-icon>
-                    搜索
-                  </el-button>
-                  <el-button @click="handleReset">重置</el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-
-            <!-- 操作按钮区域 -->
-            <div class="action-area">
-              <div class="left-actions">
-                <el-button type="primary" @click="handleAddRoom">添加房间</el-button>
-                <el-button @click="handleImport">导入房间</el-button>
-                <el-button @click="handleExport">导出房间</el-button>
+                  </template>
+                </el-input>
+                <el-tree :data="buildingTreeData" default-expand-all class="structure-tree" />
               </div>
-            </div>
+              <div class="house-page-main">
+                <!-- 搜索筛选区域 -->
+                <div class="search-area">
+                  <el-form :model="searchForm" :inline="true">
+                    <el-form-item label="房间号码:">
+                      <el-input v-model="searchForm.roomNumber" placeholder="请输入房间号码" />
+                    </el-form-item>
+                    <el-form-item label="房屋名称:">
+                      <el-input v-model="searchForm.roomName" placeholder="请输入房屋名称" />
+                    </el-form-item>
+                    <el-form-item label="房屋类型:">
+                      <el-select v-model="searchForm.roomType" placeholder="请选择房屋类型">
+                        <el-option label="全部" value="" />
+                        <el-option label="教室" value="教室" />
+                        <el-option label="会议室" value="会议室" />
+                        <el-option label="实验室" value="实验室" />
+                        <el-option label="办公室" value="办公室" />
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                      <el-button type="primary" @click="handleSearch">
+                        <el-icon><search /></el-icon>
+                        搜索
+                      </el-button>
+                      <el-button @click="handleReset">重置</el-button>
+                    </el-form-item>
+                  </el-form>
+                </div>
 
-            <!-- 房屋列表表格 -->
-            <div class="house-table">
-              <el-table :data="houseTableData" style="width: 100%" stripe>
-                <el-table-column prop="roomCode" label="房间编码" width="120" />
-                <el-table-column prop="roomName" label="房屋名称" />
-                <el-table-column prop="roomNumber" label="房间号码" width="100" />
-                <el-table-column prop="roomType" label="房屋类型" width="100">
-                  <template #default="scope">
-                    <el-tag :type="getRoomTypeTagType(scope.row.roomType)">
-                      {{ scope.row.roomType }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="roomArea" label="房间面积(㎡)" width="120" />
-                <el-table-column prop="capacity" label="容纳人数" width="100" />
-                <el-table-column prop="updateTime" label="更新时间" width="150" />
-                <el-table-column label="操作" width="180" fixed="right">
-                  <template #default="scope">
-                    <el-button type="primary" size="small" @click="handleEditRoom(scope.row)">编辑</el-button>
-                    <el-button type="danger" size="small" @click="handleDeleteRoom(scope.row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+                <!-- 操作按钮区域 -->
+                <div class="action-area">
+                  <div class="left-actions">
+                    <el-button type="primary" @click="handleAddRoom">添加房间</el-button>
+                    <el-button @click="handleImport">导入房间</el-button>
+                    <el-button @click="handleExport">导出房间</el-button>
+                  </div>
+                </div>
 
-              <!-- 分页 -->
-              <div class="pagination-area">
-                <el-pagination
-                  v-model:current-page="housePagination.currentPage"
-                  v-model:page-size="housePagination.pageSize"
-                  :page-sizes="[10, 20, 50, 100]"
-                  :total="housePagination.total"
-                  layout="total, sizes, prev, pager, next, jumper"
-                  @size-change="handleHouseSizeChange"
-                  @current-change="handleHouseCurrentChange"
-                />
+                <!-- 房屋列表表格 -->
+                <div class="house-table">
+                  <el-table :data="houseTableData" style="width: 100%" stripe>
+                    <el-table-column prop="roomCode" label="房间编码" width="120" />
+                    <el-table-column prop="roomName" label="房屋名称" />
+                    <el-table-column prop="roomNumber" label="房间号码" width="100" />
+                    <el-table-column prop="roomType" label="房屋类型" width="100">
+                      <template #default="scope">
+                        <el-tag :type="getRoomTypeTagType(scope.row.roomType)">
+                          {{ scope.row.roomType }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="roomArea" label="房间面积(㎡)" width="120" />
+                    <el-table-column prop="capacity" label="容纳人数" width="100" />
+                    <el-table-column prop="updateTime" label="更新时间" width="150" />
+                    <el-table-column label="操作" width="180" fixed="right">
+                      <template #default="scope">
+                        <el-button type="primary" size="small" @click="handleEditRoom(scope.row)">编辑</el-button>
+                        <el-button type="danger" size="small" @click="handleDeleteRoom(scope.row)">删除</el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+
+                  <!-- 分页 -->
+                  <div class="pagination-area">
+                    <el-pagination
+                      v-model:current-page="housePagination.currentPage"
+                      v-model:page-size="housePagination.pageSize"
+                      :page-sizes="[10, 20, 50, 100]"
+                      :total="housePagination.total"
+                      layout="total, sizes, prev, pager, next, jumper"
+                      @size-change="handleHouseSizeChange"
+                      @current-change="handleHouseCurrentChange"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </el-tab-pane>
@@ -329,6 +342,29 @@ export default {
         { required: true, message: '请输入名称', trigger: 'blur' }
       ]
     }
+
+    // 楼栋结构树及搜索关键字
+    const buildingKeyword = ref('')
+    const buildingTreeData = ref([
+      {
+        label: '达才楼',
+        children: [
+          { label: 'B2' },
+          { label: 'B1' },
+          { label: '1F' },
+          { label: '2F' },
+          { label: '3F' },
+          { label: '4F' },
+          { label: '5F' },
+          { label: '6F' }
+        ]
+      },
+      { label: '成彦楼' },
+      { label: '笃行楼' },
+      { label: '博雅楼' },
+      { label: '正芯楼' },
+      { label: '学华楼' }
+    ])
 
     // 楼宇树形数据
     const treeData = ref([
@@ -569,7 +605,7 @@ export default {
     }
 
     // 楼宇管理相关方法
-    const handleNodeClick = (data, node) => {
+    const handleNodeClick = data => {
       selectedNode.value = data
       console.log('选中节点:', data)
     }
@@ -643,6 +679,8 @@ export default {
       treeData,
       treeProps,
       houseTableData,
+      buildingKeyword,
+      buildingTreeData,
       dialogTitle,
       Search,
       goToHome,  // 新增返回首页方法
@@ -827,6 +865,39 @@ export default {
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
+}
+
+.house-page-wrapper {
+  display: flex;
+  gap: 20px;
+}
+
+.building-panel {
+  width: 260px;
+  background: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 20px;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tree-search {
+  margin-bottom: 15px;
+}
+
+.structure-tree {
+  min-height: 400px;
+}
+
+.house-page-main {
+  flex: 1;
 }
 
 .tree-area {
