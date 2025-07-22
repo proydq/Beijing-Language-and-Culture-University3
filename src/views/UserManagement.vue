@@ -359,11 +359,39 @@
 
               <!-- 表格容器 -->
               <div class="position-table-container">
-                <div style="padding: 15px 20px; border-bottom: 1px solid #e8e8e8;">
+                <div
+                  style="
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #e8e8e8;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                  "
+                >
                   <el-button type="primary" @click="handleAddPosition">
                     <el-icon><plus /></el-icon>
                     新增职务
                   </el-button>
+                  <el-button type="warning" @click="handleImport">
+                    <el-icon><upload /></el-icon>
+                    导入
+                  </el-button>
+                  <el-button type="info" @click="handleExport">
+                    <el-icon><download /></el-icon>
+                    导出
+                  </el-button>
+                  <el-dropdown @command="handleSyncCommand">
+                    <el-button type="success">
+                      <el-icon><refresh /></el-icon>
+                      同步<el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="syncNow">立即同步</el-dropdown-item>
+                        <el-dropdown-item command="viewLogs">查看同步记录</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                 </div>
 
                 <el-table :data="positionTableData" style="width: 100%;" border stripe>
