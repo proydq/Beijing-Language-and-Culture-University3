@@ -1,0 +1,170 @@
+<template>
+  <div class="classroom-usage-record">
+    <el-row>
+      <el-col :span="6" class="sidebar">
+        <el-tree
+          :data="buildingTree"
+          node-key="label"
+          default-expand-all
+          @node-click="handleTreeClick"
+        />
+      </el-col>
+      <el-col :span="18" class="content">
+        <div class="search-bar">
+          <el-form :model="searchForm" inline>
+            <el-form-item>
+              <el-input v-model="searchForm.keyword" placeholder="请输入教室名称" />
+            </el-form-item>
+            <el-form-item>
+              <el-select v-model="searchForm.sort" placeholder="排序方式">
+                <el-option
+                  v-for="item in sortOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="exportCurrent">导出当前页</el-button>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="success" @click="exportAll">导出全部页</el-button>
+            </el-form-item>
+          </el-form>
+        </div>
+        <el-table :data="sortedData" stripe style="width: 100%">
+          <el-table-column prop="name" label="预约教室" />
+          <el-table-column prop="times" label="预约次数" />
+          <el-table-column prop="duration" label="累计时长" />
+          <el-table-column prop="people" label="累计人数" />
+          <el-table-column label="操作" width="120">
+            <template #default="scope">
+              <el-button type="primary" size="small" @click="showDetail(scope.row)">查看详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-col>
+    </el-row>
+
+    <el-dialog v-model="detailVisible" title="教室预约详情" width="500px">
+      <el-descriptions v-if="selectedRoom" :column="1" border>
+        <el-descriptions-item label="教室名称">{{ selectedRoom.name }}</el-descriptions-item>
+        <el-descriptions-item label="所属楼栋">{{ selectedRoom.building }}</el-descriptions-item>
+        <el-descriptions-item label="预约次数">{{ selectedRoom.times }}</el-descriptions-item>
+        <el-descriptions-item label="累计时长">{{ selectedRoom.duration }} 分</el-descriptions-item>
+        <el-descriptions-item label="累计人数">{{ selectedRoom.people }} 人</el-descriptions-item>
+      </el-descriptions>
+      <el-divider />
+      <h4>最近5次预约记录</h4>
+      <el-table :data="recentRecords" border style="width: 100%" size="small">
+        <el-table-column prop="time" label="时间" />
+        <el-table-column prop="applicant" label="发起人" />
+      </el-table>
+      <template #footer>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+
+const buildingTree = [
+  {
+    label: '达才楼',
+    children: [
+      { label: 'B2' },
+      { label: 'B1' },
+      { label: '1F' },
+      { label: '2F' },
+      { label: '3F' },
+      { label: '4F' },
+      { label: '5F' },
+      { label: '6F' },
+    ],
+  },
+  { label: '成彦楼' },
+  { label: '笃行楼' },
+  { label: '博雅楼' },
+  { label: '正芯楼' },
+  { label: '学华楼' },
+]
+
+const tableData = ref([
+  { id: 1, name: '达才楼101', building: '达才楼', times: 12, duration: 300, people: 260 },
+  { id: 2, name: '达才楼102', building: '达才楼', times: 8, duration: 200, people: 160 },
+  { id: 3, name: '成彦楼201', building: '成彦楼', times: 5, duration: 150, people: 120 },
+])
+
+const searchForm = ref({
+  keyword: '',
+  sort: 'times',
+})
+
+const sortOptions = [
+  { label: '预约次数倒序', value: 'times' },
+  { label: '累计时长倒序', value: 'duration' },
+  { label: '累计人数倒序', value: 'people' },
+]
+
+const selectedBuilding = ref('')
+
+function handleTreeClick(data) {
+  selectedBuilding.value = data.label
+}
+
+const filteredData = computed(() => {
+  return tableData.value.filter((item) => {
+    const matchBuilding = selectedBuilding.value ? item.building.includes(selectedBuilding.value) : true
+    const matchName = searchForm.value.keyword ? item.name.includes(searchForm.value.keyword) : true
+    return matchBuilding && matchName
+  })
+})
+
+const sortedData = computed(() => {
+  return [...filteredData.value].sort((a, b) => b[searchForm.value.sort] - a[searchForm.value.sort])
+})
+
+function exportCurrent() {
+  console.log('export current page')
+}
+
+function exportAll() {
+  console.log('export all page')
+}
+
+const detailVisible = ref(false)
+const selectedRoom = ref(null)
+const recentRecords = ref([])
+
+function showDetail(row) {
+  selectedRoom.value = row
+  // mock last five records
+  recentRecords.value = [
+    { time: '2024-07-01 10:00', applicant: '张三' },
+    { time: '2024-06-28 14:00', applicant: '李四' },
+    { time: '2024-06-20 09:00', applicant: '王五' },
+    { time: '2024-06-18 16:00', applicant: '赵六' },
+    { time: '2024-06-10 11:00', applicant: '孙七' },
+  ]
+  detailVisible.value = true
+}
+</script>
+
+<style scoped>
+.classroom-usage-record {
+  padding: 20px;
+}
+.sidebar {
+  max-width: 250px;
+}
+.content {
+  padding-left: 20px;
+}
+.search-bar {
+  margin-bottom: 16px;
+}
+</style>
+
