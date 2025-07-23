@@ -5,43 +5,45 @@
       <div class="filter-row">
         <div class="filter-item">
           <label>预约名称</label>
-          <el-input 
-            v-model="filters.name" 
-            placeholder="请输入预约名称" 
-            clearable 
-          />
-        </div>
-        <div class="filter-item">
-          <label>申请人</label>
-          <el-input 
-            v-model="filters.applicant" 
-            placeholder="请输入申请人姓名" 
-            clearable 
+          <el-input
+            v-model="searchForm.reservationName"
+            placeholder="请输入预约名称"
+            clearable
           />
         </div>
         <div class="filter-item">
           <label>审核状态</label>
-          <el-select 
-            v-model="filters.auditType" 
-            placeholder="请选择审核状态" 
+          <el-select
+            v-model="searchForm.approvalStatus"
+            placeholder="请选择审核状态"
             clearable
           >
-            <el-option label="待审核" value="待审核" />
+            <el-option label="审核中" value="审核中" />
             <el-option label="通过" value="通过" />
             <el-option label="拒绝" value="拒绝" />
           </el-select>
         </div>
         <div class="filter-item">
           <label>使用状态</label>
-          <el-select 
-            v-model="filters.useStatus" 
-            placeholder="请选择使用状态" 
+          <el-select
+            v-model="searchForm.usageStatus"
+            placeholder="请选择使用状态"
             clearable
           >
             <el-option label="未开始" value="未开始" />
             <el-option label="进行中" value="进行中" />
             <el-option label="已结束" value="已结束" />
           </el-select>
+        </div>
+        <div class="filter-item">
+          <label>预约时间</label>
+          <el-date-picker
+            v-model="searchForm.dateRange"
+            type="daterange"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            @change="handleDateChange"
+          />
         </div>
         <div class="filter-actions">
           <el-button type="primary" @click="handleSearch">
@@ -56,46 +58,58 @@
     <!-- 借用表格 -->
     <div class="booking-table">
       <el-table :data="filteredData" border>
-        <el-table-column prop="bookingName" label="预约名称" min-width="200" />
-        <el-table-column prop="applicant" label="申请人" width="120" />
-        <el-table-column prop="bookingTime" label="预约时间" min-width="250" />
-        <el-table-column prop="roomName" label="房间名称" width="150" />
-        <el-table-column prop="auditStatus" label="审核状态" width="100">
-          <template #default="scope">
-            <el-tag 
-              :type="getAuditStatusType(scope.row.auditStatus)" 
+        <el-table-column prop="reservationName" label="预约名称" min-width="200" />
+        <el-table-column prop="reservationPeriod" label="预约周期" min-width="250" />
+        <el-table-column prop="description" label="描述" min-width="200">
+          <template #default="{ row }">
+            <el-tooltip placement="top" :content="row.description">
+              <span class="ellipsis">{{ row.description }}</span>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column prop="applicantName" label="预约人" width="120" />
+        <el-table-column prop="roomName" label="预约教室" width="150" />
+        <el-table-column prop="approvalStatus" label="审核状态" width="100">
+          <template #default="{ row }">
+            <el-tag
+              :type="getApprovalStatusType(row.approvalStatus)"
               size="small"
+              class="status-tag"
+              @click="handleViewAuditDetail(row)"
             >
-              {{ scope.row.auditStatus }}
+              {{ row.approvalStatus }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="useStatus" label="使用状态" width="100">
-          <template #default="scope">
-            <el-tag 
-              :type="getUseStatusType(scope.row.useStatus)" 
+        <el-table-column prop="usageStatus" label="使用状态" width="100">
+          <template #default="{ row }">
+            <span v-if="row.usageStatus === '/'">{{ row.usageStatus }}</span>
+            <el-tag
+              v-else
+              :type="getUsageStatusType(row.usageStatus)"
               size="small"
             >
-              {{ scope.row.useStatus }}
+              {{ row.usageStatus }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="scope">
-            <el-button 
-              type="success" 
-              size="small" 
-              @click="$emit('approve', scope.row)"
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button type="text" size="small" @click="handleView(row)">查看详情</el-button>
+            <el-popconfirm
+              v-if="(row.approvalStatus === '审核中' || row.approvalStatus === '通过') && row.usageStatus === '未开始'"
+              title="确定要取消该预约吗？取消后将无法恢复。"
+              confirm-button-text="确认"
+              cancel-button-text="取消"
+              confirm-button-type="danger"
+              @confirm="handleCancel(row)"
             >
-              审核
-            </el-button>
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="$emit('edit', scope.row)"
-            >
-              编辑
-            </el-button>
+              <template #reference>
+                <el-button type="text" size="small" style="color: #f56c6c">
+                  取消预约
+                </el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -116,122 +130,220 @@
   </div>
 </template>
 
-<script>
-import { ref, reactive, computed } from 'vue'
+<script setup>
+import { reactive, computed, watch, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import AuditDetailDialog from './AuditDetailDialog.vue'
+import ReservationDetailDialog from './ReservationDetailDialog.vue'
 
-export default {
-  name: 'AllBookings',
-  components: {
-    Search
-  },
-  props: {
-    bookingData: {
-      type: Array,
-      default: () => []
+const props = defineProps({
+  bookingData: {
+    type: Array,
+    default: () => []
+  }
+})
+
+const emit = defineEmits(['cancel'])
+
+const searchForm = reactive({
+  reservationName: '',
+  approvalStatus: '',
+  usageStatus: '',
+  dateRange: [],
+  startDate: '',
+  endDate: ''
+})
+
+const bookingBaseInfo = {
+  1: {
+    reservationName: '【活动1】的教室借用',
+    applicant: '王鹏',
+    reservationPeriod: '2025.08.24 星期四 第三节次',
+    description: '班级活动使用，需使用投影设备',
+    participants: '张三, 李四',
+    remark: '需要提前布置',
+    approvalStatus: '审批中'
+  }
+}
+
+const auditDetailData = {
+  1: [
+    {
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2025-07-21 10:12:33',
+      comment: '系统自动通过'
     }
-  },
-  emits: ['edit', 'approve'],
-  setup(props, { emit }) {
-    const filters = reactive({
-      name: '',
-      applicant: '',
-      auditType: '',
-      useStatus: ''
+  ]
+}
+
+const auditDialogVisible = ref(false)
+const currentRecord = ref({})
+const detailDialogVisible = ref(false)
+const reservationDetail = ref({
+  userName: '',
+  reservationTitle: '',
+  borrowTime: '',
+  borrowDesc: '',
+  participants: [],
+  remark: '',
+  approvalSteps: []
+})
+
+watch(
+  () => searchForm.dateRange,
+  val => {
+    if (Array.isArray(val) && val.length === 2) {
+      searchForm.startDate = val[0]
+      searchForm.endDate = val[1]
+    } else {
+      searchForm.startDate = ''
+      searchForm.endDate = ''
+    }
+  }
+)
+
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})
+
+const mappedData = computed(() =>
+  props.bookingData.map(item => ({
+    reservationName: item.reservationName || item.bookingName,
+    reservationPeriod: item.reservationPeriod || item.bookingTime,
+    description: item.description,
+    applicantName: item.applicantName || item.applicant,
+    roomName: item.roomName,
+    approvalStatus: item.approvalStatus || item.auditStatus,
+    usageStatus: item.usageStatus || item.useStatus,
+    id: item.id
+  }))
+)
+
+const filteredData = computed(() => {
+  let data = mappedData.value
+
+  if (searchForm.reservationName) {
+    data = data.filter(item =>
+      item.reservationName?.includes(searchForm.reservationName)
+    )
+  }
+
+  if (searchForm.approvalStatus) {
+    data = data.filter(item => item.approvalStatus === searchForm.approvalStatus)
+  }
+
+  if (searchForm.usageStatus) {
+    data = data.filter(item => item.usageStatus === searchForm.usageStatus)
+  }
+
+  if (searchForm.startDate && searchForm.endDate) {
+    const start = new Date(searchForm.startDate)
+    const end = new Date(searchForm.endDate)
+    data = data.filter(item => {
+      const dateStr = item.reservationPeriod?.split(' ')[0]
+      if (!dateStr) return false
+      const d = new Date(dateStr.replace(/\./g, '-'))
+      return d >= start && d <= end
     })
+  }
 
-    const pagination = reactive({
-      currentPage: 1,
-      pageSize: 10,
-      total: 0
-    })
+  pagination.total = data.length
+  const startIndex = (pagination.currentPage - 1) * pagination.pageSize
+  return data.slice(startIndex, startIndex + pagination.pageSize)
+})
 
-    // 过滤数据
-    const filteredData = computed(() => {
-      let data = props.bookingData
+function getApprovalStatusType(status) {
+  const map = {
+    审核中: 'warning',
+    通过: 'success',
+    拒绝: 'danger',
+    已取消: 'info'
+  }
+  return map[status] || 'info'
+}
 
-      if (filters.name) {
-        data = data.filter(item => 
-          item.bookingName.includes(filters.name)
-        )
-      }
+function getUsageStatusType(status) {
+  const map = {
+    未开始: 'info',
+    进行中: 'warning',
+    已结束: 'info'
+  }
+  return map[status] || 'info'
+}
 
-      if (filters.applicant) {
-        data = data.filter(item => 
-          item.applicant.includes(filters.applicant)
-        )
-      }
+function handleSearch() {
+  pagination.currentPage = 1
+}
 
-      if (filters.auditType) {
-        data = data.filter(item => 
-          item.auditStatus === filters.auditType
-        )
-      }
-
-      if (filters.useStatus) {
-        data = data.filter(item => 
-          item.useStatus === filters.useStatus
-        )
-      }
-
-      pagination.total = data.length
-
-      // 分页
-      const start = (pagination.currentPage - 1) * pagination.pageSize
-      const end = start + pagination.pageSize
-      return data.slice(start, end)
-    })
-
-    const getAuditStatusType = (status) => {
-      const statusMap = {
-        '待审核': 'warning',
-        '通过': 'success',
-        '拒绝': 'danger'
-      }
-      return statusMap[status] || 'info'
+function handleReset() {
+  Object.keys(searchForm).forEach(key => {
+    if (Array.isArray(searchForm[key])) {
+      searchForm[key] = []
+    } else {
+      searchForm[key] = ''
     }
+  })
+  pagination.currentPage = 1
+}
 
-    const getUseStatusType = (status) => {
-      const statusMap = {
-        '未开始': 'info',
-        '进行中': 'warning',
-        '已结束': 'success'
-      }
-      return statusMap[status] || 'info'
-    }
+function handleSizeChange(val) {
+  pagination.pageSize = val
+  pagination.currentPage = 1
+}
 
-    const handleSearch = () => {
-      pagination.currentPage = 1
-      console.log('搜索:', filters)
-    }
+function handleCurrentChange(val) {
+  pagination.currentPage = val
+}
 
-    const handleReset = () => {
-      Object.keys(filters).forEach(key => {
-        filters[key] = ''
-      })
-      pagination.currentPage = 1
-    }
+function handleView(row) {
+  reservationDetail.value = {
+    userName: row.applicantName,
+    reservationTitle: row.reservationName,
+    borrowTime: row.reservationPeriod,
+    borrowDesc: row.description,
+    participants:
+      (bookingBaseInfo[row.id]?.participants || '张三, 李四, 王五').split(', '),
+    remark: bookingBaseInfo[row.id]?.remark || '',
+    approvalSteps: auditDetailData[row.id] || []
+  }
+  detailDialogVisible.value = true
+}
 
-    const handleSizeChange = (val) => {
-      pagination.pageSize = val
-      pagination.currentPage = 1
-    }
+function handleCancel(row) {
+  emit('cancel', row)
+}
 
-    const handleCurrentChange = (val) => {
-      pagination.currentPage = val
-    }
+function handleCancelReservation() {
+  emit('cancel', reservationDetail.value)
+  detailDialogVisible.value = false
+}
 
-    return {
-      filters,
-      pagination,
-      filteredData,
-      getAuditStatusType,
-      getUseStatusType,
-      handleSearch,
-      handleReset,
-      handleSizeChange,
-      handleCurrentChange
-    }
+function handleViewAuditDetail(row) {
+  const base = bookingBaseInfo[row.id] || {}
+  currentRecord.value = {
+    reservationTitle: base.reservationName || row.reservationName,
+    userName: base.applicant || row.applicantName,
+    borrowPeriodText: base.reservationPeriod || row.reservationPeriod,
+    borrowDesc: base.description || row.description,
+    participants: base.participants ? base.participants.split(', ') : [],
+    remark: base.remark || '',
+    approvalStatus: base.approvalStatus || row.approvalStatus,
+    approvalSteps: auditDetailData[row.id] || []
+  }
+  auditDialogVisible.value = true
+}
+
+function handleDateChange(val) {
+  if (Array.isArray(val) && val.length === 2) {
+    searchForm.startDate = val[0]
+    searchForm.endDate = val[1]
+  } else {
+    searchForm.startDate = ''
+    searchForm.endDate = ''
   }
 }
 </script>
@@ -308,4 +420,16 @@ export default {
   justify-content: center;
   padding: 20px 0;
 }
+.status-tag {
+  cursor: pointer;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  width: 100%;
+}
 </style>
+
