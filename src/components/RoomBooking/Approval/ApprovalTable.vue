@@ -1,25 +1,21 @@
 <template>
   <div class="approval-table">
-    <el-table 
-      :data="approvalData" 
-      :loading="loading"
-      border
-      stripe
-      style="width: 100%"
-    >
+    <el-table :data="approvalData" :loading="loading" border stripe style="width: 100%">
       <el-table-column prop="name" label="预约/借用名称" min-width="200" />
       <el-table-column prop="cycle" label="预约周期" min-width="200" />
       <el-table-column prop="description" label="描述" min-width="200">
         <template #default="{ row }">
-          <span style="white-space: pre-wrap;">{{ row.description || '/' }}</span>
+          <span style="white-space: pre-wrap">{{ row.description || '/' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="applicantName" label="预约人" width="120" />
       <el-table-column prop="roomName" label="预约教室" width="150" />
 
       <el-table-column label="操作" width="120" fixed="right">
-        <template #default="scope">
-          <el-button type="primary" size="small" @click="$emit('review', scope.row)">立即审批</el-button>
+        <template #default="{ row }">
+          <el-button type="primary" size="small" @click="handleAction(row)">
+            {{ row.status === 'PENDING' ? '立即审批' : '查看详情' }}
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -38,17 +34,25 @@ export default {
   props: {
     approvalData: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     loading: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
-  emits: ['review'],
-  setup() {
-    return {}
-  }
+  emits: ['review', 'view'],
+  setup(_, { emit }) {
+    const handleAction = (row) => {
+      if (row.status === 'PENDING') {
+        emit('review', row)
+      } else {
+        emit('view', row)
+      }
+    }
+
+    return { handleAction }
+  },
 }
 </script>
 
@@ -139,7 +143,7 @@ export default {
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .action-buttons .el-button {
     width: 100%;
     margin: 2px 0;
