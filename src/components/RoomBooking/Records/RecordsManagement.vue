@@ -6,53 +6,58 @@
         <div class="sidebar-header">
           <h3>数据记录</h3>
         </div>
-        <div class="sidebar-menu">
-          <!-- 预约记录分组 -->
-          <div class="menu-group">
-            <div
-              :class="['menu-group-title', { expanded: expandedGroups.includes('booking') }]"
-              @click="toggleGroup('booking')"
-            >
+        <el-menu
+          class="sidebar-menu"
+          :default-active="activeMenu"
+          :default-openeds="expandedGroups"
+          @open="onMenuOpen"
+          @close="onMenuClose"
+          @select="handleMenuSelect"
+        >
+          <el-submenu index="booking">
+            <template #title>
               <el-icon><document /></el-icon>
               <span>预约记录</span>
-              <el-icon class="expand-icon"><arrow-down /></el-icon>
-            </div>
-            <div v-show="expandedGroups.includes('booking')" class="submenu">
-              <div
-                v-for="item in bookingRecordTypes"
-                :key="item.key"
-                :class="['submenu-item', { active: activeRecordType === item.key }]"
-                @click="setActiveRecordType(item.key)"
-              >
-                <el-icon><component :is="item.icon" /></el-icon>
-                <span>{{ item.label }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 运营记录分组 -->
-          <div class="menu-group">
-            <div
-              :class="['menu-group-title', { expanded: expandedGroups.includes('operation') }]"
-              @click="toggleGroup('operation')"
+            </template>
+            <el-menu-item
+              v-for="item in bookingRecordTypes"
+              :key="item.key"
+              :index="item.key"
             >
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </el-submenu>
+
+          <el-submenu index="access">
+            <template #title>
+              <el-icon><user /></el-icon>
+              <span>出入记录</span>
+            </template>
+            <el-menu-item
+              v-for="item in accessRecordTypes"
+              :key="item.key"
+              :index="item.key"
+            >
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </el-submenu>
+
+          <el-submenu index="operation">
+            <template #title>
               <el-icon><setting /></el-icon>
               <span>运营记录</span>
-              <el-icon class="expand-icon"><arrow-down /></el-icon>
-            </div>
-            <div v-show="expandedGroups.includes('operation')" class="submenu">
-              <div
-                v-for="item in operationRecordTypes"
-                :key="item.key"
-                :class="['submenu-item', { active: activeRecordType === item.key }]"
-                @click="setActiveRecordType(item.key)"
-              >
-                <el-icon><component :is="item.icon" /></el-icon>
-                <span>{{ item.label }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            </template>
+            <el-menu-item
+              v-for="item in operationRecordTypes"
+              :key="item.key"
+              :index="item.key"
+            >
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </el-submenu>
+        </el-menu>
       </div>
 
       <!-- 主内容区域 -->
@@ -170,12 +175,13 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter, useRoute } from 'vue-router'
 import {
   Document,
   DocumentChecked,
   Setting,
   Search,
-  ArrowDown
+  User
 } from '@element-plus/icons-vue'
 
 const expandedGroups = ref(['booking'])
@@ -184,6 +190,16 @@ const bookingRecordTypes = [{ key: 'data_booking_records', label: '数据借用�
 const operationRecordTypes = [
   { key: 'operation_door_records', label: '运营开门记录', icon: 'DocumentChecked' }
 ]
+const accessRecordTypes = [
+  { key: '/record/access/classroom', label: '教室出入记录', icon: 'Document' },
+  { key: '/record/access/remote-door', label: '远程开门记录', icon: 'Document' }
+]
+
+const router = useRouter()
+const route = useRoute()
+const activeMenu = computed(() =>
+  route.path.startsWith('/record/access') ? route.path : activeRecordType.value
+)
 
 const treeRef = ref()
 const treeFilter = ref('')
@@ -263,6 +279,25 @@ function toggleGroup(group) {
 
 function setActiveRecordType(type) {
   activeRecordType.value = type
+}
+
+function handleMenuSelect(index) {
+  if (index.startsWith('/')) {
+    router.push(index)
+  } else {
+    setActiveRecordType(index)
+  }
+}
+
+function onMenuOpen(index) {
+  if (!expandedGroups.value.includes(index)) {
+    expandedGroups.value.push(index)
+  }
+}
+
+function onMenuClose(index) {
+  const i = expandedGroups.value.indexOf(index)
+  if (i > -1) expandedGroups.value.splice(i, 1)
 }
 
 function exportCurrent() {
