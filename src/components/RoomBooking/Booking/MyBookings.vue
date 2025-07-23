@@ -127,6 +127,11 @@
       :info="currentBaseInfo"
       :audit-details="currentAuditDetails"
     />
+    <ReservationDetailDialog
+      v-model="detailDialogVisible"
+      :detail="reservationDetail"
+      @cancel="handleCancelReservation"
+    />
   </div>
 </template>
 
@@ -134,6 +139,7 @@
 import { reactive, computed, watch, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import AuditDetailDialog from './AuditDetailDialog.vue'
+import ReservationDetailDialog from './ReservationDetailDialog.vue'
 
 const props = defineProps({
   bookingData: {
@@ -142,7 +148,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['view', 'cancel'])
+const emit = defineEmits(['cancel'])
 
 const searchForm = reactive({
   reservationName: '',
@@ -278,6 +284,24 @@ const auditDetailData = {
 const auditDialogVisible = ref(false)
 const currentBaseInfo = ref({})
 const currentAuditDetails = ref([])
+const detailDialogVisible = ref(false)
+const reservationDetail = ref({
+  userName: '张三',
+  reservationTitle: '张三的教室借用',
+  borrowTime: '2025.04.24 第1节次、第2节次',
+  borrowDesc: '我是描述内容...',
+  participants: ['张三', '李四', '王五'],
+  remark: '备注信息...',
+  approvalList: [
+    {
+      level: '自动审批',
+      approver: '王五',
+      confirmApprover: '王五',
+      time: '2022.07.14 14:23:56',
+      comment: '同意'
+    }
+  ]
+})
 
 watch(
   () => searchForm.dateRange,
@@ -387,11 +411,26 @@ function handleCurrentChange(val) {
 }
 
 function handleView(row) {
-  emit('view', row)
+  reservationDetail.value = {
+    userName: row.applicantName,
+    reservationTitle: row.reservationName,
+    borrowTime: row.reservationPeriod,
+    borrowDesc: row.description,
+    participants:
+      (bookingBaseInfo[row.id]?.participants || '张三, 李四, 王五').split(', '),
+    remark: bookingBaseInfo[row.id]?.remark || '',
+    approvalList: auditDetailData[row.id] || []
+  }
+  detailDialogVisible.value = true
 }
 
 function handleCancel(row) {
   emit('cancel', row)
+}
+
+function handleCancelReservation() {
+  emit('cancel', reservationDetail.value)
+  detailDialogVisible.value = false
 }
 
 function handleViewAuditDetail(row) {
