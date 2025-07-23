@@ -60,7 +60,13 @@
       <el-table :data="filteredData" border>
         <el-table-column prop="reservationName" label="预约名称" min-width="200" />
         <el-table-column prop="reservationPeriod" label="预约周期" min-width="250" />
-        <el-table-column prop="description" label="描述" min-width="200" />
+        <el-table-column prop="description" label="描述" min-width="200">
+          <template #default="{ row }">
+            <el-tooltip placement="top" :content="row.description">
+              <span class="ellipsis">{{ row.description }}</span>
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="applicantName" label="预约人" width="120" />
         <el-table-column prop="roomName" label="预约教室" width="150" />
         <el-table-column prop="approvalStatus" label="审核状态" width="100">
@@ -150,8 +156,20 @@ const pagination = reactive({
   total: 0
 })
 
+const mappedData = computed(() =>
+  props.bookingData.map(item => ({
+    reservationName: item.reservationName || item.bookingName,
+    reservationPeriod: item.reservationPeriod || item.bookingTime,
+    description: item.description,
+    applicantName: item.applicantName || item.applicant,
+    roomName: item.roomName,
+    approvalStatus: item.approvalStatus || item.auditStatus,
+    usageStatus: item.usageStatus || item.useStatus
+  }))
+)
+
 const filteredData = computed(() => {
-  let data = props.bookingData
+  let data = mappedData.value
 
   if (searchForm.reservationName) {
     data = data.filter(item =>
@@ -315,5 +333,13 @@ function handleDateChange(val) {
   display: flex;
   justify-content: center;
   padding: 20px 0;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-block;
+  width: 100%;
 }
 </style>
