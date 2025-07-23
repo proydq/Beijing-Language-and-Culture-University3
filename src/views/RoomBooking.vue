@@ -271,7 +271,7 @@ export default {
         bookingTime: '2025-07-20 09:00-12:00',
         applyTime: '2025-07-16 14:30:00',
         reason: '新教师入职培训，需要使用多媒体设备进行培训演示',
-        status: '待审批',
+        status: 'PENDING',
         urgency: '普通'
       },
       {
@@ -283,7 +283,31 @@ export default {
         bookingTime: '2025-07-21 14:00-17:00',
         applyTime: '2025-07-15 10:20:00',
         reason: '计算机社团定期技术分享活动，邀请行业专家进行技术讲座',
-        status: '待审批',
+        status: 'PENDING',
+        urgency: '普通'
+      },
+      {
+        id: 3,
+        bookingName: '【部门会议】月度总结',
+        applicant: '王主任',
+        applicantType: '管理员',
+        roomName: '会议室A',
+        bookingTime: '2025-07-25 15:00-17:00',
+        applyTime: '2025-07-14 16:45:00',
+        reason: '部门月度工作总结和计划讨论',
+        status: 'APPROVED',
+        urgency: '紧急'
+      },
+      {
+        id: 4,
+        bookingName: '【社团活动】临时聚会',
+        applicant: '赵敏',
+        applicantType: '学生',
+        roomName: '多媒体教室（103）',
+        bookingTime: '2025-07-22 13:00-15:00',
+        applyTime: '2025-07-15 09:00:00',
+        reason: '临时聚会讨论新活动方案',
+        status: 'REJECTED',
         urgency: '普通'
       }
     ])
