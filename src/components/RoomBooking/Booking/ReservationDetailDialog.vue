@@ -1,10 +1,5 @@
 <template>
-<el-dialog
-    v-model="visible"
-    title="预约详情"
-    :width="dialogWidth"
-    :close-on-click-modal="false"
-  >
+  <el-dialog v-model="visible" title="预约详情" :width="dialogWidth" :close-on-click-modal="false">
     <div class="section">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="预约人">
@@ -69,7 +64,9 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="close">取消</el-button>
-        <el-button type="danger" @click="cancelReservation">取消预约</el-button>
+        <el-button v-if="showCancelReservation" type="danger" @click="cancelReservation">
+          取消预约
+        </el-button>
       </div>
     </template>
   </el-dialog>
@@ -82,7 +79,8 @@ import { ElMessage } from 'element-plus'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   detail: { type: Object, default: () => ({}) },
-  width: { type: String, default: '90%' }
+  width: { type: String, default: '90%' },
+  showCancelReservation: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['update:modelValue', 'cancel'])
@@ -91,6 +89,8 @@ const visible = computed({
   get: () => props.modelValue,
   set: (v) => emit('update:modelValue', v),
 })
+
+const showCancelReservation = computed(() => props.showCancelReservation)
 
 // 对话框宽度可配置，默认为 90%
 const dialogWidth = computed(() => props.width)
@@ -101,7 +101,7 @@ const close = () => {
 
 const cancelReservation = () => {
   ElMessage.success('已取消预约')
-  emit('cancel', detail)
+  emit('cancel', props.detail)
   visible.value = false
 }
 

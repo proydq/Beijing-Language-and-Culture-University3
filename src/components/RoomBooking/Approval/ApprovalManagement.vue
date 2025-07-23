@@ -21,10 +21,7 @@
               <el-input v-model="searchForm.applicant" placeholder="请输入信息" />
             </el-form-item>
             <el-form-item label="预约时间">
-              <el-date-picker
-                v-model="searchForm.dateRange"
-                type="daterange"
-              />
+              <el-date-picker v-model="searchForm.dateRange" type="daterange" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -38,6 +35,7 @@
           :approval-data="filteredApprovalData"
           :loading="loading"
           @review="openReview"
+          @view="openDetail"
         />
 
         <!-- 分页 -->
@@ -62,6 +60,12 @@
       @confirm="handleApprovalConfirm"
       @cancel="handleApprovalCancel"
     />
+    <ReservationDetailDialog
+      v-model="detailDialogVisible"
+      :detail="reservationDetail"
+      :show-cancel-reservation="false"
+      width="80%"
+    />
   </div>
 </template>
 
@@ -71,19 +75,21 @@ import { ElMessage } from 'element-plus'
 import Sidebar from '../Layout/Sidebar.vue'
 import ApprovalTable from './ApprovalTable.vue'
 import ApprovalDialog from './ApprovalDialog.vue'
+import ReservationDetailDialog from '../Booking/ReservationDetailDialog.vue'
 
 export default {
   name: 'ApprovalManagement',
   components: {
     Sidebar,
     ApprovalTable,
-    ApprovalDialog
+    ApprovalDialog,
+    ReservationDetailDialog,
   },
   props: {
     approvalData: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   emits: ['approve', 'reject'],
   setup(props, { emit }) {
@@ -92,7 +98,7 @@ export default {
       { key: 'all', label: '全部审批', icon: 'DocumentChecked' },
       { key: 'pending', label: '待审批', icon: 'Clock' },
       { key: 'approved', label: '已通过', icon: 'CircleCheck' },
-      { key: 'rejected', label: '已拒绝', icon: 'CircleClose' }
+      { key: 'rejected', label: '已拒绝', icon: 'CircleClose' },
     ]
 
     const activeApprovalType = ref('pending')
@@ -102,14 +108,14 @@ export default {
     const searchForm = reactive({
       name: '',
       applicant: '',
-      dateRange: []
+      dateRange: [],
     })
 
     // 分页
     const pagination = reactive({
       currentPage: 1,
       pageSize: 10,
-      total: 0
+      total: 0,
     })
 
     // 对话框相关
@@ -128,7 +134,7 @@ export default {
         applyTime: '2025-07-16 14:30:00',
         reason: '新教师入职培训，需要使用多媒体设备进行培训演示',
         status: 'PENDING',
-        urgency: '普通'
+        urgency: '普通',
       },
       {
         id: 2,
@@ -140,7 +146,7 @@ export default {
         applyTime: '2025-07-15 10:20:00',
         reason: '计算机社团定期技术分享活动，邀请行业专家进行技术讲座',
         status: 'PENDING',
-        urgency: '普通'
+        urgency: '普通',
       },
       {
         id: 3,
@@ -152,8 +158,8 @@ export default {
         applyTime: '2025-07-14 16:45:00',
         reason: '部门月度工作总结和下月工作计划讨论',
         status: 'APPROVED',
-        urgency: '紧急'
-      }
+        urgency: '紧急',
+      },
     ])
 
     // 过滤审批数据
@@ -165,22 +171,22 @@ export default {
         const statusMap = {
           pending: 'PENDING',
           approved: 'APPROVED',
-          rejected: 'REJECTED'
+          rejected: 'REJECTED',
         }
-        data = data.filter(item => item.status === statusMap[activeApprovalType.value])
+        data = data.filter((item) => item.status === statusMap[activeApprovalType.value])
       }
 
       // 按搜索条件过滤
       if (searchForm.name) {
-        data = data.filter(item => item.bookingName.includes(searchForm.name))
+        data = data.filter((item) => item.bookingName.includes(searchForm.name))
       }
 
       if (searchForm.applicant) {
-        data = data.filter(item => item.applicant.includes(searchForm.applicant))
+        data = data.filter((item) => item.applicant.includes(searchForm.applicant))
       }
 
       if (searchForm.dateRange && searchForm.dateRange.length === 2) {
-        data = data.filter(item => {
+        data = data.filter((item) => {
           const applyDate = item.applyTime.split(' ')[0]
           return applyDate >= searchForm.dateRange[0] && applyDate <= searchForm.dateRange[1]
         })
@@ -191,12 +197,12 @@ export default {
       // 分页
       const start = (pagination.currentPage - 1) * pagination.pageSize
       const end = start + pagination.pageSize
-      return data.slice(start, end).map(item => ({
+      return data.slice(start, end).map((item) => ({
         ...item,
         name: item.bookingName,
         cycle: item.bookingTime,
         description: item.reason,
-        applicantName: item.applicant
+        applicantName: item.applicant,
       }))
     })
 
@@ -211,7 +217,7 @@ export default {
     }
 
     const handleReset = () => {
-      Object.keys(searchForm).forEach(key => {
+      Object.keys(searchForm).forEach((key) => {
         searchForm[key] = key === 'dateRange' ? [] : ''
       })
       pagination.currentPage = 1
@@ -236,7 +242,9 @@ export default {
       loading.value = true
 
       setTimeout(() => {
-        const index = mockApprovalData.value.findIndex(item => item.id === currentApproval.value.id)
+        const index = mockApprovalData.value.findIndex(
+          (item) => item.id === currentApproval.value.id,
+        )
         if (index !== -1) {
           mockApprovalData.value[index].status = result.status
         }
@@ -251,6 +259,118 @@ export default {
     const handleApprovalCancel = () => {
       dialogVisible.value = false
       currentApproval.value = null
+    }
+
+    const detailDialogVisible = ref(false)
+    const reservationDetail = ref({})
+
+    const bookingBaseInfo = {
+      1: {
+        reservationName: '【活动1】的教室借用',
+        applicant: '王鹏',
+        reservationPeriod: '2025.08.24 星期四 第三节次',
+        description: '班级活动使用，需使用投影设备',
+        participants: '张三, 李四',
+        remark: '需要提前布置',
+      },
+      2: {
+        reservationName: '【学生会】定期会议',
+        applicant: '李明',
+        reservationPeriod: '2025.08.25 星期五 第五节次',
+        description: '学生组织定期内部会议',
+        participants: '刘强, 陈伟',
+        remark: '无',
+      },
+      3: {
+        reservationName: '【外聘讲座】演讲厅借用',
+        applicant: '赵敏',
+        reservationPeriod: '2025.08.20 星期一 第九节次',
+        description: '外聘教授举办讲座，要求提前布场',
+        participants: '张三, 李四, 王五',
+        remark: '讲座需准备扩音设备',
+      },
+      4: {
+        reservationName: '【活动八定名】的教室借用',
+        applicant: '王鹏',
+        reservationPeriod: '2025.04.24 第四节次',
+        description: '实验班借用智慧教室用于演示活动',
+        participants: '李四, 王五',
+        remark: '活动已取消',
+      },
+    }
+
+    const auditDetailData = {
+      1: [
+        {
+          levelName: '自动审批',
+          approvers: ['系统'],
+          confirmedApprover: '系统',
+          approvalTime: '2025-07-21 10:12:33',
+          comment: '系统自动通过',
+        },
+      ],
+      2: [
+        {
+          levelName: '自动审批',
+          approvers: ['系统'],
+          confirmedApprover: '系统',
+          approvalTime: '2025-08-21 09:00',
+          comment: '系统自动通过',
+        },
+        {
+          levelName: '一级审批',
+          approvers: ['赵主管', '钱经理'],
+          confirmedApprover: '钱经理',
+          approvalTime: '2025-08-22 12:00',
+          comment: '同意：排课正常，无异议',
+        },
+      ],
+      3: [
+        {
+          levelName: '自动审批',
+          approvers: ['系统'],
+          confirmedApprover: '系统',
+          approvalTime: '2025-08-15 08:00',
+          comment: '系统自动通过',
+        },
+        {
+          levelName: '一级审批',
+          approvers: ['赵主管'],
+          confirmedApprover: '赵主管',
+          approvalTime: '2025-08-16 09:30',
+          comment: '同意：排课正常，无异议',
+        },
+      ],
+      4: [
+        {
+          levelName: '自动审批',
+          approvers: ['系统'],
+          confirmedApprover: '系统',
+          approvalTime: '2025-04-20 09:00',
+          comment: '系统自动通过',
+        },
+        {
+          levelName: '一级审批',
+          approvers: ['赵主管'],
+          confirmedApprover: '赵主管',
+          approvalTime: '2025-04-21 11:00',
+          comment: '拒绝：活动已取消',
+        },
+      ],
+    }
+
+    const openDetail = (row) => {
+      const base = bookingBaseInfo[row.id] || {}
+      reservationDetail.value = {
+        userName: base.applicant || row.applicant,
+        reservationTitle: base.reservationName || row.bookingName,
+        borrowTime: base.reservationPeriod || row.bookingTime,
+        borrowDesc: base.description || row.reason,
+        participants: base.participants ? base.participants.split(', ') : [],
+        remark: base.remark || '',
+        approvalSteps: auditDetailData[row.id] || [],
+      }
+      detailDialogVisible.value = true
     }
 
     onMounted(() => {
@@ -274,9 +394,12 @@ export default {
       handleCurrentChange,
       openReview,
       handleApprovalConfirm,
-      handleApprovalCancel
+      handleApprovalCancel,
+      detailDialogVisible,
+      reservationDetail,
+      openDetail,
     }
-  }
+  },
 }
 </script>
 
