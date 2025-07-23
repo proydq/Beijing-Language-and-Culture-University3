@@ -1,0 +1,421 @@
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+export function useUserManagement() {
+  const router = useRouter()
+  
+  // 基础数据
+  const activeTab = ref('userList')
+  const searchKeyword = ref('')
+  const currentUser = ref(null)
+  const detailDialogVisible = ref(false)
+  const editDialogVisible = ref(false)
+  const isEdit = ref(false)
+  const formRef = ref()
+  const avatarList = ref([])
+  const faceList = ref([])
+  
+  // 分页数据
+  const currentPage = ref(1)
+  const pageSize = ref(10)
+  const total = ref(100)
+  
+  // 表单数据
+  const searchForm = reactive({
+    realName: '',
+    phone: '',
+    jobNumber: '',
+    status: ''
+  })
+
+  const userForm = reactive({
+    avatar: '',
+    faceImage: '',
+    realName: '',
+    gender: '',
+    phone: '',
+    department: '',
+    jobNumber: '',
+    position: '',
+    jobTitle: '',
+    cardNumber: '',
+    attendanceNumber: '',
+    status: '正常'
+  })
+
+  const departments = ref([
+    { label: '技术部', value: '技术部' },
+    { label: '行政部', value: '行政部' }
+  ])
+
+  const positions = ref([
+    { label: '前端工程师', value: '前端工程师' },
+    { label: '后端工程师', value: '后端工程师' },
+    { label: '人事专员', value: '人事专员' }
+  ])
+
+  const titles = ref([
+    { label: '初级工程师', value: '初级工程师' },
+    { label: '中级工程师', value: '中级工程师' },
+    { label: '高级工程师', value: '高级工程师' }
+  ])
+
+  // 模拟数据
+  const treeData = ref([
+    {
+      id: 1,
+      name: '北京语言大学',
+      type: 'company',
+      count: 1200,
+      children: [
+        {
+          id: 2,
+          name: '技术部',
+          type: 'department',
+          count: 50,
+          children: [
+            { id: 3, name: '前端组', type: 'group', count: 20 },
+            { id: 4, name: '后端组', type: 'group', count: 30 }
+          ]
+        },
+        {
+          id: 5,
+          name: '行政部',
+          type: 'department',
+          count: 25,
+          children: [
+            { id: 6, name: '人事组', type: 'group', count: 15 },
+            { id: 7, name: '财务组', type: 'group', count: 10 }
+          ]
+        }
+      ]
+    }
+  ])
+
+  const treeProps = {
+    children: 'children',
+    label: 'name'
+  }
+
+  const tableData = ref([
+    {
+      id: 1,
+      realName: '张三',
+      gender: '男',
+      phone: '13800138001',
+      jobNumber: 'JS001',
+      department: '技术部',
+      position: '前端工程师',
+      jobTitle: '高级工程师',
+      status: '正常',
+      createTime: '2023-01-15 10:30:00'
+    },
+    {
+      id: 2,
+      realName: '李四',
+      gender: '女',
+      phone: '13800138002',
+      jobNumber: 'JS002',
+      department: '行政部',
+      position: '人事专员',
+      jobTitle: '中级专员',
+      status: '正常',
+      createTime: '2023-02-20 14:20:00'
+    },
+    {
+      id: 3,
+      realName: '王五',
+      gender: '男',
+      phone: '13800138003',
+      jobNumber: 'JS003',
+      department: '技术部',
+      position: '后端工程师',
+      jobTitle: '高级工程师',
+      status: '禁用',
+      createTime: '2023-03-10 09:15:00'
+    }
+  ])
+
+  // 同步相关数据
+  const syncDialogVisible = ref(false)
+  const syncProgress = ref(0)
+  const syncDuration = ref(0)
+  const syncSummary = ref([
+    { object: '用户信息', auto: '否', lastTime: '2023-07-20 10:00:00' }
+  ])
+  const syncLogDialogVisible = ref(false)
+  const syncLogData = ref([
+    {
+      id: 1,
+      object: '用户信息',
+      status: '成功',
+      reason: '',
+      startTime: '2023-07-20 10:00:00',
+      endTime: '2023-07-20 10:00:30',
+      duration: 0.5
+    },
+    {
+      id: 2,
+      object: '用户信息',
+      status: '失败',
+      reason: '网络异常',
+      startTime: '2023-07-19 09:00:00',
+      endTime: '2023-07-19 09:00:20',
+      duration: 0.33
+    },
+    {
+      id: 3,
+      object: '用户信息',
+      status: '成功',
+      reason: '',
+      startTime: '2023-07-18 08:00:00',
+      endTime: '2023-07-18 08:00:25',
+      duration: 0.42
+    }
+  ])
+  const logCurrentPage = ref(1)
+  const logPageSize = ref(10)
+  const logTotal = ref(3)
+
+  // 表单验证规则
+  const formRules = {
+    avatar: [{ required: true, message: '请上传头像', trigger: 'change' }],
+    faceImage: [{ required: true, message: '请上传人脸识别照片', trigger: 'change' }],
+    realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+    gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
+    phone: [
+      { required: true, message: '请输入手机号', trigger: 'blur' },
+      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    ],
+    department: [{ required: true, message: '请选择部门', trigger: 'change' }],
+    jobNumber: [{ required: true, message: '请输入工号', trigger: 'blur' }],
+    position: [{ required: true, message: '请选择职务', trigger: 'change' }],
+    jobTitle: [{ required: true, message: '请选择职称', trigger: 'change' }],
+    cardNumber: [{ required: true, message: '请输入一卡通编号', trigger: 'blur' }],
+    attendanceNumber: [
+      { required: true, message: '请输入无感考勤编号', trigger: 'blur' }
+    ]
+  }
+
+  // 基础方法
+  const goToHome = () => {
+    router.push('/dashboard')
+  }
+
+  const goToPersonalCenter = () => {
+    router.push('/personal-center')
+  }
+
+  const logout = () => {
+    console.log('退出登录')
+  }
+
+  const handleTreeNodeClick = (data) => {
+    console.log('选择部门:', data)
+    // 根据选择的部门过滤用户数据
+  }
+
+  const handleTabClick = (tab) => {
+    console.log('切换标签页:', tab.name)
+  }
+
+  // 用户管理方法
+  const handleSearch = () => {
+    console.log('搜索用户:', searchForm)
+  }
+
+  const handleReset = () => {
+    Object.assign(searchForm, {
+      realName: '',
+      phone: '',
+      jobNumber: '',
+      status: ''
+    })
+  }
+
+  let syncTimer = null
+  const startSync = () => {
+    syncProgress.value = 0
+    syncDuration.value = 0
+    syncDialogVisible.value = true
+    if (syncTimer) clearInterval(syncTimer)
+    syncTimer = setInterval(() => {
+      if (syncProgress.value < 100) {
+        syncProgress.value += 20
+        syncDuration.value += 1
+      } else {
+        clearInterval(syncTimer)
+      }
+    }, 1000)
+  }
+
+  const showSyncLogs = () => {
+    syncLogDialogVisible.value = true
+  }
+
+  const handleSyncCommand = (cmd) => {
+    if (cmd === 'syncNow') {
+      startSync()
+    } else if (cmd === 'viewLogs') {
+      showSyncLogs()
+    }
+  }
+
+  const handleImport = () => {
+    console.log('导入用户')
+  }
+
+  const resetForm = () => {
+    Object.keys(userForm).forEach(key => {
+      userForm[key] = ''
+    })
+    avatarList.value = []
+    faceList.value = []
+    formRef.value?.resetFields()
+  }
+
+  const handleAdd = () => {
+    isEdit.value = false
+    resetForm()
+    editDialogVisible.value = true
+  }
+
+  const handleExport = () => {
+    console.log('导出用户')
+  }
+
+  const handleView = (row) => {
+    currentUser.value = row
+    detailDialogVisible.value = true
+  }
+
+  const handleEdit = (row) => {
+    isEdit.value = true
+    Object.assign(userForm, row)
+    avatarList.value = userForm.avatar ? [{ url: userForm.avatar }] : []
+    faceList.value = userForm.faceImage ? [{ url: userForm.faceImage }] : []
+    editDialogVisible.value = true
+  }
+
+  const handleDelete = (row) => {
+    ElMessageBox.confirm(`确定要删除用户"${row.realName}"吗？`, '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      ElMessage.success('删除成功')
+    })
+  }
+
+  const handleDialogClose = () => {
+    editDialogVisible.value = false
+    resetForm()
+  }
+
+  const handleSaveUser = async () => {
+    try {
+      await formRef.value.validate()
+      ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
+      handleDialogClose()
+    } catch (error) {
+      console.log('表单验证失败:', error)
+    }
+  }
+
+  const handleAvatarChange = (file, fileList) => {
+    avatarList.value = fileList.slice(-1)
+    if (file.raw) {
+      userForm.avatar = URL.createObjectURL(file.raw)
+    }
+  }
+
+  const handleFaceChange = (file, fileList) => {
+    faceList.value = fileList.slice(-1)
+    if (file.raw) {
+      userForm.faceImage = URL.createObjectURL(file.raw)
+    }
+  }
+
+  const handleSizeChange = (size) => {
+    pageSize.value = size
+  }
+
+  const handleCurrentChange = (page) => {
+    currentPage.value = page
+  }
+
+  const handleLogSizeChange = (size) => {
+    logPageSize.value = size
+  }
+
+  const handleLogCurrentChange = (page) => {
+    logCurrentPage.value = page
+  }
+
+  return {
+    // 基础数据
+    activeTab,
+    searchKeyword,
+    currentUser,
+    detailDialogVisible,
+    editDialogVisible,
+    isEdit,
+    formRef,
+    avatarList,
+    faceList,
+    currentPage,
+    pageSize,
+    total,
+    
+    // 表单数据
+    searchForm,
+    userForm,
+    
+    // 模拟数据
+    treeData,
+    treeProps,
+    tableData,
+    
+    // 表单验证规则
+    formRules,
+    departments,
+    positions,
+    titles,
+    
+    // 基础方法
+    goToHome,
+    goToPersonalCenter,
+    logout,
+    handleTreeNodeClick,
+    handleTabClick,
+    
+    // 用户管理方法
+    handleSearch,
+    handleReset,
+    syncDialogVisible,
+    syncProgress,
+    syncDuration,
+    syncSummary,
+    syncLogDialogVisible,
+    syncLogData,
+    logCurrentPage,
+    logPageSize,
+    logTotal,
+    handleSyncCommand,
+    handleLogSizeChange,
+    handleLogCurrentChange,
+    handleImport,
+    handleAdd,
+    handleExport,
+    handleView,
+    handleEdit,
+    handleDelete,
+    handleDialogClose,
+    handleAvatarChange,
+    handleFaceChange,
+    handleSaveUser,
+    handleSizeChange,
+    handleCurrentChange
+  }
+}
