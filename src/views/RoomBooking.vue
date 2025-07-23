@@ -114,23 +114,33 @@ export default {
     const bookingData = ref([
       {
         id: 1,
-        bookingName: '【教师人员专】的配置管理',
-        bookingTime: '2025.04.24 第一节次、第二节次、第三节次、第四节次',
-        description: '各类通过这里发布各类信息进行各类信息',
-        applicant: '王玲',
+        reservationName: '【活动1】的教室借用',
+        reservationPeriod: '2025.08.24 星期四 第三节次',
+        description: '班级活动使用，需使用投影设备',
+        applicantName: '王鹏',
         roomName: '多媒体教室（101）',
-        auditStatus: '待审核',
-        useStatus: '未开始'
+        approvalStatus: '审核中',
+        usageStatus: '未开始'
       },
       {
         id: 2,
-        bookingName: '【学生活动】社团会议',
-        bookingTime: '2025.04.25 第一节次、第二节次',
-        description: '学生社团定期会议活动安排',
-        applicant: '李同学',
-        roomName: '多媒体教室（102）',
-        auditStatus: '通过',
-        useStatus: '未开始'
+        reservationName: '【学生会】定期会议',
+        reservationPeriod: '2025.08.25 星期五 第五节次',
+        description: '学生组织定期内部会议',
+        applicantName: '李明',
+        roomName: '智慧教室（202）',
+        approvalStatus: '通过',
+        usageStatus: '未开始'
+      },
+      {
+        id: 3,
+        reservationName: '【外聘讲座】演讲厅借用',
+        reservationPeriod: '2025.08.20 星期一 第九节次',
+        description: '外聘教授举办讲座，要求提前布场',
+        applicantName: '赵敏',
+        roomName: '演讲厅（301）',
+        approvalStatus: '通过',
+        usageStatus: '已结束'
       }
     ])
 
