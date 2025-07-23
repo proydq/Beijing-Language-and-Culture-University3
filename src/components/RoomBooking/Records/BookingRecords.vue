@@ -83,35 +83,17 @@
     </div>
   </div>
 
-  <el-dialog v-model="detailDialogVisible" title="详情" width="500px" destroy-on-close>
-    <div v-if="currentRow" class="record-detail">
-      <div class="detail-item">
-        <label>教室：</label>
-        <span>{{ currentRow.roomName }}</span>
-      </div>
-      <div class="detail-item">
-        <label>预约次数：</label>
-        <span>{{ currentRow.times }}</span>
-      </div>
-      <div class="detail-item">
-        <label>预约累计时长：</label>
-        <span>{{ currentRow.duration }} 分钟</span>
-      </div>
-      <div class="detail-item">
-        <label>累计人数：</label>
-        <span>{{ currentRow.people }}</span>
-      </div>
-    </div>
-    <template #footer>
-      <el-button @click="detailDialogVisible = false">关闭</el-button>
-    </template>
-  </el-dialog>
+  <BorrowDetailDialog
+    v-model:visible="detailDialogVisible"
+    :detail="currentRow || {}"
+  />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import BorrowDetailDialog from './BorrowDetailDialog.vue'
 
 const treeRef = ref()
 const treeFilter = ref('')
@@ -141,13 +123,64 @@ const sortOrder = ref('times_desc')
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(0)
 
 const allRecords = ref([
-  { id: 1, roomName: 'A-101', times: 5, duration: 300, people: 40, floor: '1F' },
-  { id: 2, roomName: 'A-201', times: 3, duration: 180, people: 30, floor: '2F' },
-  { id: 3, roomName: 'B-101', times: 8, duration: 400, people: 100, floor: '1F' },
-  { id: 4, roomName: 'B-202', times: 2, duration: 90, people: 20, floor: '2F' }
+  {
+    id: 1,
+    roomName: 'A-101',
+    times: 5,
+    duration: 300,
+    people: 40,
+    floor: '1F',
+    name: '《借阅人生百味》的教室借用',
+    reserver: '王强',
+    time: '2025.04.24 第三节～第五节，周二',
+    approval: '审核中',
+    status: '未开始',
+    description: '本次借用用于课程研讨与拍摄活动，需使用多媒体设备...'
+  },
+  {
+    id: 2,
+    roomName: 'A-201',
+    times: 3,
+    duration: 180,
+    people: 30,
+    floor: '2F',
+    name: '《现代教育技术》期末讨论',
+    reserver: '李四',
+    time: '2025.04.28 第一节～第二节，周三',
+    approval: '通过',
+    status: '进行中',
+    description: '讨论课程项目并进行汇报演练。'
+  },
+  {
+    id: 3,
+    roomName: 'B-101',
+    times: 8,
+    duration: 400,
+    people: 100,
+    floor: '1F',
+    name: '摄影培训交流',
+    reserver: '张华',
+    time: '2025.04.15 第五节～第七节，周一',
+    approval: '通过',
+    status: '已结束',
+    description: '校内摄影社团培训活动，已完成拍摄练习。'
+  },
+  {
+    id: 4,
+    roomName: 'B-202',
+    times: 2,
+    duration: 90,
+    people: 20,
+    floor: '2F',
+    name: '舞蹈排练活动',
+    reserver: '赵梅',
+    time: '2025.05.02 第二节～第四节，周五',
+    approval: '拒绝',
+    status: '未开始',
+    description: '因场地冲突，本次借用申请已被拒绝。'
+  }
 ])
 
 const filteredData = computed(() => {
@@ -163,9 +196,10 @@ const filteredData = computed(() => {
     if (sortOrder.value === 'duration_asc') return a.duration - b.duration
     return 0
   })
-  total.value = data.length
   return data
 })
+
+const total = computed(() => filteredData.value.length)
 
 const pagedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
@@ -271,18 +305,5 @@ const currentRow = ref()
   display: flex;
   justify-content: center;
   padding: 20px 0;
-}
-.record-detail {
-  display: grid;
-  gap: 15px;
-}
-.detail-item {
-  display: flex;
-  gap: 10px;
-}
-.detail-item label {
-  width: 90px;
-  color: #666;
-  font-weight: 500;
 }
 </style>
