@@ -71,7 +71,12 @@
         <el-table-column prop="roomName" label="预约教室" width="150" />
         <el-table-column prop="approvalStatus" label="审核状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getApprovalStatusType(row.approvalStatus)" size="small">
+            <el-tag
+              :type="getApprovalStatusType(row.approvalStatus)"
+              size="small"
+              class="status-tag"
+              @click="handleViewAuditDetail(row)"
+            >
               {{ row.approvalStatus }}
             </el-tag>
           </template>
@@ -117,12 +122,18 @@
         @current-change="handleCurrentChange"
       />
     </div>
+    <AuditDetailDialog
+      v-model="auditDialogVisible"
+      :info="currentBaseInfo"
+      :audit-details="currentAuditDetails"
+    />
   </div>
 </template>
 
 <script setup>
-import { reactive, computed, watch } from 'vue'
+import { reactive, computed, watch, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import AuditDetailDialog from './AuditDetailDialog.vue'
 
 const props = defineProps({
   bookingData: {
@@ -141,6 +152,132 @@ const searchForm = reactive({
   startDate: '',
   endDate: ''
 })
+
+// mock 预约基础信息数据
+const bookingBaseInfo = {
+  1: {
+    reservationName: '【活动1】的教室借用',
+    applicant: '王鹏',
+    reservationPeriod: '2025.08.24 星期四 第三节次',
+    description: '班级活动使用，需使用投影设备',
+    participants: '张三, 李四',
+    remark: '需要提前布置',
+    approvalStatus: '审批中'
+  },
+  2: {
+    reservationName: '【学生会】定期会议',
+    applicant: '李明',
+    reservationPeriod: '2025.08.25 星期五 第五节次',
+    description: '学生组织定期内部会议',
+    participants: '刘强, 陈伟',
+    remark: '无',
+    approvalStatus: '已通过'
+  },
+  3: {
+    reservationName: '【外聘讲座】演讲厅借用',
+    applicant: '赵敏',
+    reservationPeriod: '2025.08.20 星期一 第九节次',
+    description: '外聘教授举办讲座，要求提前布场',
+    participants: '张三, 李四, 王五',
+    remark: '讲座需准备扩音设备',
+    approvalStatus: '已通过'
+  },
+  4: {
+    reservationName: '【活动八定名】的教室借用',
+    applicant: '王鹏',
+    reservationPeriod: '2025.04.24 第四节次',
+    description: '实验班借用智慧教室用于演示活动',
+    participants: '李四, 王五',
+    remark: '活动已取消',
+    approvalStatus: '已拒绝'
+  }
+}
+
+// mock 审核详情数据
+const auditDetailData = {
+  1: [
+    {
+      level: '自动审批',
+      approvers: ['系统'],
+      confirmApprover: '系统',
+      time: '2025-08-18 09:00',
+      result: '通过'
+    },
+    {
+      level: '一级',
+      approvers: ['赵主管', '钱经理'],
+      confirmApprover: '赵主管',
+      time: '2025-08-19 10:00',
+      result: '通过'
+    },
+    {
+      level: '二级',
+      approvers: ['孙校长'],
+      confirmApprover: '',
+      time: '',
+      result: '审批中'
+    }
+  ],
+  2: [
+    {
+      level: '自动审批',
+      approvers: ['系统'],
+      confirmApprover: '系统',
+      time: '2025-08-21 09:00',
+      result: '通过'
+    },
+    {
+      level: '一级',
+      approvers: ['赵主管', '钱经理'],
+      confirmApprover: '钱经理',
+      time: '2025-08-22 12:00',
+      result: '通过'
+    },
+    {
+      level: '二级',
+      approvers: ['孙校长'],
+      confirmApprover: '孙校长',
+      time: '2025-08-23 15:00',
+      result: '通过'
+    }
+  ],
+  3: [
+    {
+      level: '自动审批',
+      approvers: ['系统'],
+      confirmApprover: '系统',
+      time: '2025-08-15 08:00',
+      result: '通过'
+    },
+    {
+      level: '一级',
+      approvers: ['赵主管'],
+      confirmApprover: '赵主管',
+      time: '2025-08-16 09:30',
+      result: '通过'
+    }
+  ],
+  4: [
+    {
+      level: '自动审批',
+      approvers: ['系统'],
+      confirmApprover: '系统',
+      time: '2025-04-20 09:00',
+      result: '通过'
+    },
+    {
+      level: '一级',
+      approvers: ['赵主管'],
+      confirmApprover: '赵主管',
+      time: '2025-04-21 11:00',
+      result: '拒绝'
+    }
+  ]
+}
+
+const auditDialogVisible = ref(false)
+const currentBaseInfo = ref({})
+const currentAuditDetails = ref([])
 
 watch(
   () => searchForm.dateRange,
@@ -257,6 +394,12 @@ function handleCancel(row) {
   emit('cancel', row)
 }
 
+function handleViewAuditDetail(row) {
+  currentBaseInfo.value = bookingBaseInfo[row.id] || {}
+  currentAuditDetails.value = auditDetailData[row.id] || []
+  auditDialogVisible.value = true
+}
+
 function handleDateChange(val) {
   if (Array.isArray(val) && val.length === 2) {
     searchForm.startDate = val[0]
@@ -339,6 +482,10 @@ function handleDateChange(val) {
   display: flex;
   justify-content: center;
   padding: 20px 0;
+}
+
+.status-tag {
+  cursor: pointer;
 }
 
 .ellipsis {
