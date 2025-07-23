@@ -132,17 +132,47 @@ export default {
         approvalStatus: '通过',
         usageStatus: '未开始'
       },
-      {
-        id: 3,
-        reservationName: '【外聘讲座】演讲厅借用',
-        reservationPeriod: '2025.08.20 星期一 第九节次',
-        description: '外聘教授举办讲座，要求提前布场',
-        applicantName: '赵敏',
-        roomName: '演讲厅（301）',
-        approvalStatus: '通过',
-        usageStatus: '已结束'
-      }
-    ])
+        {
+          id: 3,
+          reservationName: '【外聘讲座】演讲厅借用',
+          reservationPeriod: '2025.08.20 星期一 第九节次',
+          description: '外聘教授举办讲座，要求提前布场',
+          applicantName: '赵敏',
+          roomName: '演讲厅（301）',
+          approvalStatus: '通过',
+          usageStatus: '已结束'
+        },
+        {
+          id: 4,
+          reservationName: '【活动八定名】的教室借用',
+          reservationPeriod: '2025.04.24 第四节次',
+          description: '实验班借用智慧教室用于演示活动',
+          applicantName: '王鹏',
+          roomName: '多媒体教室（101）',
+          approvalStatus: '拒绝',
+          usageStatus: '/'
+        },
+        {
+          id: 5,
+          reservationName: '【活动八定名】的教室借用',
+          reservationPeriod: '2025.04.24 第四节次',
+          description: '实验班借用智慧教室用于演示活动',
+          applicantName: '王鹏',
+          roomName: '多媒体教室（101）',
+          approvalStatus: '通过',
+          usageStatus: '已结束'
+        },
+        {
+          id: 6,
+          reservationName: '【活动八定名】的教室借用',
+          reservationPeriod: '2025.04.24 第四节次',
+          description: '实验班借用智慧教室用于演示活动',
+          applicantName: '王鹏',
+          roomName: '多媒体教室（101）',
+          approvalStatus: '已取消',
+          usageStatus: '/'
+        }
+      ])
 
     const allBookingData = ref([
       {
