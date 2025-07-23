@@ -10,6 +10,8 @@ import RoleManagement from '../views/RoleManagement.vue'
 import AdminManagement from '../views/AdminManagement.vue'
 import AddAdmin from '../views/AddAdmin.vue'  // 新增这一行
 import RoomBooking from '../views/RoomBooking.vue'
+import ClassroomAccessRecords from '../views/ClassroomAccessRecords.vue'
+import RemoteDoorRecords from '../views/RemoteDoorRecords.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -73,6 +75,16 @@ const router = createRouter({
       path: '/room-booking',
       name: 'RoomBooking',
       component: RoomBooking
+    },
+    {
+      path: '/record/access/classroom',
+      name: 'ClassroomAccessRecords',
+      component: ClassroomAccessRecords
+    },
+    {
+      path: '/record/access/remote-door',
+      name: 'RemoteDoorRecords',
+      component: RemoteDoorRecords
     },
     {
       path: '/about',
