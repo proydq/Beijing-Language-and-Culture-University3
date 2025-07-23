@@ -124,8 +124,7 @@
     </div>
     <AuditDetailDialog
       v-model="auditDialogVisible"
-      :info="currentBaseInfo"
-      :audit-details="currentAuditDetails"
+      :record="currentRecord"
     />
     <ReservationDetailDialog
       v-model="detailDialogVisible"
@@ -282,8 +281,8 @@ const auditDetailData = {
 }
 
 const auditDialogVisible = ref(false)
-const currentBaseInfo = ref({})
-const currentAuditDetails = ref([])
+// 当前弹窗展示的预约记录
+const currentRecord = ref({})
 const detailDialogVisible = ref(false)
 const reservationDetail = ref({
   userName: '张三',
@@ -434,8 +433,17 @@ function handleCancelReservation() {
 }
 
 function handleViewAuditDetail(row) {
-  currentBaseInfo.value = bookingBaseInfo[row.id] || {}
-  currentAuditDetails.value = auditDetailData[row.id] || []
+  const base = bookingBaseInfo[row.id] || {}
+  currentRecord.value = {
+    reservationTitle: base.reservationName || row.reservationName,
+    userName: base.applicant || row.applicantName,
+    borrowPeriodText: base.reservationPeriod || row.reservationPeriod,
+    borrowDesc: base.description || row.description,
+    participants: base.participants ? base.participants.split(', ') : [],
+    remark: base.remark || '',
+    approvalStatus: base.approvalStatus || row.approvalStatus,
+    approvalSteps: auditDetailData[row.id] || []
+  }
   auditDialogVisible.value = true
 }
 
