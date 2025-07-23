@@ -1,34 +1,92 @@
 <template>
   <el-dialog v-model="visible" title="教室借用详情" width="600px" destroy-on-close>
-    <el-descriptions :column="1" border>
-      <el-descriptions-item label="借用/预约名称">
-        {{ detail.name || '/' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="预约人">
-        {{ detail.reserver || '/' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="借用时间">
-        {{ detail.time || '/' }}
-      </el-descriptions-item>
-      <el-descriptions-item label="审核状态">
-        <span :style="{ color: approvalColor(detail.approval) }">
-          {{ detail.approval || '/' }}
-        </span>
-      </el-descriptions-item>
-      <el-descriptions-item label="使用状态">
-        <span :style="{ color: statusColor(detail.status) }">
-          {{ detail.status || '/' }}
-        </span>
-      </el-descriptions-item>
-      <el-descriptions-item label="描述信息">
-        <el-input
-          :model-value="detail.description || '/'"
-          type="textarea"
-          autosize
-          readonly
-        />
-      </el-descriptions-item>
-    </el-descriptions>
+    <div class="room-name">房屋名称：{{ detail.roomName || '/' }}</div>
+
+    <div class="section">
+      <h4 class="section-title">借用信息</h4>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">借用/预约名称</span>
+            <span class="value">{{ detail.name || '/' }}</span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">借用类型</span>
+            <span class="value">{{ detail.type || '/' }}</span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">审核状态</span>
+            <span class="value" :class="approvalClass(detail.approvalStatus)">
+              {{ detail.approvalStatus || '/' }}
+            </span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">使用状态</span>
+            <span class="value" :class="statusClass(detail.useStatus)">
+              {{ detail.useStatus || '/' }}
+            </span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
+    <div class="section">
+      <h4 class="section-title">时间安排</h4>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">预约时间</span>
+            <span class="value">{{ detail.timeRange || '/' }}</span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">使用时长</span>
+            <span class="value">{{ detail.duration || '/' }}</span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
+    <div class="section">
+      <h4 class="section-title">申请人信息</h4>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">预约人</span>
+            <span class="value">{{ detail.reserver || '/' }}</span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">工号</span>
+            <span class="value">{{ detail.jobNumber || '/' }}</span>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="field-item">
+            <span class="label">联系方式</span>
+            <span class="value">{{ detail.contact || '/' }}</span>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
+    <div class="section">
+      <h4 class="section-title">借用详情</h4>
+      <el-card shadow="never" class="description-card">
+        <div class="description-text">
+          {{ detail.description || '/' }}
+        </div>
+      </el-card>
+    </div>
+
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="visible = false">关闭</el-button>
@@ -51,26 +109,85 @@ const visible = computed({
   set: v => emit('update:visible', v),
 })
 
-const approvalColor = status => {
+const approvalClass = status => {
   const map = {
-    审核中: '#e6a23c',
-    通过: '#67c23a',
-    拒绝: '#f56c6c',
+    审核中: 'status-orange',
+    通过: 'status-green',
+    拒绝: 'status-red',
   }
-  return map[status] || '#909399'
+  return map[status] || 'status-gray'
 }
 
-const statusColor = status => {
+const statusClass = status => {
   const map = {
-    未开始: '#409eff',
-    进行中: '#67c23a',
-    已结束: '#909399',
+    未开始: 'status-blue',
+    进行中: 'status-green',
+    已结束: 'status-gray',
   }
-  return map[status] || '#909399'
+  return map[status] || 'status-gray'
 }
 </script>
 
 <style scoped>
+.room-name {
+  margin-bottom: 15px;
+  font-size: 14px;
+  color: #333;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.field-item {
+  display: flex;
+  line-height: 24px;
+  margin-bottom: 8px;
+}
+
+.label {
+  width: 90px;
+  color: #666;
+}
+
+.value {
+  flex: 1;
+  color: #333;
+}
+
+.status-orange {
+  color: #e6a23c;
+}
+
+.status-green {
+  color: #67c23a;
+}
+
+.status-blue {
+  color: #409eff;
+}
+
+.status-red {
+  color: #f56c6c;
+}
+
+.status-gray {
+  color: #909399;
+}
+
+.description-card {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
 .dialog-footer {
   text-align: right;
 }
