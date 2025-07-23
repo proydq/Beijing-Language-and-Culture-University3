@@ -78,7 +78,12 @@
         </el-table-column>
         <el-table-column prop="usageStatus" label="使用状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getUsageStatusType(row.usageStatus)" size="small">
+            <span v-if="row.usageStatus === '/'">{{ row.usageStatus }}</span>
+            <el-tag
+              v-else
+              :type="getUsageStatusType(row.usageStatus)"
+              size="small"
+            >
               {{ row.usageStatus }}
             </el-tag>
           </template>
@@ -205,7 +210,8 @@ function getApprovalStatusType(status) {
   const map = {
     审核中: 'warning',
     通过: 'success',
-    拒绝: 'danger'
+    拒绝: 'danger',
+    已取消: 'info'
   }
   return map[status] || 'info'
 }
@@ -214,7 +220,7 @@ function getUsageStatusType(status) {
   const map = {
     未开始: 'info',
     进行中: 'warning',
-    已结束: 'success'
+    已结束: 'info'
   }
   return map[status] || 'info'
 }
