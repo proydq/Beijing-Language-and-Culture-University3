@@ -6,18 +6,18 @@
     :close-on-click-modal="false"
     @close="handleCancel"
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+    <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
       <div class="section">
         <h4 class="section-title">基本信息</h4>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="预约人" prop="applicant">
-              <el-input v-model="form.applicant" placeholder="请输入预约人姓名" />
+              <el-input v-model="formData.applicant" placeholder="请输入预约人姓名" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="预约名称">
-              <el-input v-model="form.bookingName" placeholder="请输入预约名称" />
+              <el-input v-model="formData.bookingName" placeholder="请输入预约名称" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -25,26 +25,25 @@
 
       <div class="section">
         <h4 class="section-title">借用时间</h4>
-        <el-form-item prop="time">
-          <el-date-picker
-            v-model="form.time"
-            type="datetimerange"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
-            style="width: 100%"
+        <el-form-item prop="borrowTime">
+          <el-input
+            v-model="formData.borrowTime"
+            readonly
+            placeholder="请选择借用时间"
+            style="width: 70%; margin-right: 8px"
           />
+          <el-button type="primary" @click="timeDialogVisible = true">选择时间</el-button>
         </el-form-item>
       </div>
 
       <div class="section">
         <h4 class="section-title">其他信息</h4>
         <el-form-item label="借用描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
+          <el-input v-model="formData.description" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="参与人">
           <el-select
-            v-model="form.participants"
+            v-model="formData.participants"
             multiple
             placeholder="请选择参与人"
             style="width: 100%"
@@ -58,7 +57,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="备注详情">
-          <el-input v-model="form.remark" type="textarea" :rows="3" />
+          <el-input v-model="formData.remark" type="textarea" :rows="3" />
         </el-form-item>
       </div>
 
@@ -66,7 +65,7 @@
         <h4 class="section-title">审批信息</h4>
         <el-form-item label="审批人" prop="approvers">
           <el-select
-            v-model="form.approvers"
+            v-model="formData.approvers"
             multiple
             placeholder="请选择审批人"
             style="width: 100%"
@@ -90,10 +89,15 @@
       </div>
     </template>
   </el-dialog>
+  <TimeSelectorDialog
+    v-model:visible="timeDialogVisible"
+    @selectTime="handleTimeSelected"
+  />
 </template>
 
 <script setup>
 import { ref, reactive, watch, nextTick } from 'vue'
+import TimeSelectorDialog from './TimeSelectorDialog.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -116,12 +120,14 @@ watch(
 )
 watch(dialogVisible, val => emit('update:modelValue', val))
 
+const timeDialogVisible = ref(false)
+
 const formRef = ref()
 
-const form = reactive({
+const formData = reactive({
   applicant: '',
   bookingName: '',
-  time: [],
+  borrowTime: '',
   description: '',
   participants: [],
   remark: '',
@@ -142,18 +148,25 @@ const approverOptions = ref([
 
 const rules = {
   applicant: [{ required: true, message: '请输入预约人姓名', trigger: 'blur' }],
-  time: [{ required: true, message: '请选择借用时间', trigger: 'change' }],
+  borrowTime: [{ required: true, message: '请选择借用时间', trigger: 'change' }],
   approvers: [{ required: true, message: '请选择审批人', trigger: 'change' }]
 }
 
+const formatSelectedTimes = (times) =>
+  times.map(t => `${t.date} 第${t.period + 1}节`).join(', ')
+
+function handleTimeSelected(times) {
+  formData.borrowTime = formatSelectedTimes(times)
+}
+
 function resetForm() {
-  form.applicant = ''
-  form.bookingName = ''
-  form.time = []
-  form.description = ''
-  form.participants = []
-  form.remark = ''
-  form.approvers = []
+  formData.applicant = ''
+  formData.bookingName = ''
+  formData.borrowTime = ''
+  formData.description = ''
+  formData.participants = []
+  formData.remark = ''
+  formData.approvers = []
   formRef.value?.clearValidate()
 }
 
@@ -165,7 +178,7 @@ function handleCancel() {
 async function handleConfirm() {
   try {
     await formRef.value.validate()
-    emit('confirm', { ...form, room: props.room })
+    emit('confirm', { ...formData, room: props.room })
     dialogVisible.value = false
   } catch (e) {
     // ignore
