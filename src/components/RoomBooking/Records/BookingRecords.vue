@@ -85,7 +85,9 @@
 
   <BorrowDetailDialog
     v-model:visible="detailDialogVisible"
-    :detail="currentRow || {}"
+    :record-list="currentRecords"
+    :room-name="currentRoom.name"
+    :room-code="currentRoom.code"
   />
 </template>
 
@@ -128,58 +130,96 @@ const allRecords = ref([
   {
     id: 1,
     roomName: 'A-101',
+    roomCode: 'A101',
     times: 5,
     duration: 300,
     people: 40,
     floor: '1F',
-    name: '《借阅人生百味》的教室借用',
-    reserver: '王强',
-    time: '2025.04.24 第三节～第五节，周二',
-    approval: '审核中',
-    status: '未开始',
-    description: '本次借用用于课程研讨与拍摄活动，需使用多媒体设备...'
+    records: [
+      {
+        id: 1,
+        name: '《借阅人生百味》的教室借用',
+        time: '2025.04.24 第一节次 第二节次',
+        date: '2025-04-24',
+        description: '本次借用用于课程研讨与拍摄活动，需使用多媒体设备...',
+        applicant: '王强',
+        auditStatus: '审核中',
+        usageStatus: '未开始'
+      },
+      {
+        id: 2,
+        name: '摄影交流会',
+        time: '2025.04.26 第三节次',
+        date: '2025-04-26',
+        description: '摄影社团活动。',
+        applicant: '李四',
+        auditStatus: '通过',
+        usageStatus: '已结束'
+      }
+    ]
   },
   {
     id: 2,
     roomName: 'A-201',
+    roomCode: 'A201',
     times: 3,
     duration: 180,
     people: 30,
     floor: '2F',
-    name: '《现代教育技术》期末讨论',
-    reserver: '李四',
-    time: '2025.04.28 第一节～第二节，周三',
-    approval: '通过',
-    status: '进行中',
-    description: '讨论课程项目并进行汇报演练。'
+    records: [
+      {
+        id: 1,
+        name: '《现代教育技术》期末讨论',
+        time: '2025.04.28 第一节次 第二节次',
+        date: '2025-04-28',
+        description: '讨论课程项目并进行汇报演练。',
+        applicant: '李四',
+        auditStatus: '通过',
+        usageStatus: '进行中'
+      }
+    ]
   },
   {
     id: 3,
     roomName: 'B-101',
+    roomCode: 'B101',
     times: 8,
     duration: 400,
     people: 100,
     floor: '1F',
-    name: '摄影培训交流',
-    reserver: '张华',
-    time: '2025.04.15 第五节～第七节，周一',
-    approval: '通过',
-    status: '已结束',
-    description: '校内摄影社团培训活动，已完成拍摄练习。'
+    records: [
+      {
+        id: 1,
+        name: '摄影培训交流',
+        time: '2025.04.15 第五节次 第七节次',
+        date: '2025-04-15',
+        description: '校内摄影社团培训活动，已完成拍摄练习。',
+        applicant: '张华',
+        auditStatus: '通过',
+        usageStatus: '已结束'
+      }
+    ]
   },
   {
     id: 4,
     roomName: 'B-202',
+    roomCode: 'B202',
     times: 2,
     duration: 90,
     people: 20,
     floor: '2F',
-    name: '舞蹈排练活动',
-    reserver: '赵梅',
-    time: '2025.05.02 第二节～第四节，周五',
-    approval: '拒绝',
-    status: '未开始',
-    description: '因场地冲突，本次借用申请已被拒绝。'
+    records: [
+      {
+        id: 1,
+        name: '舞蹈排练活动',
+        time: '2025.05.02 第二节次 第四节次',
+        date: '2025-05-02',
+        description: '因场地冲突，本次借用申请已被拒绝。',
+        applicant: '赵梅',
+        auditStatus: '拒绝',
+        usageStatus: '未开始'
+      }
+    ]
   }
 ])
 
@@ -226,7 +266,8 @@ function exportAll() {
 }
 
 function viewDetails(row) {
-  currentRow.value = row
+  currentRecords.value = row.records || []
+  currentRoom.value = { name: row.roomName, code: row.roomCode }
   detailDialogVisible.value = true
 }
 
@@ -240,7 +281,8 @@ function handleCurrentChange(val) {
 }
 
 const detailDialogVisible = ref(false)
-const currentRow = ref()
+const currentRecords = ref([])
+const currentRoom = ref({})
 </script>
 
 <style scoped>
