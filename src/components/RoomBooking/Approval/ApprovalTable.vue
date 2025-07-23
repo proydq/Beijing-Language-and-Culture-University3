@@ -7,110 +7,19 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="bookingName" label="预约名称" min-width="200">
-        <template #default="scope">
-          <div class="booking-name">
-            <span class="name">{{ scope.row.bookingName }}</span>
-            <el-tag 
-              v-if="scope.row.urgency === '紧急'" 
-              type="danger" 
-              size="small"
-              style="margin-left: 8px;"
-            >
-              紧急
-            </el-tag>
-          </div>
+      <el-table-column prop="name" label="预约/借用名称" min-width="200" />
+      <el-table-column prop="cycle" label="预约周期" min-width="200" />
+      <el-table-column prop="description" label="描述" min-width="200">
+        <template #default="{ row }">
+          <span style="white-space: pre-wrap;">{{ row.description || '/' }}</span>
         </template>
       </el-table-column>
+      <el-table-column prop="applicantName" label="预约人" width="120" />
+      <el-table-column prop="roomName" label="预约教室" width="150" />
 
-      <el-table-column prop="applicant" label="申请人" width="120">
+      <el-table-column label="操作" width="120" fixed="right">
         <template #default="scope">
-          <div class="applicant-info">
-            <span class="name">{{ scope.row.applicant }}</span>
-            <el-tag 
-              :type="getApplicantTypeColor(scope.row.applicantType)" 
-              size="small"
-              style="margin-top: 2px;"
-            >
-              {{ scope.row.applicantType }}
-            </el-tag>
-          </div>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="roomName" label="房间名称" width="150" />
-
-      <el-table-column prop="bookingTime" label="预约时间" min-width="180">
-        <template #default="scope">
-          <div class="time-info">
-            <el-icon><clock /></el-icon>
-            <span>{{ scope.row.bookingTime }}</span>
-          </div>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="applyTime" label="申请时间" width="160">
-        <template #default="scope">
-          <span class="apply-time">{{ formatTime(scope.row.applyTime) }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="reason" label="申请理由" min-width="200">
-        <template #default="scope">
-          <el-tooltip 
-            :content="scope.row.reason" 
-            placement="top"
-            :disabled="scope.row.reason.length <= 30"
-          >
-            <span class="reason-text">
-              {{ scope.row.reason.length > 30 ? scope.row.reason.substring(0, 30) + '...' : scope.row.reason }}
-            </span>
-          </el-tooltip>
-        </template>
-      </el-table-column>
-
-      <el-table-column prop="status" label="状态" width="100">
-        <template #default="scope">
-          <el-tag 
-            :type="getStatusType(scope.row.status)" 
-            size="small"
-          >
-            {{ scope.row.status }}
-          </el-tag>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="scope">
-          <div class="action-buttons">
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="$emit('view-detail', scope.row)"
-            >
-              <el-icon><view /></el-icon>
-              详情
-            </el-button>
-            
-            <template v-if="scope.row.status === '待审批'">
-              <el-button 
-                type="success" 
-                size="small" 
-                @click="$emit('approve', scope.row)"
-              >
-                <el-icon><check /></el-icon>
-                通过
-              </el-button>
-              <el-button 
-                type="danger" 
-                size="small" 
-                @click="$emit('reject', scope.row)"
-              >
-                <el-icon><close /></el-icon>
-                拒绝
-              </el-button>
-            </template>
-          </div>
+          <el-button type="primary" size="small" @click="$emit('review', scope.row)">立即审批</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -123,16 +32,9 @@
 </template>
 
 <script>
-import { Clock, View, Check, Close } from '@element-plus/icons-vue'
-
 export default {
   name: 'ApprovalTable',
-  components: {
-    Clock,
-    View,
-    Check,
-    Close
-  },
+  components: {},
   props: {
     approvalData: {
       type: Array,
@@ -143,42 +45,9 @@ export default {
       default: false
     }
   },
-  emits: ['approve', 'reject', 'view-detail'],
+  emits: ['review'],
   setup() {
-    const getStatusType = (status) => {
-      const statusMap = {
-        '待审批': 'warning',
-        '已通过': 'success',
-        '已拒绝': 'danger'
-      }
-      return statusMap[status] || 'info'
-    }
-
-    const getApplicantTypeColor = (type) => {
-      const typeMap = {
-        '教师': 'success',
-        '学生': 'primary',
-        '管理员': 'warning'
-      }
-      return typeMap[type] || 'info'
-    }
-
-    const formatTime = (timeStr) => {
-      if (!timeStr) return ''
-      const date = new Date(timeStr)
-      return date.toLocaleString('zh-CN', {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-
-    return {
-      getStatusType,
-      getApplicantTypeColor,
-      formatTime
-    }
+    return {}
   }
 }
 </script>

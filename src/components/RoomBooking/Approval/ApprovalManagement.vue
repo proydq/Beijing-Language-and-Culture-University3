@@ -13,52 +13,31 @@
       <div class="main-content">
         <!-- 搜索过滤器 -->
         <div class="search-filters">
-          <div class="filter-row">
-            <div class="filter-item">
-              <label>预约名称</label>
-              <el-input 
-                v-model="filters.bookingName" 
-                placeholder="请输入预约名称" 
-                clearable 
-              />
-            </div>
-            <div class="filter-item">
-              <label>申请人</label>
-              <el-input 
-                v-model="filters.applicant" 
-                placeholder="请输入申请人姓名" 
-                clearable 
-              />
-            </div>
-            <div class="filter-item">
-              <label>申请时间</label>
+          <el-form :model="searchForm" inline>
+            <el-form-item label="预约名称">
+              <el-input v-model="searchForm.name" placeholder="请输入信息" />
+            </el-form-item>
+            <el-form-item label="预约人">
+              <el-input v-model="searchForm.applicant" placeholder="请输入信息" />
+            </el-form-item>
+            <el-form-item label="预约时间">
               <el-date-picker
-                v-model="filters.dateRange"
+                v-model="searchForm.dateRange"
                 type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                format="YYYY-MM-DD"
-                value-format="YYYY-MM-DD"
               />
-            </div>
-            <div class="filter-actions">
-              <el-button type="primary" @click="handleSearch">
-                <el-icon><search /></el-icon>
-                搜索
-              </el-button>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
               <el-button @click="handleReset">重置</el-button>
-            </div>
-          </div>
+            </el-form-item>
+          </el-form>
         </div>
 
         <!-- 审批表格 -->
-        <ApprovalTable 
+        <ApprovalTable
           :approval-data="filteredApprovalData"
           :loading="loading"
-          @approve="handleApprove"
-          @reject="handleReject"
-          @view-detail="handleViewDetail"
+          @review="openReview"
         />
 
         <!-- 分页 -->
@@ -77,10 +56,9 @@
     </div>
 
     <!-- 审批对话框 -->
-    <ApprovalDialog 
+    <ApprovalDialog
       v-model="dialogVisible"
       :approval-data="currentApproval"
-      :action-type="dialogActionType"
       @confirm="handleApprovalConfirm"
       @cancel="handleApprovalCancel"
     />
@@ -90,7 +68,6 @@
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
 import Sidebar from '../Layout/Sidebar.vue'
 import ApprovalTable from './ApprovalTable.vue'
 import ApprovalDialog from './ApprovalDialog.vue'
@@ -98,7 +75,6 @@ import ApprovalDialog from './ApprovalDialog.vue'
 export default {
   name: 'ApprovalManagement',
   components: {
-    Search,
     Sidebar,
     ApprovalTable,
     ApprovalDialog
@@ -123,8 +99,8 @@ export default {
     const loading = ref(false)
 
     // 搜索过滤器
-    const filters = reactive({
-      bookingName: '',
+    const searchForm = reactive({
+      name: '',
       applicant: '',
       dateRange: []
     })
@@ -139,7 +115,6 @@ export default {
     // 对话框相关
     const dialogVisible = ref(false)
     const currentApproval = ref(null)
-    const dialogActionType = ref('approve') // 'approve' | 'reject'
 
     // 模拟审批数据
     const mockApprovalData = ref([
@@ -152,7 +127,7 @@ export default {
         bookingTime: '2025-07-20 09:00-12:00',
         applyTime: '2025-07-16 14:30:00',
         reason: '新教师入职培训，需要使用多媒体设备进行培训演示',
-        status: '待审批',
+        status: 'PENDING',
         urgency: '普通'
       },
       {
@@ -164,7 +139,7 @@ export default {
         bookingTime: '2025-07-21 14:00-17:00',
         applyTime: '2025-07-15 10:20:00',
         reason: '计算机社团定期技术分享活动，邀请行业专家进行技术讲座',
-        status: '待审批',
+        status: 'PENDING',
         urgency: '普通'
       },
       {
@@ -176,7 +151,7 @@ export default {
         bookingTime: '2025-07-25 15:00-17:00',
         applyTime: '2025-07-14 16:45:00',
         reason: '部门月度工作总结和下月工作计划讨论',
-        status: '已通过',
+        status: 'APPROVED',
         urgency: '紧急'
       }
     ])
@@ -188,30 +163,26 @@ export default {
       // 按审批类型过滤
       if (activeApprovalType.value !== 'all') {
         const statusMap = {
-          'pending': '待审批',
-          'approved': '已通过',
-          'rejected': '已拒绝'
+          pending: 'PENDING',
+          approved: 'APPROVED',
+          rejected: 'REJECTED'
         }
         data = data.filter(item => item.status === statusMap[activeApprovalType.value])
       }
 
       // 按搜索条件过滤
-      if (filters.bookingName) {
-        data = data.filter(item => 
-          item.bookingName.includes(filters.bookingName)
-        )
+      if (searchForm.name) {
+        data = data.filter(item => item.bookingName.includes(searchForm.name))
       }
 
-      if (filters.applicant) {
-        data = data.filter(item => 
-          item.applicant.includes(filters.applicant)
-        )
+      if (searchForm.applicant) {
+        data = data.filter(item => item.applicant.includes(searchForm.applicant))
       }
 
-      if (filters.dateRange && filters.dateRange.length === 2) {
+      if (searchForm.dateRange && searchForm.dateRange.length === 2) {
         data = data.filter(item => {
           const applyDate = item.applyTime.split(' ')[0]
-          return applyDate >= filters.dateRange[0] && applyDate <= filters.dateRange[1]
+          return applyDate >= searchForm.dateRange[0] && applyDate <= searchForm.dateRange[1]
         })
       }
 
@@ -220,7 +191,13 @@ export default {
       // 分页
       const start = (pagination.currentPage - 1) * pagination.pageSize
       const end = start + pagination.pageSize
-      return data.slice(start, end)
+      return data.slice(start, end).map(item => ({
+        ...item,
+        name: item.bookingName,
+        cycle: item.bookingTime,
+        description: item.reason,
+        applicantName: item.applicant
+      }))
     })
 
     const setActiveApprovalType = (type) => {
@@ -230,12 +207,12 @@ export default {
 
     const handleSearch = () => {
       pagination.currentPage = 1
-      console.log('搜索审批:', filters)
+      console.log('搜索审批:', searchForm)
     }
 
     const handleReset = () => {
-      Object.keys(filters).forEach(key => {
-        filters[key] = key === 'dateRange' ? [] : ''
+      Object.keys(searchForm).forEach(key => {
+        searchForm[key] = key === 'dateRange' ? [] : ''
       })
       pagination.currentPage = 1
     }
@@ -250,40 +227,22 @@ export default {
     }
 
     // 审批相关操作
-    const handleApprove = (row) => {
+    const openReview = (row) => {
       currentApproval.value = row
-      dialogActionType.value = 'approve'
       dialogVisible.value = true
-    }
-
-    const handleReject = (row) => {
-      currentApproval.value = row
-      dialogActionType.value = 'reject'
-      dialogVisible.value = true
-    }
-
-    const handleViewDetail = (row) => {
-      ElMessage.info(`查看详情: ${row.bookingName}`)
     }
 
     const handleApprovalConfirm = (result) => {
       loading.value = true
-      
+
       setTimeout(() => {
-        if (dialogActionType.value === 'approve') {
-          ElMessage.success('审批通过成功')
-          emit('approve', { ...currentApproval.value, ...result })
-        } else {
-          ElMessage.success('审批拒绝成功')
-          emit('reject', { ...currentApproval.value, ...result })
-        }
-        
-        // 更新本地数据状态
         const index = mockApprovalData.value.findIndex(item => item.id === currentApproval.value.id)
         if (index !== -1) {
-          mockApprovalData.value[index].status = dialogActionType.value === 'approve' ? '已通过' : '已拒绝'
+          mockApprovalData.value[index].status = result.status
         }
-        
+        ElMessage.success('操作成功')
+        emit('approve', { ...currentApproval.value, ...result })
+
         loading.value = false
         dialogVisible.value = false
       }, 1000)
@@ -303,20 +262,17 @@ export default {
       approvalMenuItems,
       activeApprovalType,
       loading,
-      filters,
+      searchForm,
       pagination,
       filteredApprovalData,
       dialogVisible,
       currentApproval,
-      dialogActionType,
       setActiveApprovalType,
       handleSearch,
       handleReset,
       handleSizeChange,
       handleCurrentChange,
-      handleApprove,
-      handleReject,
-      handleViewDetail,
+      openReview,
       handleApprovalConfirm,
       handleApprovalCancel
     }
