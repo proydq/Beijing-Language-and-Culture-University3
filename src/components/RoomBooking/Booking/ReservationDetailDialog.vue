@@ -33,24 +33,24 @@
     </div>
 
     <div class="section">
-      <el-table :data="detail.approvalList || []" border stripe>
-        <el-table-column prop="level" label="审批层级" width="90" />
-        <el-table-column prop="approver" label="审批人">
+      <el-table :data="detail.approvalSteps || []" border stripe>
+        <el-table-column prop="levelName" label="审批层级" width="90" />
+        <el-table-column prop="approvers" label="审批人">
           <template #default="{ row }">
-            {{ formatApprover(row.approver) }}
+            {{ formatApprover(row.approvers) }}
           </template>
         </el-table-column>
-        <el-table-column prop="confirmApprover" label="确认审批人">
-          <template #default="{ row }">{{ row.confirmApprover || '/' }}</template>
+        <el-table-column prop="confirmedApprover" label="确认审批人">
+          <template #default="{ row }">{{ row.confirmedApprover || '/' }}</template>
         </el-table-column>
-        <el-table-column prop="time" label="审批时间">
-          <template #default="{ row }">{{ row.time || '/' }}</template>
+        <el-table-column prop="approvalTime" label="审批时间">
+          <template #default="{ row }">{{ row.approvalTime || '/' }}</template>
         </el-table-column>
         <el-table-column prop="comment" label="审批意见">
           <template #default="{ row }">
             <el-tag
               v-if="row.comment"
-              :type="row.comment === '通过' || row.comment === '同意' ? 'success' : 'danger'"
+              :type="row.comment.includes('拒绝') ? 'danger' : 'success'"
               size="small"
             >
               {{ row.comment }}
