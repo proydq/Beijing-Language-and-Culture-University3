@@ -96,15 +96,20 @@
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button type="text" size="small" @click="handleView(row)">查看详情</el-button>
-            <el-button
+            <el-popconfirm
               v-if="(row.approvalStatus === '审核中' || row.approvalStatus === '通过') && row.usageStatus === '未开始'"
-              type="text"
-              size="small"
-              style="color: #f56c6c"
-              @click="handleCancel(row)"
+              title="确定要取消该预约吗？取消后将无法恢复。"
+              confirm-button-text="确认"
+              cancel-button-text="取消"
+              confirm-button-type="danger"
+              @confirm="handleCancel(row)"
             >
-              取消预约
-            </el-button>
+              <template #reference>
+                <el-button type="text" size="small" style="color: #f56c6c">
+                  取消预约
+                </el-button>
+              </template>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
