@@ -174,6 +174,7 @@ export default {
         }
       ])
 
+    // 全部借用样例数据，包含审核中、通过、拒绝、已取消
     const allBookingData = ref([
       {
         id: 1,
@@ -182,7 +183,7 @@ export default {
         description: '各类通过这里发布各类信息进行各类信息',
         applicant: '张老师',
         roomName: '多媒体教室（101）',
-        auditStatus: '待审核',
+        auditStatus: '审核中',
         useStatus: '未开始'
       },
       {
@@ -202,8 +203,18 @@ export default {
         description: '新入职教师培训活动',
         applicant: '王主任',
         roomName: '多媒体教室（103）',
-        auditStatus: '通过',
+        auditStatus: '拒绝',
         useStatus: '进行中'
+      },
+      {
+        id: 4,
+        bookingName: '【活动撤销】教室预约',
+        bookingTime: '2025.04.28 第二节次',
+        description: '社团活动取消，撤销预约',
+        applicant: '张红',
+        roomName: '多媒体教室（105）',
+        auditStatus: '已取消',
+        useStatus: '未开始'
       }
     ])
 

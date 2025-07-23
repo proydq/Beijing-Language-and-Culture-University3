@@ -127,6 +127,15 @@
         @current-change="handleCurrentChange"
       />
     </div>
+    <!-- 审核详情弹窗 -->
+    <AuditDetailDialog v-model="auditDialogVisible" :record="currentRecord" />
+    <!-- 预约详情弹窗，宽度固定为 600px -->
+    <ReservationDetailDialog
+      v-model="detailDialogVisible"
+      :detail="reservationDetail"
+      @cancel="handleCancelReservation"
+      width="600px"
+    />
   </div>
 </template>
 
@@ -154,6 +163,7 @@ const searchForm = reactive({
   endDate: ''
 })
 
+// mock 预约基础信息，涵盖审核中、通过、拒绝、已取消四种状态
 const bookingBaseInfo = {
   1: {
     reservationName: '【活动1】的教室借用',
@@ -162,10 +172,47 @@ const bookingBaseInfo = {
     description: '班级活动使用，需使用投影设备',
     participants: '张三, 李四',
     remark: '需要提前布置',
-    approvalStatus: '审批中'
+    approvalStatus: '审核中'
+  },
+  2: {
+    reservationName: '【学生会】定期会议',
+    applicant: '李明',
+    reservationPeriod: '2025.08.25 星期五 第五节次',
+    description: '学生组织定期内部会议',
+    participants: '刘强, 陈伟',
+    remark: '无',
+    approvalStatus: '通过'
+  },
+  3: {
+    reservationName: '【外聘讲座】演讲厅借用',
+    applicant: '赵敏',
+    reservationPeriod: '2025.08.20 星期一 第九节次',
+    description: '外聘教授举办讲座，要求提前布场',
+    participants: '张三, 李四, 王五',
+    remark: '讲座需准备扩音设备',
+    approvalStatus: '通过'
+  },
+  4: {
+    reservationName: '【活动取消】的教室借用',
+    applicant: '王鹏',
+    reservationPeriod: '2025.04.24 第四节次',
+    description: '实验班借用智慧教室用于演示活动',
+    participants: '李四, 王五',
+    remark: '活动已取消',
+    approvalStatus: '拒绝'
+  },
+  5: {
+    reservationName: '【活动撤销】教室预约',
+    applicant: '张红',
+    reservationPeriod: '2025.04.28 第二节次',
+    description: '社团活动取消，撤销预约',
+    participants: '张红, 李华',
+    remark: '用户主动取消',
+    approvalStatus: '已取消'
   }
 }
 
+// mock 审核详情数据，展示不同状态下的审批流程
 const auditDetailData = {
   1: [
     {
@@ -173,6 +220,77 @@ const auditDetailData = {
       approvers: ['系统'],
       confirmedApprover: '系统',
       approvalTime: '2025-07-21 10:12:33',
+      comment: '系统自动通过'
+    },
+    {
+      levelName: '一级审批',
+      approvers: ['王五', '李四'],
+      confirmedApprover: '',
+      approvalTime: null,
+      comment: ''
+    }
+  ],
+  2: [
+    {
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2025-08-21 09:00',
+      comment: '系统自动通过'
+    },
+    {
+      levelName: '一级审批',
+      approvers: ['赵主管', '钱经理'],
+      confirmedApprover: '钱经理',
+      approvalTime: '2025-08-22 12:00',
+      comment: '同意：排课正常，无异议'
+    },
+    {
+      levelName: '二级审批',
+      approvers: ['孙校长'],
+      confirmedApprover: '孙校长',
+      approvalTime: '2025-08-23 15:00',
+      comment: '同意：排课正常，无异议'
+    }
+  ],
+  3: [
+    {
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2025-08-15 08:00',
+      comment: '系统自动通过'
+    },
+    {
+      levelName: '一级审批',
+      approvers: ['赵主管'],
+      confirmedApprover: '赵主管',
+      approvalTime: '2025-08-16 09:30',
+      comment: '同意：排课正常，无异议'
+    }
+  ],
+  4: [
+    {
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2025-04-20 09:00',
+      comment: '系统自动通过'
+    },
+    {
+      levelName: '一级审批',
+      approvers: ['赵主管'],
+      confirmedApprover: '赵主管',
+      approvalTime: '2025-04-21 11:00',
+      comment: '拒绝：活动已取消'
+    }
+  ],
+  5: [
+    {
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2025-04-26 09:00',
       comment: '系统自动通过'
     }
   ]

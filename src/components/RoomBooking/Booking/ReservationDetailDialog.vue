@@ -1,5 +1,10 @@
 <template>
-  <el-dialog v-model="visible" title="预约详情" :width="dialogWidth" :close-on-click-modal="false">
+<el-dialog
+    v-model="visible"
+    title="预约详情"
+    :width="dialogWidth"
+    :close-on-click-modal="false"
+  >
     <div class="section">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="预约人">
@@ -77,6 +82,7 @@ import { ElMessage } from 'element-plus'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   detail: { type: Object, default: () => ({}) },
+  width: { type: String, default: '90%' }
 })
 
 const emit = defineEmits(['update:modelValue', 'cancel'])
@@ -86,7 +92,8 @@ const visible = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const dialogWidth = '90%'
+// 对话框宽度可配置，默认为 90%
+const dialogWidth = computed(() => props.width)
 
 const close = () => {
   visible.value = false
