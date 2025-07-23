@@ -202,80 +202,80 @@ const bookingBaseInfo = {
 const auditDetailData = {
   1: [
     {
-      level: '自动审批',
+      levelName: '自动审批',
       approvers: ['系统'],
-      confirmApprover: '系统',
-      time: '2025-08-18 09:00',
-      result: '通过'
+      confirmedApprover: '系统',
+      approvalTime: '2025-07-21 10:12:33',
+      comment: '系统自动通过'
     },
     {
-      level: '一级',
-      approvers: ['赵主管', '钱经理'],
-      confirmApprover: '赵主管',
-      time: '2025-08-19 10:00',
-      result: '通过'
+      levelName: '一级审批',
+      approvers: ['王五', '李四'],
+      confirmedApprover: '王五',
+      approvalTime: '2025-07-21 11:20:00',
+      comment: '同意：排课正常，无异议'
     },
     {
-      level: '二级',
-      approvers: ['孙校长'],
-      confirmApprover: '',
-      time: '',
-      result: '审批中'
+      levelName: '二级审批',
+      approvers: ['刘晓旭'],
+      confirmedApprover: '',
+      approvalTime: null,
+      comment: ''
     }
   ],
   2: [
     {
-      level: '自动审批',
+      levelName: '自动审批',
       approvers: ['系统'],
-      confirmApprover: '系统',
-      time: '2025-08-21 09:00',
-      result: '通过'
+      confirmedApprover: '系统',
+      approvalTime: '2025-08-21 09:00',
+      comment: '系统自动通过'
     },
     {
-      level: '一级',
+      levelName: '一级审批',
       approvers: ['赵主管', '钱经理'],
-      confirmApprover: '钱经理',
-      time: '2025-08-22 12:00',
-      result: '通过'
+      confirmedApprover: '钱经理',
+      approvalTime: '2025-08-22 12:00',
+      comment: '同意：排课正常，无异议'
     },
     {
-      level: '二级',
+      levelName: '二级审批',
       approvers: ['孙校长'],
-      confirmApprover: '孙校长',
-      time: '2025-08-23 15:00',
-      result: '通过'
+      confirmedApprover: '孙校长',
+      approvalTime: '2025-08-23 15:00',
+      comment: '同意：排课正常，无异议'
     }
   ],
   3: [
     {
-      level: '自动审批',
+      levelName: '自动审批',
       approvers: ['系统'],
-      confirmApprover: '系统',
-      time: '2025-08-15 08:00',
-      result: '通过'
+      confirmedApprover: '系统',
+      approvalTime: '2025-08-15 08:00',
+      comment: '系统自动通过'
     },
     {
-      level: '一级',
+      levelName: '一级审批',
       approvers: ['赵主管'],
-      confirmApprover: '赵主管',
-      time: '2025-08-16 09:30',
-      result: '通过'
+      confirmedApprover: '赵主管',
+      approvalTime: '2025-08-16 09:30',
+      comment: '同意：排课正常，无异议'
     }
   ],
   4: [
     {
-      level: '自动审批',
+      levelName: '自动审批',
       approvers: ['系统'],
-      confirmApprover: '系统',
-      time: '2025-04-20 09:00',
-      result: '通过'
+      confirmedApprover: '系统',
+      approvalTime: '2025-04-20 09:00',
+      comment: '系统自动通过'
     },
     {
-      level: '一级',
+      levelName: '一级审批',
       approvers: ['赵主管'],
-      confirmApprover: '赵主管',
-      time: '2025-04-21 11:00',
-      result: '拒绝'
+      confirmedApprover: '赵主管',
+      approvalTime: '2025-04-21 11:00',
+      comment: '拒绝：活动已取消'
     }
   ]
 }
@@ -291,13 +291,13 @@ const reservationDetail = ref({
   borrowDesc: '我是描述内容...',
   participants: ['张三', '李四', '王五'],
   remark: '备注信息...',
-  approvalList: [
+  approvalSteps: [
     {
-      level: '自动审批',
-      approver: '王五',
-      confirmApprover: '王五',
-      time: '2022.07.14 14:23:56',
-      comment: '同意'
+      levelName: '自动审批',
+      approvers: ['系统'],
+      confirmedApprover: '系统',
+      approvalTime: '2022.07.14 14:23:56',
+      comment: '系统自动通过'
     }
   ]
 })
@@ -418,7 +418,7 @@ function handleView(row) {
     participants:
       (bookingBaseInfo[row.id]?.participants || '张三, 李四, 王五').split(', '),
     remark: bookingBaseInfo[row.id]?.remark || '',
-    approvalList: auditDetailData[row.id] || []
+    approvalSteps: auditDetailData[row.id] || []
   }
   detailDialogVisible.value = true
 }
