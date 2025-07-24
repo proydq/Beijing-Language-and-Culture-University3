@@ -33,3 +33,7 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## Backend
+
+The `backend` directory contains a Spring Boot project implementing user authentication using JWT.
