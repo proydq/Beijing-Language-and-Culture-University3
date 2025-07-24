@@ -125,199 +125,163 @@
   </el-dialog>
 </template>
 
-<script>
+<script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 
-export default {
-  name: 'PermissionEditDialog',
-  props: {
-    visible: {
-      type: Boolean,
-      default: false
-    },
-    isEdit: {
-      type: Boolean,
-      default: false
-    },
-    userList: {
-      type: Array,
-      default: () => []
-    },
-    roomList: {
-      type: Array,
-      default: () => []
-    },
-    selectedUsers: {
-      type: Array,
-      default: () => []
-    },
-    selectedRooms: {
-      type: Array,
-      default: () => []
-    }
+const props = defineProps({
+  visible: Boolean,
+  isEdit: Boolean,
+  userList: {
+    type: Array,
+    default: () => []
   },
-  emits: ['update:visible', 'submit'],
-  setup(props, { emit }) {
-    const visible = computed({
-      get: () => props.visible,
-      set: (val) => emit('update:visible', val)
-    })
+  roomList: {
+    type: Array,
+    default: () => []
+  },
+  selectedUsers: {
+    type: Array,
+    default: () => []
+  },
+  selectedRooms: {
+    type: Array,
+    default: () => []
+  }
+})
 
-    const userFilter = reactive({
-      type: 'all',
-      keyword: ''
-    })
-    const roomFilter = reactive({
-      type: 'all',
-      keyword: ''
-    })
+const emit = defineEmits(['update:visible', 'submit'])
 
-    const userPage = reactive({
-      currentPage: 1,
-      pageSize: 10
-    })
-    const roomPage = reactive({
-      currentPage: 1,
-      pageSize: 10
-    })
+const visible = computed({
+  get: () => props.visible,
+  set: (val) => emit('update:visible', val)
+})
 
-    const userData = ref([])
-    const roomData = ref([])
+const userFilter = reactive({
+  type: 'all',
+  keyword: ''
+})
+const roomFilter = reactive({
+  type: 'all',
+  keyword: ''
+})
 
-    const selectedUserRows = ref([])
-    const selectedRoomRows = ref([])
+const userPage = reactive({
+  currentPage: 1,
+  pageSize: 10
+})
+const roomPage = reactive({
+  currentPage: 1,
+  pageSize: 10
+})
 
-    // watch visible prop
-    watch(
-      () => props.visible,
-      (val) => {
-        if (val) {
-          userData.value = [...props.selectedUsers]
-          roomData.value = [...props.selectedRooms]
-        }
-      }
-    )
+const userData = ref([])
+const roomData = ref([])
 
-    const filterListByTypeAndKeyword = (list, filter) => {
-      let result = list
-      if (filter.type !== 'all') {
-        result = result.filter((item) => item.type === filter.type)
-      }
-      if (filter.keyword) {
-        const kw = filter.keyword.toLowerCase()
-        result = result.filter(
-          (item) =>
-            (item.name && item.name.includes(filter.keyword)) ||
-            (item.jobNumber && String(item.jobNumber).toLowerCase().includes(kw)) ||
-            (item.roomName && item.roomName.includes(filter.keyword)) ||
-            (item.roomCode && String(item.roomCode).toLowerCase().includes(kw)) ||
-            (item.building && item.building.includes(filter.keyword))
-        )
-      }
-      return result
-    }
+const selectedUserRows = ref([])
+const selectedRoomRows = ref([])
 
-    const filteredUsers = computed(() =>
-      filterListByTypeAndKeyword(userData.value, userFilter)
-    )
-    const filteredRooms = computed(() =>
-      filterListByTypeAndKeyword(roomData.value, roomFilter)
-    )
-
-    const pagedUsers = computed(() => {
-      const start = (userPage.currentPage - 1) * userPage.pageSize
-      return filteredUsers.value.slice(start, start + userPage.pageSize)
-    })
-
-    const pagedRooms = computed(() => {
-      const start = (roomPage.currentPage - 1) * roomPage.pageSize
-      return filteredRooms.value.slice(start, start + roomPage.pageSize)
-    })
-
-    const searchUsers = () => {
-      userPage.currentPage = 1
-    }
-    const searchRooms = () => {
-      roomPage.currentPage = 1
-    }
-
-    const userSelectionChange = (val) => {
-      selectedUserRows.value = val
-    }
-    const roomSelectionChange = (val) => {
-      selectedRoomRows.value = val
-    }
-
-    const removeSelectedUsers = () => {
-      userData.value = userData.value.filter(
-        (item) => !selectedUserRows.value.includes(item)
-      )
-      selectedUserRows.value = []
-    }
-
-    const removeSelectedRooms = () => {
-      roomData.value = roomData.value.filter(
-        (item) => !selectedRoomRows.value.includes(item)
-      )
-      selectedRoomRows.value = []
-    }
-
-    const handleAddUser = () => {
-      const existingIds = new Set(userData.value.map((u) => u.id))
-      const candidate = props.userList.find((u) => !existingIds.has(u.id))
-      if (candidate) {
-        userData.value.push(candidate)
-      }
-    }
-
-    const handleAddRoom = () => {
-      const existingIds = new Set(roomData.value.map((r) => r.id))
-      const candidate = props.roomList.find((r) => !existingIds.has(r.id))
-      if (candidate) {
-        roomData.value.push(candidate)
-      }
-    }
-
-    const handleClose = () => {
-      emit('update:visible', false)
-    }
-
-    const handleSubmit = () => {
-      emit('submit', {
-        users: userData.value,
-        rooms: roomData.value
-      })
-      handleClose()
-    }
-
-    return {
-      Search,
-      visible,
-      userFilter,
-      roomFilter,
-      userPage,
-      roomPage,
-      userData,
-      roomData,
-      pagedUsers,
-      pagedRooms,
-      filteredUsers,
-      filteredRooms,
-      selectedUserRows,
-      selectedRoomRows,
-      searchUsers,
-      searchRooms,
-      userSelectionChange,
-      roomSelectionChange,
-      removeSelectedUsers,
-      removeSelectedRooms,
-      handleAddUser,
-      handleAddRoom,
-      handleClose,
-      handleSubmit
+// watch visible prop
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      userData.value = [...props.selectedUsers]
+      roomData.value = [...props.selectedRooms]
     }
   }
+)
+
+const filterListByTypeAndKeyword = (list, filter) => {
+  let result = list
+  if (filter.type !== 'all') {
+    result = result.filter((item) => item.type === filter.type)
+  }
+  if (filter.keyword) {
+    const kw = filter.keyword.toLowerCase()
+    result = result.filter(
+      (item) =>
+        (item.name && item.name.includes(filter.keyword)) ||
+        (item.jobNumber && String(item.jobNumber).toLowerCase().includes(kw)) ||
+        (item.roomName && item.roomName.includes(filter.keyword)) ||
+        (item.roomCode && String(item.roomCode).toLowerCase().includes(kw)) ||
+        (item.building && item.building.includes(filter.keyword))
+    )
+  }
+  return result
+}
+
+const filteredUsers = computed(() =>
+  filterListByTypeAndKeyword(userData.value, userFilter)
+)
+const filteredRooms = computed(() =>
+  filterListByTypeAndKeyword(roomData.value, roomFilter)
+)
+
+const pagedUsers = computed(() => {
+  const start = (userPage.currentPage - 1) * userPage.pageSize
+  return filteredUsers.value.slice(start, start + userPage.pageSize)
+})
+
+const pagedRooms = computed(() => {
+  const start = (roomPage.currentPage - 1) * roomPage.pageSize
+  return filteredRooms.value.slice(start, start + roomPage.pageSize)
+})
+
+const searchUsers = () => {
+  userPage.currentPage = 1
+}
+const searchRooms = () => {
+  roomPage.currentPage = 1
+}
+
+const userSelectionChange = (val) => {
+  selectedUserRows.value = val
+}
+const roomSelectionChange = (val) => {
+  selectedRoomRows.value = val
+}
+
+const removeSelectedUsers = () => {
+  userData.value = userData.value.filter(
+    (item) => !selectedUserRows.value.includes(item)
+  )
+  selectedUserRows.value = []
+}
+
+const removeSelectedRooms = () => {
+  roomData.value = roomData.value.filter(
+    (item) => !selectedRoomRows.value.includes(item)
+  )
+  selectedRoomRows.value = []
+}
+
+const handleAddUser = () => {
+  const existingIds = new Set(userData.value.map((u) => u.id))
+  const candidate = props.userList.find((u) => !existingIds.has(u.id))
+  if (candidate) {
+    userData.value.push(candidate)
+  }
+}
+
+const handleAddRoom = () => {
+  const existingIds = new Set(roomData.value.map((r) => r.id))
+  const candidate = props.roomList.find((r) => !existingIds.has(r.id))
+  if (candidate) {
+    roomData.value.push(candidate)
+  }
+}
+
+const handleClose = () => {
+  emit('update:visible', false)
+}
+
+const handleSubmit = () => {
+  emit('submit', {
+    users: userData.value,
+    rooms: roomData.value
+  })
+  handleClose()
 }
 </script>
 
