@@ -1,7 +1,5 @@
 package com.proshine.system.security;
 
-import com.proshine.system.entity.User;
-import com.proshine.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
