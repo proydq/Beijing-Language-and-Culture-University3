@@ -1,7 +1,5 @@
 package com.proshine.system.config;
 
-import com.proshine.system.security.JwtAuthenticationFilter;
-import com.proshine.system.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
