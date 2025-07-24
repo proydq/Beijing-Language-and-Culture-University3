@@ -66,39 +66,24 @@
     <!-- 数据表格 -->
     <div class="table-area">
       <el-table 
-        :data="filteredBlacklistData" 
+        :data="paginatedBlacklistData" 
         style="width: 100%" 
         border
-        stripe
         :header-cell-style="{ backgroundColor: '#fafafa', fontWeight: '600' }"
       >
         <el-table-column type="selection" width="55" />
+        <el-table-column label="序号" width="80" align="center">
+          <template #default="{ $index }">
+            {{ (currentPage - 1) * pageSize + $index + 1 }}
+          </template>
+        </el-table-column>
         <el-table-column prop="name" label="姓名" width="120" align="center" />
         <el-table-column prop="employeeId" label="工号" width="140" align="center" />
         <el-table-column prop="department" label="所属部门" min-width="150" align="center" />
-        <el-table-column prop="violationReason" label="违规原因" min-width="200" />
-        <el-table-column prop="violationCount" label="违规次数" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getViolationCountType(row.violationCount)" size="small">
-              {{ row.violationCount }}次
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="addTime" label="加入时间" width="180" align="center" />
-        <el-table-column prop="expireTime" label="解除时间" width="180" align="center">
-          <template #default="{ row }">
-            <span :class="{ 'permanent-ban': row.expireTime === '永久' }">
-              {{ row.expireTime }}
-            </span>
-          </template>
-        </el-table-column>
         <el-table-column label="操作" width="120" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button type="success" size="small" @click="removeFromBlacklist(row)">
-              解除
-            </el-button>
-            <el-button type="danger" size="small" @click="deleteBlacklistItem(row)">
-              删除
+            <el-button type="danger" size="small" @click="removeFromBlacklist(row)">
+              移除
             </el-button>
           </template>
         </el-table-column>
@@ -139,7 +124,7 @@ export default {
   setup() {
     const currentPage = ref(1)
     const pageSize = ref(10)
-    const totalItems = ref(15)
+    const totalItems = ref(484)
 
     // 搜索表单
     const searchForm = reactive({
@@ -150,56 +135,16 @@ export default {
 
     // 黑名单数据
     const blacklistData = ref([
-      {
-        id: 1,
-        name: '张三',
-        employeeId: 'T001',
-        department: '教务处',
-        violationReason: '连续3次无故缺席预约，影响教室正常使用',
-        violationCount: 3,
-        addTime: '2024-03-15 14:30:00',
-        expireTime: '2024-04-15 14:30:00'
-      },
-      {
-        id: 2,
-        name: '李四',
-        employeeId: 'S002',
-        department: '学工处',
-        violationReason: '恶意占用教室资源，不按时归还',
-        violationCount: 5,
-        addTime: '2024-03-10 09:20:00',
-        expireTime: '永久'
-      },
-      {
-        id: 3,
-        name: '王五',
-        employeeId: 'L003',
-        department: '图书馆',
-        violationReason: '预约后经常迟到，影响其他用户使用',
-        violationCount: 2,
-        addTime: '2024-03-20 16:45:00',
-        expireTime: '2024-05-20 16:45:00'
-      },
-      {
-        id: 4,
-        name: '赵六',
-        employeeId: 'E004',
-        department: '实验中心',
-        violationReason: '多次违反教室使用规定',
-        violationCount: 4,
-        addTime: '2024-03-18 11:30:00',
-        expireTime: '2024-06-18 11:30:00'
-      },
-      {
-        id: 5,
-        name: '孙七',
-        employeeId: 'T005',
-        department: '教务处',
-        violationReason: '重复预约多个教室但只使用其中一个',
-        violationCount: 1,
-        addTime: '2024-03-25 10:15:00',
-        expireTime: '2024-04-25 10:15:00'
-      }
+      { id: 1, name: '李远达', employeeId: '1958990148', department: '教师' },
+      { id: 2, name: '杜亮生', employeeId: '1965990105', department: '教师' },
+      { id: 3, name: '王桂雅', employeeId: '1965990106', department: '教师' },
+      { id: 4, name: '王文清', employeeId: '1965990107', department: '教师' },
+      { id: 5, name: '吴涛', employeeId: '1967990010', department: '教师' },
+      { id: 6, name: '徐利君', employeeId: '1970990383', department: '教师' },
+      { id: 7, name: '朱美君', employeeId: '1970990387', department: '教师' },
+      { id: 8, name: '朱雪', employeeId: '1970990389', department: '教师' },
+      { id: 9, name: '张力萍', employeeId: '1970990391', department: '教师' },
+      { id: 10, name: '张志忠', employeeId: '1970990392', department: '教师' }
     ])
 
     // 过滤后的数据
@@ -228,12 +173,12 @@ export default {
       return filtered
     })
 
-    // 获取违规次数标签类型
-    const getViolationCountType = (count) => {
-      if (count >= 5) return 'danger'
-      if (count >= 3) return 'warning'
-      return 'info'
-    }
+    // 分页数据
+    const paginatedBlacklistData = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value
+      const end = start + pageSize.value
+      return filteredBlacklistData.value.slice(start, end)
+    })
 
     const addToBlacklist = () => {
       ElMessage.info('添加黑名单功能开发中...')
@@ -260,17 +205,13 @@ export default {
 
     const removeFromBlacklist = async (row) => {
       try {
-        await ElMessageBox.confirm(`确认将 "${row.name}" 移出黑名单吗？`, '解除确认')
+        await ElMessageBox.confirm(`确认将 "${row.name}" 移出黑名单吗？`, '移除确认')
+        // 从数据中移除该项
+        const index = blacklistData.value.findIndex(item => item.id === row.id)
+        if (index > -1) {
+          blacklistData.value.splice(index, 1)
+        }
         ElMessage.success(`已将 ${row.name} 移出黑名单`)
-      } catch {
-        // 用户取消
-      }
-    }
-
-    const deleteBlacklistItem = async (row) => {
-      try {
-        await ElMessageBox.confirm(`确认删除 "${row.name}" 的黑名单记录吗？此操作不可恢复！`, '删除确认')
-        ElMessage.success(`已删除 ${row.name} 的黑名单记录`)
       } catch {
         // 用户取消
       }
@@ -292,13 +233,12 @@ export default {
       searchForm,
       blacklistData,
       filteredBlacklistData,
-      getViolationCountType,
+      paginatedBlacklistData,
       addToBlacklist,
       exportBlacklist,
       handleSearch,
       handleReset,
       removeFromBlacklist,
-      deleteBlacklistItem,
       handleSizeChange,
       handleCurrentChange
     }

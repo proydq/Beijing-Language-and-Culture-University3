@@ -84,6 +84,51 @@
         </div>
       </div>
     </div>
+
+    <!-- 违规配置弹出框 -->
+    <el-dialog
+      v-model="violationDialogVisible"
+      :title="dialogTitle"
+      width="600px"
+      destroy-on-close
+    >
+      <el-form :model="violationForm" label-width="120px" class="violation-form">
+        <el-form-item label="超过">
+          <div class="form-row">
+            <el-input
+              v-model="violationForm.overDays"
+              placeholder="请输入天数"
+              style="width: 100px;"
+            />
+            <span class="form-text">天开始使用时间（</span>
+            <el-input
+              v-model="violationForm.startTime"
+              placeholder="请输入时间"
+              style="width: 120px;"
+            />
+            <span class="form-text">）分钟，无门禁卡时间段，第一次。</span>
+          </div>
+        </el-form-item>
+        
+        <el-form-item label="超过">
+          <div class="form-row">
+            <el-input
+              v-model="violationForm.overDaysSecond"
+              placeholder="请输入天数"
+              style="width: 100px;"
+            />
+            <span class="form-text">天，拉黑警告条件，预约人员警告条件，第二次。</span>
+          </div>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="violationDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmViolationSettings">确认</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -157,12 +202,47 @@ export default {
       return filtered
     })
 
+    // 弹出框相关数据
+    const violationDialogVisible = ref(false)
+    const dialogTitle = ref('')
+    const violationForm = ref({
+      overDays: '',
+      startTime: '',
+      overDaysSecond: ''
+    })
+    const currentEditRow = ref(null)
+
     const batchSetContinuousDays = () => {
-      ElMessage.info('批量修改连续预约条件功能开发中...')
+      dialogTitle.value = '批量修改违规条件'
+      violationForm.value = {
+        overDays: '',
+        startTime: '',
+        overDaysSecond: ''
+      }
+      violationDialogVisible.value = true
     }
 
     const editContinuousDays = (row) => {
-      ElMessage.info(`编辑教室: ${row.roomName}`)
+      dialogTitle.value = `编辑违规条件 - ${row.roomName}`
+      currentEditRow.value = row
+      violationForm.value = {
+        overDays: row.continuousDays?.toString() || '',
+        startTime: '30',
+        overDaysSecond: '7'
+      }
+      violationDialogVisible.value = true
+    }
+
+    const confirmViolationSettings = () => {
+      if (currentEditRow.value) {
+        // 单个编辑
+        ElMessage.success(`已更新 ${currentEditRow.value.roomName} 的违规条件`)
+      } else {
+        // 批量修改
+        ElMessage.success('已批量更新违规条件')
+      }
+      violationDialogVisible.value = false
+      currentEditRow.value = null
     }
 
     const handleSizeChange = (val) => {
@@ -187,7 +267,12 @@ export default {
       batchSetContinuousDays,
       editContinuousDays,
       handleSizeChange,
-      handleCurrentChange
+      handleCurrentChange,
+      violationDialogVisible,
+      dialogTitle,
+      violationForm,
+      currentEditRow,
+      confirmViolationSettings
     }
   }
 }
@@ -334,5 +419,41 @@ export default {
 .pagination-info {
   color: #666;
   font-size: 14px;
+}
+
+/* 违规配置弹出框样式 */
+.violation-form {
+  padding: 20px 0;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.form-text {
+  color: #666;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+
+:deep(.el-dialog__header) {
+  padding: 20px 20px 10px 20px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+:deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+:deep(.el-dialog__footer) {
+  padding: 10px 20px 20px 20px;
+  border-top: 1px solid #e8e8e8;
 }
 </style>

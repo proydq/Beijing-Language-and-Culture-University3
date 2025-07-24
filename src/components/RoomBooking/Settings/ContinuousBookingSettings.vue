@@ -2,21 +2,20 @@
   <div class="setting-section">
     <div class="section-header">
       <div>
-        <h2>连续预约设置</h2>
-        <p>配置教室连续预约的天数限制</p>
+        <h2>教室连续预约设置</h2>
       </div>
     </div>
 
     <!-- 提示信息 -->
     <div class="tips-section">
       <p class="tips-text">
-        <span class="tips-label">温馨提示：</span>
+        <span class="tips-label">PS：</span>
         <span class="tips-content">
-          连续预约天数是指同一用户对同一教室可以连续预约的最大天数。设置为0表示不限制连续预约天数。
+          表示连续预约时，房屋连续预约天数的限制规则；
         </span>
       </p>
       <p class="example-text">
-        例如：设置为3天，则用户最多可以连续预约同一教室3天，第4天需要间隔后才能再次预约。
+        例如：设置可连续预约（16）天，可连续时间为：3月1日-3月16日，第17日起不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；
       </p>
     </div>
 
@@ -60,18 +59,19 @@
         <!-- 教室表格 -->
         <div class="classroom-table">
           <el-table :data="filteredClassrooms" style="width: 100%" border>
-            <el-table-column prop="roomName" label="教室名称" width="200" />
-            <el-table-column prop="roomType" label="教室类型" width="120" />
-            <el-table-column prop="capacity" label="容量" width="80" />
-            <el-table-column prop="continuousDays" label="连续预约天数" width="150">
+            <el-table-column type="selection" width="55" />
+            <el-table-column prop="roomName" label="预约教室" width="200" />
+            <el-table-column prop="roomCode" label="房屋号" width="120" />
+            <el-table-column prop="building" label="所属楼" width="120" />
+            <el-table-column prop="continuousDays" label="可连续预约天数" width="150">
               <template #default="{ row }">
-                <span v-if="row.continuousDays === 0" class="no-limit-text">不限制</span>
-                <span v-else-if="row.continuousDays <= 7" class="unlimited-text">{{ row.continuousDays }}天</span>
-                <span v-else-if="row.continuousDays <= 30" class="monthly-text">{{ row.continuousDays }}天</span>
-                <span v-else class="yearly-text">{{ row.continuousDays }}天</span>
+                <span v-if="row.continuousDays === '不可连续预约'" class="unlimited-text">{{ row.continuousDays }}</span>
+                <span v-else-if="row.continuousDays === '一天'" class="monthly-text">{{ row.continuousDays }}</span>
+                <span v-else-if="row.continuousDays === '一年'" class="yearly-text">{{ row.continuousDays }}</span>
+                <span v-else-if="row.continuousDays === '无限制预约'" class="no-limit-text">{{ row.continuousDays }}</span>
+                <span v-else>{{ row.continuousDays }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="floor" label="所在楼层" width="100" />
             <el-table-column label="操作" width="120">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click="editContinuousDays(row)">编辑</el-button>
@@ -94,6 +94,25 @@
         </div>
       </div>
     </div>
+
+    <!-- 设置可连续预约天数弹出框 -->
+    <el-dialog v-model="continuousDaysDialogVisible" title="设置可连续预约天数" width="400px">
+      <div class="continuous-days-options">
+        <el-radio-group v-model="selectedContinuousDays">
+          <el-radio value="unlimited">可连续预约（    ）天无限</el-radio>
+          <el-radio value="monthly">可连续预约（    ）个月的</el-radio>
+          <el-radio value="yearly">可连续预约（    ）年的</el-radio>
+          <el-radio value="no_continuous">不可连续预约</el-radio>
+          <el-radio value="no_limit">无限制预约</el-radio>
+        </el-radio-group>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="continuousDaysDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmContinuousDays">确认</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -109,43 +128,68 @@ export default {
     Upload
   },
   setup() {
+    // 响应式变量
     const selectedFloor = ref('all')
     const floorSearchKeyword = ref('')
     const currentPage = ref(1)
     const pageSize = ref(20)
-    const totalClassrooms = ref(58)
-
+    const totalClassrooms = computed(() => filteredClassrooms.value.length)
+    
+    // 弹出框相关变量
+    const continuousDaysDialogVisible = ref(false)
+    const selectedContinuousDays = ref('unlimited')
+    const currentEditingRow = ref(null)
+    const isBatchMode = ref(false)
+    
     // 楼层选项
     const floorOptions = [
-      { label: '全部楼层', value: 'all' },
-      { label: '1楼', value: '1' },
-      { label: '2楼', value: '2' },
-      { label: '3楼', value: '3' },
-      { label: '4楼', value: '4' },
-      { label: '5楼', value: '5' }
+      { label: '全部', value: 'all' },
+      { label: '达才楼', value: 'dacai' },
+      { label: 'B2', value: 'b2' },
+      { label: 'B1', value: 'b1' },
+      { label: '1F', value: '1f' },
+      { label: '2F', value: '2f' },
+      { label: '3F', value: '3f' },
+      { label: '4F', value: '4f' },
+      { label: '5F', value: '5f' },
+      { label: '6F', value: '6f' },
+      { label: '高层楼', value: 'gaoceng' },
+      { label: '博雅楼', value: 'boya' }
     ]
 
     // 教室数据
     const classroomsData = ref([
-      { id: 1, roomName: '多媒体教室101', roomType: '多媒体', capacity: 60, continuousDays: 7, floor: '1楼' },
-      { id: 2, roomName: '多媒体教室102', roomType: '多媒体', capacity: 60, continuousDays: 5, floor: '1楼' },
-      { id: 3, roomName: '实验室201', roomType: '实验室', capacity: 40, continuousDays: 3, floor: '2楼' },
-      { id: 4, roomName: '会议室301', roomType: '会议室', capacity: 20, continuousDays: 0, floor: '3楼' },
-      { id: 5, roomName: '多媒体教室401', roomType: '多媒体', capacity: 80, continuousDays: 10, floor: '4楼' }
+      { id: 1, roomName: '多媒体教室（101）', roomCode: '101', building: '科研楼', continuousDays: 15 },
+      { id: 2, roomName: '多媒体教室（102）', roomCode: '102', building: '科研楼', continuousDays: 15 },
+      { id: 3, roomName: '多媒体教室（103）', roomCode: '103', building: '科研楼', continuousDays: 15 },
+      { id: 4, roomName: '多媒体教室（104）', roomCode: '104', building: '科研楼', continuousDays: 15 },
+      { id: 5, roomName: '多媒体教室（105）', roomCode: '105', building: '科研楼', continuousDays: '不可连续预约' },
+      { id: 6, roomName: '多媒体教室（106）', roomCode: '106', building: '科研楼', continuousDays: '一天' },
+      { id: 7, roomName: '多媒体教室（107）', roomCode: '107', building: '科研楼', continuousDays: '一年' },
+      { id: 8, roomName: '多媒体教室（108）', roomCode: '108', building: '科研楼', continuousDays: 45 },
+      { id: 9, roomName: '多媒体教室（109）', roomCode: '109', building: '科研楼', continuousDays: 15 },
+      { id: 10, roomName: '多媒体教室（110）', roomCode: '110', building: '科研楼', continuousDays: '无限制预约' }
     ])
 
     // 过滤后的教室数据
     const filteredClassrooms = computed(() => {
       let filtered = classroomsData.value
       
+      // 按楼层过滤
       if (selectedFloor.value !== 'all') {
-        filtered = filtered.filter(room => room.floor === `${selectedFloor.value}楼`)
+        // 根据选择的楼层过滤，这里暂时显示所有数据，因为示例数据都是科研楼
+        if (selectedFloor.value === 'gaoceng') {
+          filtered = filtered.filter(room => room.building === '科研楼')
+        } else {
+          filtered = filtered.filter(room => room.building.includes(selectedFloor.value) || room.building === '科研楼')
+        }
       }
       
+      // 按搜索关键词过滤
       if (floorSearchKeyword.value) {
         filtered = filtered.filter(room => 
           room.roomName.toLowerCase().includes(floorSearchKeyword.value.toLowerCase()) ||
-          room.floor.includes(floorSearchKeyword.value)
+          room.building.includes(floorSearchKeyword.value)
         )
       }
       
@@ -153,7 +197,10 @@ export default {
     })
 
     const batchSetContinuousDays = () => {
-      ElMessage.info('批量设置功能开发中...')
+      isBatchMode.value = true
+      currentEditingRow.value = null
+      selectedContinuousDays.value = 'unlimited'
+      continuousDaysDialogVisible.value = true
     }
 
     const exportContinuousSettings = () => {
@@ -161,7 +208,19 @@ export default {
     }
 
     const editContinuousDays = (row) => {
-      ElMessage.info(`编辑教室: ${row.roomName}`)
+      isBatchMode.value = false
+      currentEditingRow.value = row
+      selectedContinuousDays.value = 'unlimited'
+      continuousDaysDialogVisible.value = true
+    }
+
+    const confirmContinuousDays = () => {
+      if (isBatchMode.value) {
+        ElMessage.success('批量设置连续预约天数成功')
+      } else {
+        ElMessage.success(`已更新教室 ${currentEditingRow.value.roomName} 的连续预约天数`)
+      }
+      continuousDaysDialogVisible.value = false
     }
 
     const handleSizeChange = (val) => {
@@ -186,7 +245,12 @@ export default {
       exportContinuousSettings,
       editContinuousDays,
       handleSizeChange,
-      handleCurrentChange
+      handleCurrentChange,
+      continuousDaysDialogVisible,
+      selectedContinuousDays,
+      currentEditingRow,
+      isBatchMode,
+      confirmContinuousDays
     }
   }
 }
@@ -337,5 +401,26 @@ export default {
   display: flex;
   justify-content: center;
   padding: 20px 0;
+}
+
+/* 弹出框样式 */
+.continuous-days-options {
+  padding: 20px 0;
+}
+
+.continuous-days-options .el-radio {
+  display: block;
+  margin-bottom: 16px;
+  line-height: 32px;
+}
+
+.continuous-days-options .el-radio:last-child {
+  margin-bottom: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>

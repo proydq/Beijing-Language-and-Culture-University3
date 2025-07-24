@@ -102,7 +102,7 @@ export default {
   emits: ['save-settings'],
   setup(props, { emit }) {
     const activeSettingType = ref('booking_personnel')
-    const expandedGroups = ref(['house_permission'])
+    const expandedGroups = ref(['house_permission', 'violation_settings'])
 
     const handleSaveSettings = (settingsData) => {
       emit('save-settings', settingsData)

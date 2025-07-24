@@ -6,7 +6,7 @@
     <div class="sidebar-menu">
       <!-- 房屋类别权限设置分组 -->
       <div class="menu-group">
-        <div 
+        <div
           :class="['menu-group-title', { expanded: expandedGroups.includes('house_permission') }]"
           @click="toggleGroup('house_permission')"
         >
@@ -15,8 +15,8 @@
           <el-icon class="expand-icon"><arrow-down /></el-icon>
         </div>
         <div v-show="expandedGroups.includes('house_permission')" class="submenu">
-          <div 
-            v-for="item in housePermissionSettings" 
+          <div
+            v-for="item in housePermissionSettings"
             :key="item.key"
             :class="['submenu-item', { active: activeSettingType === item.key }]"
             @click="setActiveSettingType(item.key)"
@@ -29,7 +29,7 @@
 
       <!-- 房屋管理分组 -->
       <div class="menu-group">
-        <div 
+        <div
           :class="['menu-group-title', { expanded: expandedGroups.includes('house_management') }]"
           @click="toggleGroup('house_management')"
         >
@@ -38,8 +38,8 @@
           <el-icon class="expand-icon"><arrow-down /></el-icon>
         </div>
         <div v-show="expandedGroups.includes('house_management')" class="submenu">
-          <div 
-            v-for="item in houseManagementSettings" 
+          <div
+            v-for="item in houseManagementSettings"
             :key="item.key"
             :class="['submenu-item', { active: activeSettingType === item.key }]"
             @click="setActiveSettingType(item.key)"
@@ -52,7 +52,7 @@
 
       <!-- 违规设置分组 -->
       <div class="menu-group">
-        <div 
+        <div
           :class="['menu-group-title', { expanded: expandedGroups.includes('violation_settings') }]"
           @click="toggleGroup('violation_settings')"
         >
@@ -61,8 +61,8 @@
           <el-icon class="expand-icon"><arrow-down /></el-icon>
         </div>
         <div v-show="expandedGroups.includes('violation_settings')" class="submenu">
-          <div 
-            v-for="item in violationSettings" 
+          <div
+            v-for="item in violationSettings"
             :key="item.key"
             :class="['submenu-item', { active: activeSettingType === item.key }]"
             @click="setActiveSettingType(item.key)"
@@ -78,11 +78,11 @@
 
 <script>
 import { computed } from 'vue'
-import { 
-  ArrowDown, 
-  Key, 
-  Cpu, 
-  User, 
+import {
+  ArrowDown,
+  Key,
+  Cpu,
+  User,
   Clock,
   Document,
   Bell,
@@ -116,8 +116,8 @@ export default {
     // 设置菜单定义
     const housePermissionSettings = [
       { key: 'booking_personnel', label: '预约人员', icon: 'User' },
-      { key: 'booking_time_settings', label: '预约时间设置', icon: 'Clock' },
-      { key: 'continuous_booking', label: '连续预约设置', icon: 'Document' }
+      { key: 'booking_time_settings', label: '人员提前预约时间设置', icon: 'Clock' },
+      { key: 'continuous_booking', label: '教室连续预约设置', icon: 'Document' }
     ]
 
     const houseManagementSettings = [
@@ -127,19 +127,19 @@ export default {
 
     const violationSettings = [
       { key: 'violation_config', label: '违规配置', icon: 'Warning' },
-      { key: 'blacklist', label: '黑名单管理', icon: 'User' }
+      { key: 'blacklist_management', label: '黑名单管理', icon: 'User' }
     ]
 
     const toggleGroup = (groupKey) => {
       const newExpandedGroups = [...props.expandedGroups]
       const index = newExpandedGroups.indexOf(groupKey)
-      
+
       if (index > -1) {
         newExpandedGroups.splice(index, 1)
       } else {
         newExpandedGroups.push(groupKey)
       }
-      
+
       emit('update:expandedGroups', newExpandedGroups)
     }
 

@@ -219,10 +219,10 @@
             <p><strong>一、房屋信息录入规范</strong></p>
             <p>1. <strong>核心字段必填：</strong>添加房间时，"房屋类型" 为关键必选字段，请确保准确填写。</p>
             <p>2. <strong>唯一性要求：</strong>房屋名称与房间号的组合必须具有唯一性，重复信息将无法成录入。</p>
-            
+
             <p><strong>二、业务关联与数据同步</strong></p>
             <p>1. <strong>跨系统数据同步：</strong>房屋添加成功后，如用于工会议预约、实验室预约、教室借用等业务，会在对应业务系统中生成同步房屋信息。</p>
-            
+
             <p><strong>三、房屋删除须知</strong></p>
             <p style="color: red;"><strong>若在房屋管理系统中删除房屋操作，所有关联业务系统中的该房屋信息将同步删除，请谨慎操作。</strong></p>
           </div>
@@ -564,7 +564,7 @@ export default {
     const handleRoomSubmit = async () => {
       try {
         await roomFormRef.value?.validate()
-        
+
         if (isEditMode.value) {
           // 编辑房间
           const index = houseTableData.value.findIndex(item => item.id === currentRoomData.value.id)
@@ -588,7 +588,7 @@ export default {
           housePagination.total += 1
           ElMessage.success('房间添加成功')
         }
-        
+
         handleRoomDialogClose()
       } catch (error) {
         console.log('表单验证失败:', error)
