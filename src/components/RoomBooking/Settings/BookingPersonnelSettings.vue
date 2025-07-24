@@ -57,6 +57,14 @@
     </el-table>
     <AuthorityUserDialog v-model="authorityDialogVisible" :users="currentAuthorityUsers" />
     <PermissionRoomDialog v-model="roomDialogVisible" :rooms="currentPermissionRooms" />
+    <PermissionEditDialog
+      v-model:visible="editDialogVisible"
+      :isEdit="isEdit"
+      :editData="currentEditRow"
+      :allUsers="allUsers"
+      :allRooms="allRooms"
+      @submit="handlePermissionSubmit"
+    />
   </div>
 </template>
 
@@ -65,12 +73,14 @@ import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AuthorityUserDialog from './AuthorityUserDialog.vue'
 import PermissionRoomDialog from './PermissionRoomDialog.vue'
+import PermissionEditDialog from './PermissionEditDialog.vue'
 
 export default {
   name: 'BookingPersonnelSettings',
   components: {
     AuthorityUserDialog,
     PermissionRoomDialog,
+    PermissionEditDialog,
   },
   setup() {
     // 预约人员权限数据 - 根据截图的实际数据结构
@@ -113,8 +123,31 @@ export default {
     const roomDialogVisible = ref(false)
     const currentPermissionRooms = ref([])
 
+    const editDialogVisible = ref(false)
+    const isEdit = ref(false)
+    const currentEditRow = ref(null)
+
+    const allUsers = ref([
+      { name: '张三', jobNumber: 'H0001234', department: '科技处', type: 'teacher' },
+      { name: '李四', jobNumber: 'H0001235', department: '信息化办公室', type: 'teacher' },
+      { name: '王五', jobNumber: 'H0001236', department: '后勤处', type: 'student' },
+      { name: '赵六', jobNumber: 'H0001237', department: '资产管理处', type: 'teacher' },
+      { name: '钱七', jobNumber: 'H0001238', department: '教务处', type: 'teacher' },
+      { name: '孙八', jobNumber: 'H0001239', department: '实验中心', type: 'student' },
+    ])
+
+    const allRooms = ref([
+      { roomName: '多媒体教室（101）', roomCode: '101', buildingName: '科研楼' },
+      { roomName: '多媒体教室（102）', roomCode: '102', buildingName: '科研楼' },
+      { roomName: '多媒体教室（103）', roomCode: '103', buildingName: '科研楼' },
+      { roomName: '清洁间', roomCode: '401', buildingName: '达才楼' },
+      { roomName: '会议室', roomCode: '201', buildingName: '综合楼' },
+    ])
+
     const addPersonnelPermission = () => {
-      ElMessage.info('新增预约人员权限功能开发中...')
+      currentEditRow.value = { users: [], rooms: [] }
+      isEdit.value = false
+      editDialogVisible.value = true
     }
 
     const exportPersonnelList = () => {
@@ -132,7 +165,13 @@ export default {
     }
 
     const editPersonnelPermission = (row) => {
-      ElMessage.info(`编辑权限设置: ${row.subject}`)
+      currentEditRow.value = {
+        ...row,
+        users: row.authorizedUsers || [],
+        rooms: row.roomList || []
+      }
+      isEdit.value = true
+      editDialogVisible.value = true
     }
 
     const deletePersonnelPermission = async (row) => {
@@ -142,6 +181,27 @@ export default {
       } catch {
         // 用户取消
       }
+    }
+
+    const handlePermissionSubmit = ({ users, rooms }) => {
+      if (isEdit.value && currentEditRow.value) {
+        currentEditRow.value.authorizedUsers = users
+        currentEditRow.value.roomList = rooms
+        currentEditRow.value.authorizedPersonnel = users.map((u) => u.name).join('；')
+        currentEditRow.value.bookingRooms = rooms.map((r) => r.roomName).join('；')
+      } else {
+        personnelPermissionData.value.push({
+          id: Date.now(),
+          subject: '新建权限配置',
+          authorizedUsers: users,
+          roomList: rooms,
+          authorizedPersonnel: users.map((u) => u.name).join('；'),
+          bookingRooms: rooms.map((r) => r.roomName).join('；'),
+          creator: '管理员',
+          createTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        })
+      }
+      editDialogVisible.value = false
     }
 
     return {
@@ -156,6 +216,12 @@ export default {
       currentAuthorityUsers,
       roomDialogVisible,
       currentPermissionRooms,
+      editDialogVisible,
+      isEdit,
+      currentEditRow,
+      allUsers,
+      allRooms,
+      handlePermissionSubmit,
     }
   },
 }
