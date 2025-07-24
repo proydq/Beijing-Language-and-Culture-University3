@@ -10,6 +10,7 @@ import RoleManagement from '../views/RoleManagement.vue'
 import AdminManagement from '../views/AdminManagement.vue'
 import AddAdmin from '../views/AddAdmin.vue'  // 新增这一行
 import RoomBooking from '../views/RoomBooking.vue'
+import Login from '../views/Login.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,6 +19,11 @@ const router = createRouter({
       path: '/',
       name: 'dashboard',
       component: Dashboard
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login
     },
     {
       path: '/dashboard',
@@ -81,6 +87,10 @@ const router = createRouter({
       // this generates a separate chunk (About.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/AboutView.vue')
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/login'
     }
   ]
 })
