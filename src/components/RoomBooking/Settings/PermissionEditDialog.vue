@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    v-model="dialogVisible"
+    v-model:visible="visible"
     :title="isEdit ? '编辑权限配置' : '新增权限配置'"
     width="900px"
     destroy-on-close
@@ -159,7 +159,10 @@ export default {
   },
   emits: ['update:visible', 'submit'],
   setup(props, { emit }) {
-    const dialogVisible = ref(false)
+    const visible = computed({
+      get: () => props.visible,
+      set: (val) => emit('update:visible', val)
+    })
 
     const userFilter = reactive({
       type: 'all',
@@ -189,17 +192,12 @@ export default {
     watch(
       () => props.visible,
       (val) => {
-        dialogVisible.value = val
         if (val) {
           userData.value = [...props.selectedUsers]
           roomData.value = [...props.selectedRooms]
         }
       }
     )
-
-    watch(dialogVisible, (val) => {
-      emit('update:visible', val)
-    })
 
     const filterListByTypeAndKeyword = (list, filter) => {
       let result = list
@@ -282,7 +280,7 @@ export default {
     }
 
     const handleClose = () => {
-      dialogVisible.value = false
+      emit('update:visible', false)
     }
 
     const handleSubmit = () => {
@@ -295,7 +293,7 @@ export default {
 
     return {
       Search,
-      dialogVisible,
+      visible,
       userFilter,
       roomFilter,
       userPage,

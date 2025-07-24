@@ -57,6 +57,15 @@
     </el-table>
     <AuthorityUserDialog v-model="authorityDialogVisible" :users="currentAuthorityUsers" />
     <PermissionRoomDialog v-model="roomDialogVisible" :rooms="currentPermissionRooms" />
+    <PermissionEditDialog
+      v-model:visible="editDialogVisible"
+      :isEdit="isEdit"
+      :userList="[]"
+      :roomList="[]"
+      :selectedUsers="selectedUserData"
+      :selectedRooms="selectedRoomData"
+      @submit="handlePermissionSubmit"
+    />
   </div>
 </template>
 
@@ -65,12 +74,14 @@ import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AuthorityUserDialog from './AuthorityUserDialog.vue'
 import PermissionRoomDialog from './PermissionRoomDialog.vue'
+import PermissionEditDialog from './PermissionEditDialog.vue'
 
 export default {
   name: 'BookingPersonnelSettings',
   components: {
     AuthorityUserDialog,
     PermissionRoomDialog,
+    PermissionEditDialog,
   },
   setup() {
     // 预约人员权限数据 - 根据截图的实际数据结构
@@ -113,8 +124,16 @@ export default {
     const roomDialogVisible = ref(false)
     const currentPermissionRooms = ref([])
 
+    const editDialogVisible = ref(false)
+    const isEdit = ref(false)
+    const selectedUserData = ref([])
+    const selectedRoomData = ref([])
+
     const addPersonnelPermission = () => {
-      ElMessage.info('新增预约人员权限功能开发中...')
+      isEdit.value = false
+      selectedUserData.value = []
+      selectedRoomData.value = []
+      editDialogVisible.value = true
     }
 
     const exportPersonnelList = () => {
@@ -132,7 +151,10 @@ export default {
     }
 
     const editPersonnelPermission = (row) => {
-      ElMessage.info(`编辑权限设置: ${row.subject}`)
+      isEdit.value = true
+      selectedUserData.value = row.authorizedUsers || []
+      selectedRoomData.value = row.roomList || []
+      editDialogVisible.value = true
     }
 
     const deletePersonnelPermission = async (row) => {
@@ -144,6 +166,12 @@ export default {
       }
     }
 
+    const handlePermissionSubmit = (payload) => {
+      console.log('提交的权限配置：', payload)
+      ElMessage.success('权限配置已提交')
+      editDialogVisible.value = false
+    }
+
     return {
       personnelPermissionData,
       addPersonnelPermission,
@@ -152,10 +180,15 @@ export default {
       viewRoomDetails,
       editPersonnelPermission,
       deletePersonnelPermission,
+      handlePermissionSubmit,
       authorityDialogVisible,
       currentAuthorityUsers,
       roomDialogVisible,
       currentPermissionRooms,
+      editDialogVisible,
+      isEdit,
+      selectedUserData,
+      selectedRoomData,
     }
   },
 }
