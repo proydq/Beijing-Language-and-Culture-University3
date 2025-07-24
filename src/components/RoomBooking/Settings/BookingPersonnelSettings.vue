@@ -5,12 +5,8 @@
         <h2>预约人员权限列表</h2>
       </div>
       <div class="header-actions">
-        <el-button type="primary" @click="addPersonnelPermission">
-          新增
-        </el-button>
-        <el-button @click="exportPersonnelList">
-          导出
-        </el-button>
+        <el-button type="primary" @click="addPersonnelPermission"> 新增 </el-button>
+        <el-button @click="exportPersonnelList"> 导出 </el-button>
       </div>
     </div>
 
@@ -20,11 +16,11 @@
         <template #default="{ row }">
           <div class="personnel-text">
             {{ row.authorizedPersonnel }}
-            <el-button 
-              type="text" 
-              size="small" 
+            <el-button
+              type="text"
+              size="small"
               @click="viewPersonnelDetails(row)"
-              style="color: #409EFF; margin-left: 10px;"
+              style="color: #409eff; margin-left: 10px"
             >
               查看详情
             </el-button>
@@ -35,11 +31,11 @@
         <template #default="{ row }">
           <div class="rooms-text">
             {{ row.bookingRooms }}
-            <el-button 
-              type="text" 
-              size="small" 
+            <el-button
+              type="text"
+              size="small"
               @click="viewRoomDetails(row)"
-              style="color: #409EFF; margin-left: 10px;"
+              style="color: #409eff; margin-left: 10px"
             >
               查看详情
             </el-button>
@@ -50,15 +46,17 @@
       <el-table-column prop="createTime" label="创建时间" width="120" />
       <el-table-column label="操作" width="150">
         <template #default="{ row }">
-          <el-button type="primary" size="small" @click="editPersonnelPermission(row)">编辑</el-button>
-          <el-button type="danger" size="small" @click="deletePersonnelPermission(row)">删除</el-button>
+          <el-button type="primary" size="small" @click="editPersonnelPermission(row)"
+            >编辑</el-button
+          >
+          <el-button type="danger" size="small" @click="deletePersonnelPermission(row)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
-    <AuthorityUserDialog
-      v-model="authorityDialogVisible"
-      :users="currentAuthorityUsers"
-    />
+    <AuthorityUserDialog v-model="authorityDialogVisible" :users="currentAuthorityUsers" />
+    <PermissionRoomDialog v-model="roomDialogVisible" :rooms="currentPermissionRooms" />
   </div>
 </template>
 
@@ -66,11 +64,13 @@
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AuthorityUserDialog from './AuthorityUserDialog.vue'
+import PermissionRoomDialog from './PermissionRoomDialog.vue'
 
 export default {
   name: 'BookingPersonnelSettings',
   components: {
-    AuthorityUserDialog
+    AuthorityUserDialog,
+    PermissionRoomDialog,
   },
   setup() {
     // 预约人员权限数据 - 根据截图的实际数据结构
@@ -78,14 +78,20 @@ export default {
       {
         id: 1,
         subject: '物理实验室一层、二层、三层可预约人员',
-        authorizedPersonnel: '杨超；郭辉；邓伯雯；赵芳；潘欣妍；张宇；吴俊杰；刘敏；孙辉；高颖；王丽；陈杰；周琼；赵诗雅；徐赠；王宇轩；黄斯；李鸥；荣意；贾永强；张良嘉；曹明红；郑子豪......',
+        authorizedPersonnel:
+          '杨超；郭辉；邓伯雯；赵芳；潘欣妍；张宇；吴俊杰；刘敏；孙辉；高颖；王丽；陈杰；周琼；赵诗雅；徐赠；王宇轩；黄斯；李鸥；荣意；贾永强；张良嘉；曹明红；郑子豪......',
         authorizedUsers: [
           { name: '张三', jobNumber: 'H0001234', department: '科技处' },
-          { name: '李四', jobNumber: 'H0001235', department: '信息化办公室' }
+          { name: '李四', jobNumber: 'H0001235', department: '信息化办公室' },
         ],
-        bookingRooms: '多媒体教室（101）；多媒体教室（102）；多媒体教室（103）；多媒体教室（104）；多媒体教室（105）；多媒体教室（106）；多媒体教室（107）；多媒体教室（108）；多媒体教室（109）；多媒体教室（110）......',
+        bookingRooms:
+          '多媒体教室（101）；多媒体教室（102）；多媒体教室（103）；多媒体教室（104）；多媒体教室（105）；多媒体教室（106）；多媒体教室（107）；多媒体教室（108）；多媒体教室（109）；多媒体教室（110）......',
+        roomList: [
+          { roomName: '多媒体教室（101）', roomCode: '101', building: '科研楼' },
+          { roomName: '多媒体教室（102）', roomCode: '102', building: '科研楼' },
+        ],
         creator: '张三',
-        createTime: '2024.03.08 09:16:26'
+        createTime: '2024.03.08 09:16:26',
       },
       {
         id: 2,
@@ -93,16 +99,19 @@ export default {
         authorizedPersonnel: '杨超；郭辉；邓伯雯；赵芳；潘欣妍；',
         authorizedUsers: [
           { name: '王五', jobNumber: 'H0001236', department: '后勤处' },
-          { name: '赵六', jobNumber: 'H0001237', department: '资产管理处' }
+          { name: '赵六', jobNumber: 'H0001237', department: '资产管理处' },
         ],
         bookingRooms: '清洁间',
+        roomList: [{ roomName: '清洁间', roomCode: '401', building: '达才楼' }],
         creator: '张三',
-        createTime: '2024.03.08 09:16:26'
-      }
+        createTime: '2024.03.08 09:16:26',
+      },
     ])
 
     const authorityDialogVisible = ref(false)
     const currentAuthorityUsers = ref([])
+    const roomDialogVisible = ref(false)
+    const currentPermissionRooms = ref([])
 
     const addPersonnelPermission = () => {
       ElMessage.info('新增预约人员权限功能开发中...')
@@ -118,7 +127,8 @@ export default {
     }
 
     const viewRoomDetails = (row) => {
-      ElMessage.info(`查看房间详情: ${row.subject}`)
+      currentPermissionRooms.value = row.roomList || []
+      roomDialogVisible.value = true
     }
 
     const editPersonnelPermission = (row) => {
@@ -143,9 +153,11 @@ export default {
       editPersonnelPermission,
       deletePersonnelPermission,
       authorityDialogVisible,
-      currentAuthorityUsers
+      currentAuthorityUsers,
+      roomDialogVisible,
+      currentPermissionRooms,
     }
-  }
+  },
 }
 </script>
 
