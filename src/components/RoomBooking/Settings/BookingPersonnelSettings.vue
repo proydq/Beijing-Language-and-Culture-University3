@@ -55,15 +55,23 @@
         </template>
       </el-table-column>
     </el-table>
+    <AuthorityUserDialog
+      v-model="authorityDialogVisible"
+      :users="currentAuthorityUsers"
+    />
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import AuthorityUserDialog from './AuthorityUserDialog.vue'
 
 export default {
   name: 'BookingPersonnelSettings',
+  components: {
+    AuthorityUserDialog
+  },
   setup() {
     // 预约人员权限数据 - 根据截图的实际数据结构
     const personnelPermissionData = ref([
@@ -71,6 +79,10 @@ export default {
         id: 1,
         subject: '物理实验室一层、二层、三层可预约人员',
         authorizedPersonnel: '杨超；郭辉；邓伯雯；赵芳；潘欣妍；张宇；吴俊杰；刘敏；孙辉；高颖；王丽；陈杰；周琼；赵诗雅；徐赠；王宇轩；黄斯；李鸥；荣意；贾永强；张良嘉；曹明红；郑子豪......',
+        authorizedUsers: [
+          { name: '张三', jobNumber: 'H0001234', department: '科技处' },
+          { name: '李四', jobNumber: 'H0001235', department: '信息化办公室' }
+        ],
         bookingRooms: '多媒体教室（101）；多媒体教室（102）；多媒体教室（103）；多媒体教室（104）；多媒体教室（105）；多媒体教室（106）；多媒体教室（107）；多媒体教室（108）；多媒体教室（109）；多媒体教室（110）......',
         creator: '张三',
         createTime: '2024.03.08 09:16:26'
@@ -79,11 +91,18 @@ export default {
         id: 2,
         subject: '物理实验室四层可预约人员',
         authorizedPersonnel: '杨超；郭辉；邓伯雯；赵芳；潘欣妍；',
+        authorizedUsers: [
+          { name: '王五', jobNumber: 'H0001236', department: '后勤处' },
+          { name: '赵六', jobNumber: 'H0001237', department: '资产管理处' }
+        ],
         bookingRooms: '清洁间',
         creator: '张三',
         createTime: '2024.03.08 09:16:26'
       }
     ])
+
+    const authorityDialogVisible = ref(false)
+    const currentAuthorityUsers = ref([])
 
     const addPersonnelPermission = () => {
       ElMessage.info('新增预约人员权限功能开发中...')
@@ -94,7 +113,8 @@ export default {
     }
 
     const viewPersonnelDetails = (row) => {
-      ElMessage.info(`查看人员详情: ${row.subject}`)
+      currentAuthorityUsers.value = row.authorizedUsers || []
+      authorityDialogVisible.value = true
     }
 
     const viewRoomDetails = (row) => {
@@ -121,7 +141,9 @@ export default {
       viewPersonnelDetails,
       viewRoomDetails,
       editPersonnelPermission,
-      deletePersonnelPermission
+      deletePersonnelPermission,
+      authorityDialogVisible,
+      currentAuthorityUsers
     }
   }
 }
