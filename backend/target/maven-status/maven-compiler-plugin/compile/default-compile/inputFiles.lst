@@ -5,8 +5,10 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\SystemApplication.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysUserRoleRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\SysUserServiceImpl.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchRoleCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysPermissionRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\AuthenticationController.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\SysRoleController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\security\JwtAuthenticationFilter.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\security\JwtUtil.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\AuthenticationServiceImpl.java
@@ -23,10 +25,13 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysRoleRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysUserRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysRolePermission.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\SysRoleService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\dto\BCryptUtil.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\AuthenticationService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchUserCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\dto\SearchBaseCondition.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\RoleVo.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\dto\BCryptExample.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\response\ResponseEntity.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysPermission.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\SysRoleServiceImpl.java

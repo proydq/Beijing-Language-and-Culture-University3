@@ -9,8 +9,10 @@
         <span class="title">首页</span>
       </div>
       <div class="header-right">
-        <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+        <div class="header-right">
+          <div class="avatar" @click="handleLogout" title="点击退出登录">
+            <el-icon size="20"><user /></el-icon>
+          </div>
         </div>
         <span class="username">张三</span>
         <el-dropdown>
@@ -420,7 +422,7 @@ export default {
     const router = useRouter()
 
     const handleCardClick = (cardName) => {
-      switch(cardName) {
+      switch (cardName) {
         case '用户信息管理':
           router.push('/user-management')
           break
@@ -433,16 +435,23 @@ export default {
         case '房屋借用管理':
           router.push('/room-booking')
           break
-        // 可以添加更多卡片的跳转逻辑
         default:
           console.log('点击了:', cardName)
       }
     }
 
-    return {
-      handleCardClick
+    const handleLogout = () => {
+      // 清除登录信息并跳转到登录页
+      localStorage.removeItem('userToken')
+      localStorage.removeItem('userInfo')
+      router.replace('/login')
     }
-  }
+
+    return {
+      handleCardClick,
+      handleLogout,
+    }
+  },
 }
 </script>
 
@@ -453,7 +462,7 @@ export default {
 }
 
 .header {
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
   color: white;
   padding: 15px 30px;
   display: flex;
@@ -473,7 +482,7 @@ export default {
   height: 40px;
   border-radius: 8px;
   background: white;
-  color: #4A90E2;
+  color: #4a90e2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -535,7 +544,7 @@ export default {
   color: #333;
   margin-bottom: 20px;
   padding-left: 10px;
-  border-left: 4px solid #4A90E2;
+  border-left: 4px solid #4a90e2;
   font-weight: 600;
 }
 
@@ -561,11 +570,11 @@ export default {
 .function-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  border-color: #4A90E2;
+  border-color: #4a90e2;
 }
 
 .function-card.active {
-  background: #FF8C42;
+  background: #ff8c42;
   color: white;
 }
 
@@ -582,7 +591,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4A90E2;
+  color: #4a90e2;
 }
 
 .function-card.active .card-icon {
@@ -617,15 +626,15 @@ export default {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .main-content {
     padding: 20px;
   }
-  
+
   .card-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .function-card {
     padding: 15px;
   }

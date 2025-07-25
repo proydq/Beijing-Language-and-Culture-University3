@@ -106,7 +106,7 @@ export default {
     async handleLogin() {
       // 隐藏之前的提示
       this.hideMessages();
-      
+
       // 基本验证
       if (!this.loginForm.username || !this.loginForm.password || !this.loginForm.customerId) {
         this.showErrorMessage('请填写完整的登录信息');
@@ -122,16 +122,16 @@ export default {
           password: this.loginForm.password,
           customerId: this.loginForm.customerId
         });
-        
+
         console.log('登录API响应:', response);
-        
+
         // 检查响应状态码
         if (response.code === 200) {
           // 如果选择了记住我，保存到本地存储
           if (this.loginForm.remember) {
             localStorage.setItem('rememberedUser', this.loginForm.username);
           }
-          
+
           // 立即处理登录成功
           this.handleLoginSuccess(response.data);
           this.showSuccessMessage('登录成功！正在跳转...');
@@ -156,7 +156,7 @@ export default {
     // 登录成功处理
     handleLoginSuccess(userData) {
       console.log('开始处理登录成功，用户数据:', userData);
-      
+
       // 保存用户信息到本地存储
       localStorage.setItem('userToken', userData.token);
       localStorage.setItem('userInfo', JSON.stringify({
@@ -165,12 +165,12 @@ export default {
         realName: userData.realName,
         customerId: userData.customerId
       }));
-      
+
       console.log('Token已保存:', localStorage.getItem('userToken'));
-      
+
       // 发送登录成功事件给父组件
       this.$emit('loginSuccess', userData);
-      
+
       // 使用nextTick确保DOM更新后再跳转
       this.$nextTick(() => {
         console.log('准备跳转到dashboard');
@@ -427,11 +427,11 @@ export default {
   .login-container {
     padding: 30px 20px;
   }
-  
+
   .login-header h1 {
     font-size: 24px;
   }
-  
+
   .form-options {
     flex-direction: column;
     gap: 15px;

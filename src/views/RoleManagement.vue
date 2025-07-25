@@ -66,9 +66,9 @@
               <el-table-column label="操作" width="180" fixed="right">
                 <template #default="scope">
                   <el-button type="primary" size="small" @click="handleEditRole(scope.row)">编辑</el-button>
-                  <el-button 
-                    type="danger" 
-                    size="small" 
+                  <el-button
+                    type="danger"
+                    size="small"
                     @click="handleDeleteRole(scope.row)"
                     :disabled="scope.row.id === 1"
                   >
@@ -107,16 +107,16 @@
         <el-form-item label="角色名称:" prop="roleName">
           <el-input v-model="roleForm.roleName" placeholder="请输入角色名称" />
         </el-form-item>
-        
+
         <el-form-item label="角色描述:" prop="roleDesc">
-          <el-input 
-            v-model="roleForm.roleDesc" 
-            type="textarea" 
+          <el-input
+            v-model="roleForm.roleDesc"
+            type="textarea"
             :rows="3"
-            placeholder="请输入角色描述" 
+            placeholder="请输入角色描述"
           />
         </el-form-item>
-        
+
         <el-form-item label="权限设置:">
           <div class="permission-tree">
             <el-tree
@@ -380,10 +380,10 @@ export default {
     const handleSubmit = async () => {
       try {
         await formRef.value.validate()
-        
+
         // 获取选中的权限
         const selectedPermissions = permissionTreeRef.value.getCheckedKeys()
-        
+
         if (isEdit.value) {
           // 编辑角色
           const index = roleTableData.value.findIndex(item => item.id === currentRoleData.value.id)
@@ -409,7 +409,7 @@ export default {
           pagination.total += 1
           ElMessage.success('角色添加成功')
         }
-        
+
         handleDialogClose()
       } catch (error) {
         console.log('表单验证失败:', error)

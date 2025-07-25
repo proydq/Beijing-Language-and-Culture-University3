@@ -3,17 +3,13 @@
     <!-- 左侧导航栏 -->
     <div class="sidebar">
       <div class="search-section">
-        <el-input
-          v-model="sidebarSearch"
-          placeholder="请输入关键词搜索"
-          clearable
-        >
+        <el-input v-model="sidebarSearch" placeholder="请输入关键词搜索" clearable>
           <template #suffix>
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
       </div>
-      
+
       <div class="nav-menu">
         <div class="nav-item active">全部</div>
         <div class="nav-item">设置楼</div>
@@ -43,26 +39,27 @@
             <el-input
               v-model="roomNameSearch"
               placeholder="请输入房间名称或房间号"
-              style="width: 200px;"
+              style="width: 200px"
               clearable
             />
           </div>
           <div class="filter-item">
             <label>是否需要审批:</label>
-            <el-select v-model="approvalFilter" placeholder="全部" style="width: 120px;">
+            <el-select v-model="approvalFilter" placeholder="全部" style="width: 120px">
               <el-option label="全部" value="all"></el-option>
               <el-option label="需要" value="yes"></el-option>
               <el-option label="不需要" value="no"></el-option>
             </el-select>
           </div>
         </div>
-        
+
         <div class="action-buttons">
           <el-button type="warning" @click="exportData">导出</el-button>
           <el-button type="success" @click="importData">导入</el-button>
           <el-button type="danger" @click="deleteSelected">删除</el-button>
-          <el-button type="primary" @click="viewDetails">查看详情</el-button>
-          <el-button type="info" @click="batchSetPermissions">批量设置房间权限</el-button>
+          <el-button type="primary" @click="viewDetails">添加教室</el-button>
+          <el-button type="primary" @click="viewDetails">手动同步</el-button>
+          <el-button type="info" @click="batchSetPermissions">批量配置审批权限</el-button>
         </div>
       </div>
 
@@ -105,7 +102,9 @@
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
-              <el-button type="primary" size="small" @click="managePersonnel(row)">管理人员</el-button>
+              <el-button type="primary" size="small" @click="managePersonnel(row)"
+              >审批人设置</el-button
+              >
             </template>
           </el-table-column>
         </el-table>
@@ -135,22 +134,22 @@ import { Search } from '@element-plus/icons-vue'
 export default {
   name: 'SchemeManagement',
   components: {
-    Search
+    Search,
   },
   setup() {
     // 搜索和筛选
     const sidebarSearch = ref('')
     const roomNameSearch = ref('')
     const approvalFilter = ref('all')
-    
+
     // 分页
     const currentPage = ref(1)
     const pageSize = ref(10)
     const total = ref(201)
-    
+
     // 选中的行
     const selectedRows = ref([])
-    
+
     // 房间数据
     const roomData = ref([
       {
@@ -162,7 +161,7 @@ export default {
         needApproval: 'yes',
         firstApprover: '张三、李四、王五',
         secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞'
+        thirdApprover: '刘备、关羽、张飞',
       },
       {
         id: 2,
@@ -173,7 +172,7 @@ export default {
         needApproval: 'yes',
         firstApprover: '张三、李四、王五',
         secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞'
+        thirdApprover: '刘备、关羽、张飞',
       },
       {
         id: 3,
@@ -184,7 +183,7 @@ export default {
         needApproval: 'no',
         firstApprover: '张三、李四、王五',
         secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞'
+        thirdApprover: '刘备、关羽、张飞',
       },
       {
         id: 4,
@@ -195,7 +194,7 @@ export default {
         needApproval: 'yes',
         firstApprover: '张三、李四、王五',
         secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞'
+        thirdApprover: '刘备、关羽、张飞',
       },
       {
         id: 5,
@@ -206,7 +205,7 @@ export default {
         needApproval: 'no',
         firstApprover: '',
         secondApprover: '',
-        thirdApprover: ''
+        thirdApprover: '',
       },
       {
         id: 6,
@@ -217,22 +216,22 @@ export default {
         needApproval: 'no',
         firstApprover: '',
         secondApprover: '',
-        thirdApprover: ''
-      }
+        thirdApprover: '',
+      },
     ])
-    
+
     const handleSelectionChange = (selection) => {
       selectedRows.value = selection
     }
-    
+
     const handleSizeChange = (val) => {
       pageSize.value = val
     }
-    
+
     const handleCurrentChange = (val) => {
       currentPage.value = val
     }
-    
+
     const managePersonnel = (row) => {
       ElMessage.info(`管理人员: ${row.roomName} ${row.roomNumber}`)
     }
@@ -255,7 +254,10 @@ export default {
         return
       }
       try {
-        await ElMessageBox.confirm(`确认删除选中的 ${selectedRows.value.length} 条数据吗？`, '删除确认')
+        await ElMessageBox.confirm(
+          `确认删除选中的 ${selectedRows.value.length} 条数据吗？`,
+          '删除确认',
+        )
         ElMessage.success('删除成功')
         selectedRows.value = []
       } catch {
@@ -296,9 +298,9 @@ export default {
       importData,
       deleteSelected,
       viewDetails,
-      batchSetPermissions
+      batchSetPermissions,
     }
-  }
+  },
 }
 </script>
 

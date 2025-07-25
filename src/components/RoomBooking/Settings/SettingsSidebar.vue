@@ -121,7 +121,7 @@ export default {
     ]
 
     const houseManagementSettings = [
-      { key: 'scheme_management', label: '方案管理', icon: 'Document' },
+      { key: 'scheme_management', label: '房屋列表', icon: 'Document' },
       { key: 'recycle_bin', label: '回收站', icon: 'Delete' }
     ]
 

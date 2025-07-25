@@ -1,7 +1,7 @@
 <template>
   <div class="header">
     <div class="header-left">
-      <div class="logo">
+      <div class="logo" @click="goToHome" style="cursor: pointer">
         <el-icon size="24"><home-filled /></el-icon>
       </div>
       <span class="title">房屋借用管理</span>
@@ -34,22 +34,27 @@ export default {
   components: {
     HomeFilled,
     User,
-    Grid
+    Grid,
   },
-  emits: ['profile', 'logout']
+  emits: ['profile', 'logout'],
+  methods: {
+    goToHome() {
+      this.$router.push('/dashboard') // 跳转首页
+    },
+  },
 }
 </script>
 
 <style scoped>
 .header {
   height: 60px;
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
   color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
