@@ -148,300 +148,217 @@
   </div>
 </template>
 
-<script>
-import { ref, reactive } from 'vue'
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@/utils/request'
 
-export default {
-  name: 'RoleManagement',
-  setup() {
-    const router = useRouter()
-    const activeTab = ref('role')
-    const formRef = ref()
-    const permissionTreeRef = ref()
-    const dialogVisible = ref(false)
-    const isEdit = ref(false)
-    const currentRoleData = ref({})
-    const checkedPermissions = ref([])
+const router = useRouter()
+const activeTab = ref('role')
+const formRef = ref()
+const permissionTreeRef = ref()
+const dialogVisible = ref(false)
+const isEdit = ref(false)
+const currentRoleData = ref({})
+const checkedPermissions = ref([])
 
-    const pagination = reactive({
-      currentPage: 1,
-      pageSize: 10,
-      total: 50
-    })
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})
 
-    const roleForm = reactive({
+const roleForm = reactive({
+  roleName: '',
+  roleDesc: ''
+})
+
+const treeProps = {
+  children: 'children',
+  label: 'label'
+}
+
+const permissionTreeData = ref([])
+const roleTableData = ref([])
+
+const roleRules = {
+  roleName: [
+    { required: true, message: '请输入角色名称', trigger: 'blur' },
+    { min: 2, max: 20, message: '角色名称长度应为2-20个字符', trigger: 'blur' }
+  ],
+  roleDesc: [
+    { required: true, message: '请输入角色描述', trigger: 'blur' }
+  ]
+}
+
+// 查询角色列表
+const fetchRoleList = async () => {
+  try {
+    const { code, message, data } = await request.post('/role-management/search', {
       roleName: '',
-      roleDesc: '',
-      permissions: []
+      pageNumber: pagination.currentPage,
+      pageSize: pagination.pageSize
     })
-
-    const treeProps = {
-      children: 'children',
-      label: 'label'
+    if (code === 200) {
+      roleTableData.value = data.rows || []
+      pagination.total = data.total || 0
+    } else {
+      ElMessage.error(message || '查询角色失败')
     }
-
-    // 权限目录树数据
-    const permissionTreeData = ref([
-      {
-        id: 'homepage',
-        label: '首页',
-        type: 'module',
-        children: []
-      },
-      {
-        id: 'focus',
-        label: '关注',
-        type: 'module',
-        children: []
-      },
-      {
-        id: 'today',
-        label: '今日',
-        type: 'module',
-        children: [
-          {
-            id: 'today-view',
-            label: '查看',
-            type: 'action'
-          },
-          {
-            id: 'today-edit',
-            label: '微信',
-            type: 'action'
-          },
-          {
-            id: 'today-message',
-            label: '短信',
-            type: 'action'
-          },
-          {
-            id: 'today-phone',
-            label: '电话',
-            type: 'action'
-          },
-          {
-            id: 'today-send',
-            label: '手送',
-            type: 'action'
-          }
-        ]
-      },
-      {
-        id: 'diagnosis',
-        label: '分诊',
-        type: 'module',
-        children: [
-          {
-            id: 'diagnosis-sub',
-            label: '分诊',
-            type: 'action'
-          }
-        ]
-      }
-    ])
-
-    const roleRules = {
-      roleName: [
-        { required: true, message: '请输入角色名称', trigger: 'blur' },
-        { min: 2, max: 20, message: '角色名称长度应为2-20个字符', trigger: 'blur' }
-      ],
-      roleDesc: [
-        { required: true, message: '请输入角色描述', trigger: 'blur' }
-      ]
-    }
-
-    // 角色数据
-    const roleTableData = ref([
-      {
-        id: 1,
-        roleName: '默认超级管理员',
-        roleDesc: '管理所有的模块，不允许编辑、删除等操作',
-        moduleNames: '所有',
-        userCount: 1
-      },
-      {
-        id: 2,
-        roleName: '会议系统管理员',
-        roleDesc: '主要用于会议模块的管理',
-        moduleNames: '会议模块',
-        userCount: 5
-      },
-      {
-        id: 3,
-        roleName: '互动系统管理员',
-        roleDesc: '主要用于互动模块的管理',
-        moduleNames: '互动模块',
-        userCount: 5
-      },
-      {
-        id: 4,
-        roleName: '门禁系统管理员',
-        roleDesc: '主要用于门禁系统模块的管理',
-        moduleNames: '门禁模块',
-        userCount: 5
-      },
-      {
-        id: 5,
-        roleName: '媒体资源管理员',
-        roleDesc: '主要用于平台系统的运维管理',
-        moduleNames: '媒体资源',
-        userCount: 2
-      },
-      {
-        id: 7,
-        roleName: '电子纸模块管理员',
-        roleDesc: '主要用于电子纸的管理',
-        moduleNames: '电子纸模块',
-        userCount: 0
-      }
-    ])
-
-    // 返回首页
-    const goToHome = () => {
-      router.push('/dashboard')
-    }
-
-    const goToAdminManagement = () => {
-      router.push('/admin-management')
-    }
-
-    const handleAddRole = () => {
-      isEdit.value = false
-      resetForm()
-      dialogVisible.value = true
-    }
-
-    const handleEditRole = (row) => {
-      if (row.id === 1) {
-        ElMessage.warning('默认超级管理员角色不允许编辑')
-        return
-      }
-      isEdit.value = true
-      currentRoleData.value = { ...row }
-      roleForm.roleName = row.roleName
-      roleForm.roleDesc = row.roleDesc
-      // 设置已选择的权限
-      checkedPermissions.value = ['today-view', 'today-edit', 'diagnosis'] // 示例选中项
-      dialogVisible.value = true
-    }
-
-    const handlePermissionCheck = (data, checked) => {
-      console.log('权限选择变化:', data, checked)
-    }
-
-    const handleDeleteRole = (row) => {
-      if (row.id === 1) {
-        ElMessage.warning('默认超级管理员角色不允许删除')
-        return
-      }
-
-      ElMessageBox.confirm(
-        `确定要删除角色 "${row.roleName}" 吗？删除后该角色的所有用户权限将被清除。`,
-        '确认删除',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      ).then(() => {
-        const index = roleTableData.value.findIndex(item => item.id === row.id)
-        if (index !== -1) {
-          roleTableData.value.splice(index, 1)
-          pagination.total -= 1
-        }
-        ElMessage.success('删除成功')
-      }).catch(() => {
-        ElMessage.info('已取消删除')
-      })
-    }
-
-    const handleSizeChange = (size) => {
-      pagination.pageSize = size
-    }
-
-    const handleCurrentChange = (page) => {
-      pagination.currentPage = page
-    }
-
-    const resetForm = () => {
-      roleForm.roleName = ''
-      roleForm.roleDesc = ''
-      roleForm.permissions = []
-      checkedPermissions.value = []
-    }
-
-    const handleDialogClose = () => {
-      dialogVisible.value = false
-      resetForm()
-    }
-
-    const handleSubmit = async () => {
-      try {
-        await formRef.value.validate()
-
-        // 获取选中的权限
-        const selectedPermissions = permissionTreeRef.value.getCheckedKeys()
-
-        if (isEdit.value) {
-          // 编辑角色
-          const index = roleTableData.value.findIndex(item => item.id === currentRoleData.value.id)
-          if (index !== -1) {
-            roleTableData.value[index] = {
-              ...roleTableData.value[index],
-              roleName: roleForm.roleName,
-              roleDesc: roleForm.roleDesc,
-              moduleNames: selectedPermissions.length > 0 ? '自定义权限' : '无权限'
-            }
-          }
-          ElMessage.success('角色更新成功')
-        } else {
-          // 新增角色
-          const newRole = {
-            id: roleTableData.value.length + 1,
-            roleName: roleForm.roleName,
-            roleDesc: roleForm.roleDesc,
-            moduleNames: selectedPermissions.length > 0 ? '自定义权限' : '无权限',
-            userCount: 0
-          }
-          roleTableData.value.push(newRole)
-          pagination.total += 1
-          ElMessage.success('角色添加成功')
-        }
-
-        handleDialogClose()
-      } catch (error) {
-        console.log('表单验证失败:', error)
-      }
-    }
-
-    return {
-      activeTab,
-      formRef,
-      permissionTreeRef,
-      dialogVisible,
-      isEdit,
-      pagination,
-      roleForm,
-      roleRules,
-      roleTableData,
-      permissionTreeData,
-      treeProps,
-      checkedPermissions,
-      goToHome,  // 新增返回首页方法
-      goToAdminManagement,
-      handleAddRole,
-      handleEditRole,
-      handleDeleteRole,
-      handleSizeChange,
-      handleCurrentChange,
-      handleDialogClose,
-      handleSubmit,
-      handlePermissionCheck
-    }
+  } catch (error) {
+    ElMessage.error(error.message || '查询角色失败')
   }
 }
+
+// 获取权限树
+const fetchPermissionTree = async () => {
+  try {
+    const { code, data, message } = await request.get('/role-management/permissions')
+    if (code === 200) {
+      permissionTreeData.value = data || []
+    } else {
+      ElMessage.error(message || '获取权限树失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '获取权限树失败')
+  }
+}
+
+// 保存角色（新增或更新）
+const saveRole = async () => {
+  try {
+    await formRef.value.validate()
+    const permissionIds = permissionTreeRef.value.getCheckedKeys()
+    const payload = {
+      ...roleForm,
+      permissionIds
+    }
+    if (isEdit.value) {
+      payload.id = currentRoleData.value.id
+    }
+    const { code, message } = await request.post('/role-management/save', payload)
+    if (code === 200) {
+      ElMessage.success('保存成功')
+      dialogVisible.value = false
+      fetchRoleList()
+    } else {
+      ElMessage.error(message || '保存失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
+}
+
+// 删除角色
+const deleteRole = async (roleId) => {
+  try {
+    const { code, message } = await request.delete(`/role-management/delete?id=${roleId}`)
+    if (code === 200) {
+      ElMessage.success('删除成功')
+      fetchRoleList()
+    } else {
+      ElMessage.error(message || '删除失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
+}
+
+// 加载角色详情
+const loadRoleDetail = async (roleId) => {
+  try {
+    const { code, data, message } = await request.get(`/role-management/findById?id=${roleId}`)
+    if (code === 200) {
+      roleForm.roleName = data.roleName
+      roleForm.roleDesc = data.roleDesc
+      checkedPermissions.value = data.permissionIds || []
+    } else {
+      ElMessage.error(message || '获取角色详情失败')
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '获取角色详情失败')
+  }
+}
+
+const goToHome = () => {
+  router.push('/dashboard')
+}
+
+const goToAdminManagement = () => {
+  router.push('/admin-management')
+}
+
+const handleAddRole = () => {
+  isEdit.value = false
+  resetForm()
+  dialogVisible.value = true
+}
+
+const handleEditRole = async (row) => {
+  if (row.id === 1) {
+    ElMessage.warning('默认超级管理员角色不允许编辑')
+    return
+  }
+  isEdit.value = true
+  currentRoleData.value = { ...row }
+  dialogVisible.value = true
+  await loadRoleDetail(row.id)
+}
+
+const handlePermissionCheck = (data, checked) => {
+  console.log('权限选择变化:', data, checked)
+}
+
+const handleDeleteRole = (row) => {
+  if (row.id === 1) {
+    ElMessage.warning('默认超级管理员角色不允许删除')
+    return
+  }
+  ElMessageBox.confirm(
+    `确定要删除角色 "${row.roleName}" 吗？删除后该角色的所有用户权限将被清除。`,
+    '确认删除',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    deleteRole(row.id)
+  }).catch(() => {
+    ElMessage.info('已取消删除')
+  })
+}
+
+const handleSizeChange = (size) => {
+  pagination.pageSize = size
+  fetchRoleList()
+}
+
+const handleCurrentChange = (page) => {
+  pagination.currentPage = page
+  fetchRoleList()
+}
+
+const resetForm = () => {
+  roleForm.roleName = ''
+  roleForm.roleDesc = ''
+  checkedPermissions.value = []
+}
+
+const handleDialogClose = () => {
+  dialogVisible.value = false
+  resetForm()
+}
+
+const handleSubmit = () => {
+  saveRole()
+}
+
+onMounted(() => {
+  fetchRoleList()
+  fetchPermissionTree()
+})
 </script>
 
 <style scoped>
