@@ -1,5 +1,7 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { saveAs } from 'file-saver'
+import request from '@/utils/request'
 
 export function useTitleManagement() {
   // 职称管理相关 ref
@@ -9,37 +11,13 @@ export function useTitleManagement() {
   const titleDialogMode = ref('add') // 'add' or 'edit'
   const titleCurrentPage = ref(1)
   const titlePageSize = ref(10)
-  const titleTotal = ref(30)
+  const titleTotal = ref(0)
 
   // 职称数据
-  const titleTableData = ref([
-    {
-      id: 1,
-      name: '初级工程师',
-      description: '入门级别的技术人员，负责基础开发工作',
-      createTime: '2023-01-15 10:30:00'
-    },
-    {
-      id: 2,
-      name: '中级工程师',
-      description: '有一定经验的技术人员，能独立完成开发任务',
-      createTime: '2023-01-16 14:20:00'
-    },
-    {
-      id: 3,
-      name: '高级工程师',
-      description: '资深技术人员，能指导团队和架构设计',
-      createTime: '2023-01-17 09:15:00'
-    },
-    {
-      id: 4,
-      name: '技术专家',
-      description: '在特定技术领域有深入研究的专业人员',
-      createTime: '2023-01-18 11:45:00'
-    }
-  ])
+  const titleTableData = ref([])
 
   const titleFormData = reactive({
+    id: null,
     name: '',
     description: ''
   })
@@ -55,14 +33,34 @@ export function useTitleManagement() {
     ]
   }
 
+  const fetchTitleList = async () => {
+    try {
+      const { code, message, data } = await request.post('/api/title/search', {
+        name: titleSearchKeyword.value,
+        pageNumber: titleCurrentPage.value,
+        pageSize: titlePageSize.value
+      })
+      if (code === 200) {
+        titleTableData.value = data?.rows || []
+        titleTotal.value = data?.total || 0
+      } else {
+        ElMessage.error(message || '获取职称列表失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职称列表失败')
+    }
+  }
+
   // 职称管理方法
   const handleTitleSearch = () => {
-    console.log('搜索职称:', titleSearchKeyword.value)
+    titleCurrentPage.value = 1
+    fetchTitleList()
   }
 
   const handleAddTitle = () => {
     titleDialogMode.value = 'add'
     Object.assign(titleFormData, {
+      id: null,
       name: '',
       description: ''
     })
@@ -71,7 +69,11 @@ export function useTitleManagement() {
 
   const handleEditTitle = (row) => {
     titleDialogMode.value = 'edit'
-    Object.assign(titleFormData, row)
+    Object.assign(titleFormData, {
+      id: row.id,
+      name: row.name,
+      description: row.description
+    })
     titleDialogVisible.value = true
   }
 
@@ -80,21 +82,34 @@ export function useTitleManagement() {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      ElMessage.success('删除成功')
+    }).then(async () => {
+      try {
+        const { code, message } = await request.delete(`/api/title/${row.id}`)
+        if (code === 200) {
+          ElMessage.success('删除成功')
+          fetchTitleList()
+        } else {
+          ElMessage.error(message || '删除失败')
+        }
+      } catch (error) {
+        ElMessage.error(error.message || '删除失败')
+      }
     })
   }
 
   const handleTitleSizeChange = (size) => {
     titlePageSize.value = size
+    fetchTitleList()
   }
 
   const handleTitleCurrentChange = (page) => {
     titleCurrentPage.value = page
+    fetchTitleList()
   }
 
   const resetTitleForm = () => {
     Object.assign(titleFormData, {
+      id: null,
       name: '',
       description: ''
     })
@@ -108,12 +123,65 @@ export function useTitleManagement() {
   const handleTitleSubmit = async () => {
     try {
       await titleFormRef.value.validate()
-      ElMessage.success(titleDialogMode.value === 'add' ? '新增成功' : '编辑成功')
-      handleTitleDialogClose()
+      if (titleDialogMode.value === 'add') {
+        const { code, message } = await request.post('/api/title', {
+          name: titleFormData.name,
+          description: titleFormData.description
+        })
+        if (code === 200) {
+          ElMessage.success('新增成功')
+          handleTitleDialogClose()
+          fetchTitleList()
+        } else {
+          ElMessage.error(message || '新增失败')
+        }
+      } else {
+        const { code, message } = await request.put(`/api/title/${titleFormData.id}`, {
+          name: titleFormData.name,
+          description: titleFormData.description
+        })
+        if (code === 200) {
+          ElMessage.success('编辑成功')
+          handleTitleDialogClose()
+          fetchTitleList()
+        } else {
+          ElMessage.error(message || '编辑失败')
+        }
+      }
     } catch (error) {
-      console.log('表单验证失败:', error)
+      ElMessage.error(error.message || '提交失败')
     }
   }
+
+  const handleExport = async () => {
+    try {
+      const blob = await request.get('/api/title/export', { responseType: 'blob' })
+      saveAs(blob, 'titles.xlsx')
+      ElMessage.success('导出成功')
+    } catch (error) {
+      ElMessage.error(error.message || '导出失败')
+    }
+  }
+
+  const handleImport = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file.raw || file)
+    try {
+      const { code, message } = await request.post('/api/title/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      if (code === 200) {
+        ElMessage.success('导入成功')
+        fetchTitleList()
+      } else {
+        ElMessage.error(message || '导入失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '导入失败')
+    }
+  }
+
+  onMounted(fetchTitleList)
 
   return {
     titleFormRef,
@@ -126,6 +194,7 @@ export function useTitleManagement() {
     titleTableData,
     titleFormData,
     titleFormRules,
+    fetchTitleList,
     handleTitleSearch,
     handleAddTitle,
     handleEditTitle,
@@ -133,6 +202,8 @@ export function useTitleManagement() {
     handleTitleSizeChange,
     handleTitleCurrentChange,
     handleTitleDialogClose,
-    handleTitleSubmit
+    handleTitleSubmit,
+    handleExport,
+    handleImport
   }
 }
