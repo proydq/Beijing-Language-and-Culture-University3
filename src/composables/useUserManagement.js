@@ -47,22 +47,60 @@ export function useUserManagement() {
     status: '正常'
   })
 
-  const departments = ref([
-    { label: '技术部', value: '技术部' },
-    { label: '行政部', value: '行政部' }
-  ])
+  const departments = ref([])
+  const departmentsLoading = ref(false)
+  const positions = ref([])
+  const positionsLoading = ref(false)
+  const titles = ref([])
+  const titlesLoading = ref(false)
 
-  const positions = ref([
-    { label: '前端工程师', value: '前端工程师' },
-    { label: '后端工程师', value: '后端工程师' },
-    { label: '人事专员', value: '人事专员' }
-  ])
+  const fetchDepartments = async () => {
+    departmentsLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/organization/all')
+      if (code === 200) {
+        departments.value = data || []
+      } else {
+        ElMessage.error(message || '获取部门失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取部门失败')
+    } finally {
+      departmentsLoading.value = false
+    }
+  }
 
-  const titles = ref([
-    { label: '初级工程师', value: '初级工程师' },
-    { label: '中级工程师', value: '中级工程师' },
-    { label: '高级工程师', value: '高级工程师' }
-  ])
+  const fetchPositions = async () => {
+    positionsLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/position/all')
+      if (code === 200) {
+        positions.value = data || []
+      } else {
+        ElMessage.error(message || '获取职务失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职务失败')
+    } finally {
+      positionsLoading.value = false
+    }
+  }
+
+  const fetchTitles = async () => {
+    titlesLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/title/all')
+      if (code === 200) {
+        titles.value = data || []
+      } else {
+        ElMessage.error(message || '获取职称失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职称失败')
+    } finally {
+      titlesLoading.value = false
+    }
+  }
 
   // 模拟数据
   const treeData = ref([
@@ -348,7 +386,12 @@ export function useUserManagement() {
     logCurrentPage.value = page
   }
 
-  onMounted(fetchUserList)
+  onMounted(() => {
+    fetchUserList()
+    fetchDepartments()
+    fetchPositions()
+    fetchTitles()
+  })
 
   return {
     // 基础数据
@@ -377,8 +420,14 @@ export function useUserManagement() {
     // 表单验证规则
     formRules,
     departments,
+    departmentsLoading,
     positions,
+    positionsLoading,
     titles,
+    titlesLoading,
+    fetchDepartments,
+    fetchPositions,
+    fetchTitles,
     
     // 基础方法
     goToHome,

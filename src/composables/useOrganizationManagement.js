@@ -14,6 +14,25 @@ export function useOrganizationManagement() {
   const orgDialogMode = ref('add') // 'add' or 'edit'
   const orgActionType = ref('')
 
+  const departmentOptions = ref([])
+  const departmentLoading = ref(false)
+
+  const fetchDepartmentOptions = async () => {
+    departmentLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/organization/all')
+      if (code === 200) {
+        departmentOptions.value = data || []
+      } else {
+        ElMessage.error(message || '获取部门下拉失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取部门下拉失败')
+    } finally {
+      departmentLoading.value = false
+    }
+  }
+
   // 组织架构数据
   const orgTreeData = ref([
     {
@@ -318,6 +337,7 @@ export function useOrganizationManagement() {
 
   onMounted(() => {
     fetchOrganizationTree()
+    fetchDepartmentOptions()
   })
 
   return {
@@ -335,6 +355,9 @@ export function useOrganizationManagement() {
     orgFormData,
     orgDialogFormData,
     orgMembersData,
+    departmentOptions,
+    departmentLoading,
+    fetchDepartmentOptions,
     orgFormRules,
     orgDialogFormRules,
     
