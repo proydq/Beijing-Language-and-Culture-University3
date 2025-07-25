@@ -1,39 +1,21 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { saveAs } from 'file-saver'
+import request from '@/utils/request'
 
 export function usePositionManagement() {
-  // 职务管理相关 ref
   const positionFormRef = ref()
   const positionSearchKeyword = ref('')
   const positionDialogVisible = ref(false)
-  const positionDialogMode = ref('add') // 'add' or 'edit'
+  const positionDialogMode = ref('add')
   const positionCurrentPage = ref(1)
   const positionPageSize = ref(10)
-  const positionTotal = ref(50)
+  const positionTotal = ref(0)
 
-  // 职务数据
-  const positionTableData = ref([
-    {
-      id: 1,
-      name: '前端工程师',
-      description: '负责前端页面开发和用户交互设计',
-      createTime: '2023-01-15 10:30:00'
-    },
-    {
-      id: 2,
-      name: '后端工程师',
-      description: '负责服务器端开发和数据库设计',
-      createTime: '2023-01-16 14:20:00'
-    },
-    {
-      id: 3,
-      name: '产品经理',
-      description: '负责产品规划和需求分析',
-      createTime: '2023-01-17 09:15:00'
-    }
-  ])
+  const positionTableData = ref([])
 
   const positionFormData = reactive({
+    id: null,
     name: '',
     description: ''
   })
@@ -49,23 +31,33 @@ export function usePositionManagement() {
     ]
   }
 
-  // 职务管理方法
-  const handlePositionSearch = () => {
-    console.log('搜索职务:', positionSearchKeyword.value)
+  const fetchPositionList = async () => {
+    try {
+      const { code, message, data } = await request.post('/api/position/search', {
+        name: positionSearchKeyword.value,
+        pageNumber: positionCurrentPage.value,
+        pageSize: positionPageSize.value
+      })
+      if (code === 200) {
+        positionTableData.value = data?.rows || []
+        positionTotal.value = data?.total || 0
+      } else {
+        ElMessage.error(message || '获取职务列表失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职务列表失败')
+    }
   }
 
   const handleAddPosition = () => {
     positionDialogMode.value = 'add'
-    Object.assign(positionFormData, {
-      name: '',
-      description: ''
-    })
+    Object.assign(positionFormData, { id: null, name: '', description: '' })
     positionDialogVisible.value = true
   }
 
   const handleEditPosition = (row) => {
     positionDialogMode.value = 'edit'
-    Object.assign(positionFormData, row)
+    Object.assign(positionFormData, { id: row.id, name: row.name, description: row.description })
     positionDialogVisible.value = true
   }
 
@@ -74,24 +66,33 @@ export function usePositionManagement() {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
-    }).then(() => {
-      ElMessage.success('删除成功')
+    }).then(async () => {
+      try {
+        const { code, message } = await request.delete(`/api/position/${row.id}`)
+        if (code === 200) {
+          ElMessage.success('删除成功')
+          fetchPositionList()
+        } else {
+          ElMessage.error(message || '删除失败')
+        }
+      } catch (error) {
+        ElMessage.error(error.message || '删除失败')
+      }
     })
   }
 
   const handlePositionSizeChange = (size) => {
     positionPageSize.value = size
+    fetchPositionList()
   }
 
   const handlePositionCurrentChange = (page) => {
     positionCurrentPage.value = page
+    fetchPositionList()
   }
 
   const resetPositionForm = () => {
-    Object.assign(positionFormData, {
-      name: '',
-      description: ''
-    })
+    Object.assign(positionFormData, { id: null, name: '', description: '' })
   }
 
   const handlePositionDialogClose = () => {
@@ -102,12 +103,65 @@ export function usePositionManagement() {
   const handlePositionSubmit = async () => {
     try {
       await positionFormRef.value.validate()
-      ElMessage.success(positionDialogMode.value === 'add' ? '新增成功' : '编辑成功')
-      handlePositionDialogClose()
+      if (positionDialogMode.value === 'add') {
+        const { code, message } = await request.post('/api/position', {
+          name: positionFormData.name,
+          description: positionFormData.description
+        })
+        if (code === 200) {
+          ElMessage.success('新增成功')
+          handlePositionDialogClose()
+          fetchPositionList()
+        } else {
+          ElMessage.error(message || '新增失败')
+        }
+      } else {
+        const { code, message } = await request.put(`/api/position/${positionFormData.id}`, {
+          name: positionFormData.name,
+          description: positionFormData.description
+        })
+        if (code === 200) {
+          ElMessage.success('编辑成功')
+          handlePositionDialogClose()
+          fetchPositionList()
+        } else {
+          ElMessage.error(message || '编辑失败')
+        }
+      }
     } catch (error) {
-      console.log('表单验证失败:', error)
+      ElMessage.error(error.message || '提交失败')
     }
   }
+
+  const handleExport = async () => {
+    try {
+      const blob = await request.get('/api/position/export', { responseType: 'blob' })
+      saveAs(blob, 'positions.xlsx')
+      ElMessage.success('导出成功')
+    } catch (error) {
+      ElMessage.error(error.message || '导出失败')
+    }
+  }
+
+  const handleImport = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file.raw || file)
+    try {
+      const { code, message } = await request.post('/api/position/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      if (code === 200) {
+        ElMessage.success('导入成功')
+        fetchPositionList()
+      } else {
+        ElMessage.error(message || '导入失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '导入失败')
+    }
+  }
+
+  onMounted(fetchPositionList)
 
   return {
     positionFormRef,
@@ -120,13 +174,15 @@ export function usePositionManagement() {
     positionTableData,
     positionFormData,
     positionFormRules,
-    handlePositionSearch,
+    fetchPositionList,
     handleAddPosition,
     handleEditPosition,
     handleDeletePosition,
     handlePositionSizeChange,
     handlePositionCurrentChange,
     handlePositionDialogClose,
-    handlePositionSubmit
+    handlePositionSubmit,
+    handleExport,
+    handleImport
   }
 }
