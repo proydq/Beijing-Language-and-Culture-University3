@@ -103,6 +103,30 @@ export const userAPI = {
    */
   checkJobNumberExists(jobNumber) {
     return api.get(`/sys/user/checkJobNumber/${jobNumber}`)
+  },
+
+  /**
+   * 获取部门下拉列表
+   * @returns {Promise}
+   */
+  getAllDepartments() {
+    return api.get('/api/organization/all')
+  },
+
+  /**
+   * 获取职务下拉列表
+   * @returns {Promise}
+   */
+  getAllPositions() {
+    return api.get('/api/position/all')
+  },
+
+  /**
+   * 获取职称下拉列表
+   * @returns {Promise}
+   */
+  getAllTitles() {
+    return api.get('/api/title/all')
   }
 }
 

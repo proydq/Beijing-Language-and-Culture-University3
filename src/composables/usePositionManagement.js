@@ -20,6 +20,25 @@ export function usePositionManagement() {
     description: ''
   })
 
+  const positionOptions = ref([])
+  const positionOptionsLoading = ref(false)
+
+  const fetchPositionOptions = async () => {
+    positionOptionsLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/position/all')
+      if (code === 200) {
+        positionOptions.value = data || []
+      } else {
+        ElMessage.error(message || '获取职务下拉失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职务下拉失败')
+    } finally {
+      positionOptionsLoading.value = false
+    }
+  }
+
   const positionFormRules = {
     name: [
       { required: true, message: '请输入职务名称', trigger: 'blur' },
@@ -161,7 +180,10 @@ export function usePositionManagement() {
     }
   }
 
-  onMounted(fetchPositionList)
+  onMounted(() => {
+    fetchPositionList()
+    fetchPositionOptions()
+  })
 
   return {
     positionFormRef,
@@ -183,6 +205,9 @@ export function usePositionManagement() {
     handlePositionDialogClose,
     handlePositionSubmit,
     handleExport,
-    handleImport
+    handleImport,
+    positionOptions,
+    positionOptionsLoading,
+    fetchPositionOptions
   }
 }

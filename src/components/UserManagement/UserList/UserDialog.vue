@@ -90,8 +90,24 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="所属部门" prop="department">
-            <el-select v-model="userForm.department" placeholder="请选择部门" style="width: 100%">
-              <el-option v-for="item in departments" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select
+              v-model="userForm.department"
+              placeholder="请选择部门"
+              style="width: 100%"
+              :loading="departmentLoading"
+            >
+              <el-option
+                v-for="item in departments"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+              <el-option
+                v-if="!departmentLoading && departments.length === 0"
+                disabled
+                label="暂无数据"
+                value=""
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -105,8 +121,24 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="职务" prop="position">
-            <el-select v-model="userForm.position" placeholder="请选择职务" style="width: 100%">
-              <el-option v-for="item in positions" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select
+              v-model="userForm.position"
+              placeholder="请选择职务"
+              style="width: 100%"
+              :loading="positionOptionsLoading"
+            >
+              <el-option
+                v-for="item in positions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+              <el-option
+                v-if="!positionOptionsLoading && positions.length === 0"
+                disabled
+                label="暂无数据"
+                value=""
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -115,8 +147,24 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="职称" prop="jobTitle">
-            <el-select v-model="userForm.jobTitle" placeholder="请选择职称" style="width: 100%">
-              <el-option v-for="item in titles" :key="item.value" :label="item.label" :value="item.value" />
+            <el-select
+              v-model="userForm.jobTitle"
+              placeholder="请选择职称"
+              style="width: 100%"
+              :loading="titleOptionsLoading"
+            >
+              <el-option
+                v-for="item in titles"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+              <el-option
+                v-if="!titleOptionsLoading && titles.length === 0"
+                disabled
+                label="暂无数据"
+                value=""
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -148,6 +196,9 @@
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { useOrganizationManagement } from '@/composables/useOrganizationManagement.js'
+import { usePositionManagement } from '@/composables/usePositionManagement.js'
+import { useTitleManagement } from '@/composables/useTitleManagement.js'
 
 const props = defineProps({
   detailDialogVisible: { type: Boolean, default: false },
@@ -163,6 +214,19 @@ const loading = ref(false)
 const avatarList = ref([])
 const faceList = ref([])
 
+const {
+  departmentOptions: departments,
+  departmentLoading
+} = useOrganizationManagement()
+const {
+  positionOptions: positions,
+  positionOptionsLoading
+} = usePositionManagement()
+const {
+  titleOptions: titles,
+  titleOptionsLoading
+} = useTitleManagement()
+
 const userForm = reactive({
   avatar: '',
   faceImage: '',
@@ -177,22 +241,6 @@ const userForm = reactive({
   attendanceNumber: ''
 })
 
-const departments = ref([
-  { label: '技术部', value: '技术部' },
-  { label: '行政部', value: '行政部' }
-])
-
-const positions = ref([
-  { label: '前端工程师', value: '前端工程师' },
-  { label: '后端工程师', value: '后端工程师' },
-  { label: '人事专员', value: '人事专员' }
-])
-
-const titles = ref([
-  { label: '初级工程师', value: '初级工程师' },
-  { label: '中级工程师', value: '中级工程师' },
-  { label: '高级工程师', value: '高级工程师' }
-])
 
 const formRules = {
   avatar: [{ required: true, message: '请上传头像', trigger: 'change' }],

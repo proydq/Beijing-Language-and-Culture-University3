@@ -71,11 +71,24 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item label="所属部门:" prop="department">
-            <el-select v-model="formData.department" placeholder="请选择部门" style="width: 100%">
-              <el-option label="产品部门" value="产品部门" />
-              <el-option label="开发部门" value="开发部门" />
-              <el-option label="销售部门" value="销售部门" />
-              <el-option label="市场部门" value="市场部门" />
+            <el-select
+              v-model="formData.department"
+              placeholder="请选择部门"
+              style="width: 100%"
+              :loading="departmentLoading"
+            >
+              <el-option
+                v-for="item in departments"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+              <el-option
+                v-if="!departmentLoading && departments.length === 0"
+                disabled
+                label="暂无数据"
+                value=""
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -86,11 +99,24 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="职务:" prop="position">
-            <el-select v-model="formData.position" placeholder="请选择职务" style="width: 100%">
-              <el-option label="产品经理" value="产品经理" />
-              <el-option label="开发工程师" value="开发工程师" />
-              <el-option label="销售经理" value="销售经理" />
-              <el-option label="市场专员" value="市场专员" />
+            <el-select
+              v-model="formData.position"
+              placeholder="请选择职务"
+              style="width: 100%"
+              :loading="positionOptionsLoading"
+            >
+              <el-option
+                v-for="item in positions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+              <el-option
+                v-if="!positionOptionsLoading && positions.length === 0"
+                disabled
+                label="暂无数据"
+                value=""
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -137,6 +163,9 @@
 import { ref, reactive, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { useOrganizationManagement } from '@/composables/useOrganizationManagement.js'
+import { usePositionManagement } from '@/composables/usePositionManagement.js'
+import { useTitleManagement } from '@/composables/useTitleManagement.js'
 
 export default {
   name: 'UserEditDialog',
@@ -158,6 +187,16 @@ export default {
   setup(props, { emit }) {
     const dialogVisible = ref(false)
     const formRef = ref()
+
+    const {
+      departmentOptions: departments,
+      departmentLoading,
+    } = useOrganizationManagement()
+    const {
+      positionOptions: positions,
+      positionOptionsLoading,
+    } = usePositionManagement()
+    const { titleOptions: titles, titleOptionsLoading } = useTitleManagement()
 
     const formData = reactive({
       name: '',
@@ -280,6 +319,12 @@ export default {
       formRef,
       formData,
       formRules,
+      departments,
+      departmentLoading,
+      positions,
+      positionOptionsLoading,
+      titles,
+      titleOptionsLoading,
       Plus,
       handleClose,
       handleSubmit,

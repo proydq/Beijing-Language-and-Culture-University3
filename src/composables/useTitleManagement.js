@@ -16,6 +16,25 @@ export function useTitleManagement() {
   // 职称数据
   const titleTableData = ref([])
 
+  const titleOptions = ref([])
+  const titleOptionsLoading = ref(false)
+
+  const fetchTitleOptions = async () => {
+    titleOptionsLoading.value = true
+    try {
+      const { code, message, data } = await request.get('/api/title/all')
+      if (code === 200) {
+        titleOptions.value = data || []
+      } else {
+        ElMessage.error(message || '获取职称下拉失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取职称下拉失败')
+    } finally {
+      titleOptionsLoading.value = false
+    }
+  }
+
   const titleFormData = reactive({
     id: null,
     name: '',
@@ -181,7 +200,10 @@ export function useTitleManagement() {
     }
   }
 
-  onMounted(fetchTitleList)
+  onMounted(() => {
+    fetchTitleList()
+    fetchTitleOptions()
+  })
 
   return {
     titleFormRef,
@@ -204,6 +226,9 @@ export function useTitleManagement() {
     handleTitleDialogClose,
     handleTitleSubmit,
     handleExport,
-    handleImport
+    handleImport,
+    titleOptions,
+    titleOptionsLoading,
+    fetchTitleOptions
   }
 }
