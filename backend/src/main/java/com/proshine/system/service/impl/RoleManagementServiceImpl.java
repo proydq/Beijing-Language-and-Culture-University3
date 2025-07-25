@@ -12,7 +12,7 @@ import com.proshine.system.repository.SysUserRoleRepository;
 import com.proshine.system.security.SecurityUtil;
 import com.proshine.system.service.RoleManagementService;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -47,8 +47,7 @@ public class RoleManagementServiceImpl implements RoleManagementService {
     @Autowired
     private SysUserRoleRepository userRoleRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+
 
     @Override
     public ResponsePageDataEntity<RoleVo> searchRoles(SearchRoleCondition condition) {

@@ -4,9 +4,7 @@
     <div class="tips-section">
       <p class="tips-text">
         <span class="tips-label">PS：</span>
-        <span class="tips-content">
-          表示预约时间时，可预约的天数限制规则；
-        </span>
+        <span class="tips-content"> 表示预约时间时，可预约的天数限制规则； </span>
       </p>
       <p class="example-text">
         例如：设置可预约时间（16）天，可预约时间为：3月1日-3月16日，3月16日后不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；
@@ -15,9 +13,7 @@
 
     <!-- 操作按钮 -->
     <div class="action-buttons">
-      <el-button type="primary" @click="addTimeSlot">
-        新增
-      </el-button>
+      <el-button type="primary" @click="addTimeSlot"> 新增 </el-button>
     </div>
 
     <!-- 预约时间表格 -->
@@ -28,16 +24,24 @@
         <el-table-column prop="remark" label="备注" />
         <el-table-column prop="bookingDays" label="预约天数" width="120">
           <template #default="{ row }">
-            <span v-if="row.bookingDays === '不限制'" class="no-limit-text">{{ row.bookingDays }}</span>
-            <span v-else-if="row.bookingDays === '全天预约'" class="all-day-text">{{ row.bookingDays }}</span>
+            <span v-if="row.bookingDays === '不限制'" class="no-limit-text">{{
+              row.bookingDays
+            }}</span>
+            <span v-else-if="row.bookingDays === '全天预约'" class="all-day-text">{{
+              row.bookingDays
+            }}</span>
             <span v-else class="days-text">{{ row.bookingDays }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="250">
           <template #default="{ row }">
-            <el-button type="warning" size="small" @click="managePersonnel(row)">管理人员</el-button>
-            <el-button type="primary" size="small" @click="editTimeSlot(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteTimeSlot(row)">删除</el-button>
+            <span style="display: inline-flex; gap: 8px; align-items: center; white-space: nowrap">
+              <el-button type="warning" size="small" @click="managePersonnel(row)"
+                >管理人员</el-button
+              >
+              <el-button type="primary" size="small" @click="editTimeSlot(row)">编辑</el-button>
+              <el-button type="danger" size="small" @click="deleteTimeSlot(row)">删除</el-button>
+            </span>
           </template>
         </el-table-column>
       </el-table>
@@ -58,7 +62,7 @@
               v-model="editForm.days"
               type="number"
               placeholder="请输入天数"
-              style="width: 100px;"
+              style="width: 100px"
             />
             <span class="unit-text">天</span>
           </div>
@@ -70,7 +74,7 @@
             type="textarea"
             :rows="4"
             placeholder="请输入备注信息"
-            style="width: 100%;"
+            style="width: 100%"
           />
         </div>
       </div>
@@ -93,14 +97,18 @@
         <span class="tips-label">PS：</span>
         <span class="tips-content">请从人员表中选择，仅支持单选预约时间段的预约人员</span>
       </div>
-      
+
       <div class="personnel-container">
         <!-- 左侧可选人员 -->
         <div class="personnel-section">
           <div class="section-header">
             <span>1/29 条</span>
             <div class="search-box">
-              <el-select v-model="selectedDepartment" placeholder="全部" style="width: 120px; margin-right: 10px;">
+              <el-select
+                v-model="selectedDepartment"
+                placeholder="全部"
+                style="width: 120px; margin-right: 10px"
+              >
                 <el-option label="全部" value="all"></el-option>
                 <el-option label="部门1" value="dept1"></el-option>
                 <el-option label="部门2" value="dept2"></el-option>
@@ -108,7 +116,7 @@
               <el-input
                 v-model="searchKeyword"
                 placeholder="请输入姓名/工号"
-                style="width: 200px;"
+                style="width: 200px"
                 clearable
               >
                 <template #suffix>
@@ -117,7 +125,7 @@
               </el-input>
             </div>
           </div>
-          
+
           <el-table
             :data="availablePersonnel"
             height="300"
@@ -127,7 +135,7 @@
             <el-table-column prop="workId" label="工号" width="100" />
             <el-table-column prop="name" label="姓名" />
           </el-table>
-          
+
           <div class="pagination">
             <el-pagination
               v-model:current-page="availablePage"
@@ -141,15 +149,15 @@
 
         <!-- 中间操作按钮 -->
         <div class="operation-buttons">
-          <el-button 
-            type="primary" 
-            :icon="ArrowRight" 
+          <el-button
+            type="primary"
+            :icon="ArrowRight"
             @click="addPersonnel"
             :disabled="selectedAvailable.length === 0"
           ></el-button>
-          <el-button 
-            type="primary" 
-            :icon="ArrowLeft" 
+          <el-button
+            type="primary"
+            :icon="ArrowLeft"
             @click="removePersonnel"
             :disabled="selectedAssigned.length === 0"
           ></el-button>
@@ -163,7 +171,7 @@
               <el-input
                 v-model="assignedSearchKeyword"
                 placeholder="请输入姓名/工号"
-                style="width: 200px;"
+                style="width: 200px"
                 clearable
               >
                 <template #suffix>
@@ -172,7 +180,7 @@
               </el-input>
             </div>
           </div>
-          
+
           <el-table
             :data="assignedPersonnel"
             height="300"
@@ -182,7 +190,7 @@
             <el-table-column prop="workId" label="工号" width="100" />
             <el-table-column prop="name" label="姓名" />
           </el-table>
-          
+
           <div class="pagination">
             <el-pagination
               v-model:current-page="assignedPage"
@@ -194,7 +202,7 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handlePersonnelClose">取消</el-button>
@@ -219,30 +227,31 @@ export default {
         id: 1,
         sequence: 1,
         timeSlot: '不限制',
-        remark: '表示预约时间时，可预约的天数限制规则，可预约时间为：3月1日-3月16日，3月16日后不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；',
-        bookingDays: 3000
+        remark:
+          '表示预约时间时，可预约的天数限制规则，可预约时间为：3月1日-3月16日，3月16日后不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；',
+        bookingDays: 3000,
       },
       {
         id: 2,
         sequence: 2,
         timeSlot: '10',
         remark: '全天预约时间',
-        bookingDays: 20
+        bookingDays: 20,
       },
       {
         id: 3,
         sequence: 3,
         timeSlot: '30',
         remark: '全天预约时间',
-        bookingDays: 10
-      }
+        bookingDays: 10,
+      },
     ])
 
     // 编辑对话框相关
     const editDialogVisible = ref(false)
     const editForm = ref({
       days: '',
-      remark: ''
+      remark: '',
     })
     const currentEditingRow = ref(null)
 
@@ -257,7 +266,7 @@ export default {
     const assignedTotal = ref(1)
     const selectedAvailable = ref([])
     const selectedAssigned = ref([])
-    
+
     // 可选人员数据
     const availablePersonnel = ref([
       { id: 1, workId: 'A219213', name: '张三' },
@@ -269,13 +278,11 @@ export default {
       { id: 7, workId: 'A219219', name: '吴九' },
       { id: 8, workId: 'A219220', name: '郑十' },
       { id: 9, workId: 'A219221', name: '钱十一' },
-      { id: 10, workId: 'A219222', name: '孙十二' }
+      { id: 10, workId: 'A219222', name: '孙十二' },
     ])
-    
+
     // 已选人员数据
-    const assignedPersonnel = ref([
-      { id: 11, workId: 'A219214', name: '李四' }
-    ])
+    const assignedPersonnel = ref([{ id: 11, workId: 'A219214', name: '李四' }])
 
     const addTimeSlot = () => {
       ElMessage.info('新增时间段功能开发中...')
@@ -292,7 +299,7 @@ export default {
       editDialogVisible.value = false
       editForm.value = {
         days: '',
-        remark: ''
+        remark: '',
       }
       currentEditingRow.value = null
     }
@@ -302,16 +309,16 @@ export default {
         ElMessage.warning('请输入预约天数')
         return
       }
-      
+
       // 更新数据
       if (currentEditingRow.value) {
-        const index = timeSlotData.value.findIndex(item => item.id === currentEditingRow.value.id)
+        const index = timeSlotData.value.findIndex((item) => item.id === currentEditingRow.value.id)
         if (index > -1) {
           timeSlotData.value[index].bookingDays = parseInt(editForm.value.days)
           timeSlotData.value[index].remark = editForm.value.remark
         }
       }
-      
+
       ElMessage.success('修改成功')
       handleClose()
     }
@@ -335,11 +342,11 @@ export default {
     }
 
     const addPersonnel = () => {
-      selectedAvailable.value.forEach(person => {
-        const exists = assignedPersonnel.value.find(p => p.id === person.id)
+      selectedAvailable.value.forEach((person) => {
+        const exists = assignedPersonnel.value.find((p) => p.id === person.id)
         if (!exists) {
           assignedPersonnel.value.push({ ...person })
-          const index = availablePersonnel.value.findIndex(p => p.id === person.id)
+          const index = availablePersonnel.value.findIndex((p) => p.id === person.id)
           if (index > -1) {
             availablePersonnel.value.splice(index, 1)
           }
@@ -351,11 +358,11 @@ export default {
     }
 
     const removePersonnel = () => {
-      selectedAssigned.value.forEach(person => {
-        const exists = availablePersonnel.value.find(p => p.id === person.id)
+      selectedAssigned.value.forEach((person) => {
+        const exists = availablePersonnel.value.find((p) => p.id === person.id)
         if (!exists) {
           availablePersonnel.value.push({ ...person })
-          const index = assignedPersonnel.value.findIndex(p => p.id === person.id)
+          const index = assignedPersonnel.value.findIndex((p) => p.id === person.id)
           if (index > -1) {
             assignedPersonnel.value.splice(index, 1)
           }
@@ -372,23 +379,21 @@ export default {
     }
 
     const deleteTimeSlot = (row) => {
-      ElMessageBox.confirm(
-        `确定要删除时间段 "${row.timeSlot}" 吗？`,
-        '确认删除',
-        {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      ).then(() => {
-        const index = timeSlotData.value.findIndex(item => item.id === row.id)
-        if (index > -1) {
-          timeSlotData.value.splice(index, 1)
-          ElMessage.success('删除成功')
-        }
-      }).catch(() => {
-        ElMessage.info('已取消删除')
+      ElMessageBox.confirm(`确定要删除时间段 "${row.timeSlot}" 吗？`, '确认删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
       })
+        .then(() => {
+          const index = timeSlotData.value.findIndex((item) => item.id === row.id)
+          if (index > -1) {
+            timeSlotData.value.splice(index, 1)
+            ElMessage.success('删除成功')
+          }
+        })
+        .catch(() => {
+          ElMessage.info('已取消删除')
+        })
     }
 
     return {
@@ -422,9 +427,9 @@ export default {
       confirmPersonnel,
       Search,
       ArrowRight,
-      ArrowLeft
+      ArrowLeft,
     }
-  }
+  },
 }
 </script>
 
@@ -442,7 +447,7 @@ export default {
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 16px;
-  border-left: 4px solid #4A90E2;
+  border-left: 4px solid #4a90e2;
 }
 
 .tips-text {
@@ -536,7 +541,7 @@ export default {
   padding: 12px 16px;
   border-radius: 6px;
   margin-bottom: 20px;
-  border-left: 4px solid #4A90E2;
+  border-left: 4px solid #4a90e2;
   font-size: 14px;
 }
 
@@ -590,5 +595,8 @@ export default {
   background: #fafafa;
   display: flex;
   justify-content: center;
+}
+.el-button + .el-button {
+  margin-left: 0px;
 }
 </style>

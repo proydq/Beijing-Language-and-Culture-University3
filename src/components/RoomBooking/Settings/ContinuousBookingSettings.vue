@@ -10,9 +10,7 @@
     <div class="tips-section">
       <p class="tips-text">
         <span class="tips-label">PS：</span>
-        <span class="tips-content">
-          表示连续预约时，房屋连续预约天数的限制规则；
-        </span>
+        <span class="tips-content"> 表示连续预约时，房屋连续预约天数的限制规则； </span>
       </p>
       <p class="example-text">
         例如：设置可连续预约（16）天，可连续时间为：3月1日-3月16日，第17日起不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；
@@ -24,11 +22,7 @@
       <!-- 左侧楼层筛选 -->
       <div class="floor-filter-sidebar">
         <div class="search-box">
-          <el-input
-            v-model="floorSearchKeyword"
-            placeholder="搜索楼层"
-            clearable
-          />
+          <el-input v-model="floorSearchKeyword" placeholder="搜索楼层" clearable />
         </div>
         <div class="floor-list">
           <div
@@ -60,21 +54,31 @@
         <div class="classroom-table">
           <el-table :data="filteredClassrooms" style="width: 100%" border>
             <el-table-column type="selection" width="55" />
-            <el-table-column prop="roomName" label="预约教室" width="200" />
-            <el-table-column prop="roomCode" label="房屋号" width="120" />
-            <el-table-column prop="building" label="所属楼" width="120" />
-            <el-table-column prop="continuousDays" label="可连续预约天数" width="150">
+            <el-table-column prop="roomName" label="预约教室" />
+            <el-table-column prop="roomCode" label="房屋号" />
+            <el-table-column prop="building" label="所属楼" />
+            <el-table-column prop="continuousDays" label="可连续预约天数">
               <template #default="{ row }">
-                <span v-if="row.continuousDays === '不可连续预约'" class="unlimited-text">{{ row.continuousDays }}</span>
-                <span v-else-if="row.continuousDays === '一天'" class="monthly-text">{{ row.continuousDays }}</span>
-                <span v-else-if="row.continuousDays === '一年'" class="yearly-text">{{ row.continuousDays }}</span>
-                <span v-else-if="row.continuousDays === '无限制预约'" class="no-limit-text">{{ row.continuousDays }}</span>
+                <span v-if="row.continuousDays === '不可连续预约'" class="unlimited-text">{{
+                  row.continuousDays
+                }}</span>
+                <span v-else-if="row.continuousDays === '一天'" class="monthly-text">{{
+                  row.continuousDays
+                }}</span>
+                <span v-else-if="row.continuousDays === '一年'" class="yearly-text">{{
+                  row.continuousDays
+                }}</span>
+                <span v-else-if="row.continuousDays === '无限制预约'" class="no-limit-text">{{
+                  row.continuousDays
+                }}</span>
                 <span v-else>{{ row.continuousDays }}</span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="120">
               <template #default="{ row }">
-                <el-button type="primary" size="small" @click="editContinuousDays(row)">编辑</el-button>
+                <el-button type="primary" size="small" @click="editContinuousDays(row)"
+                  >编辑</el-button
+                >
               </template>
             </el-table-column>
           </el-table>
@@ -99,9 +103,9 @@
     <el-dialog v-model="continuousDaysDialogVisible" title="设置可连续预约天数" width="400px">
       <div class="continuous-days-options">
         <el-radio-group v-model="selectedContinuousDays">
-          <el-radio value="unlimited">可连续预约（    ）天无限</el-radio>
-          <el-radio value="monthly">可连续预约（    ）个月的</el-radio>
-          <el-radio value="yearly">可连续预约（    ）年的</el-radio>
+          <el-radio value="unlimited">可连续预约（ ）天无限</el-radio>
+          <el-radio value="monthly">可连续预约（ ）个月的</el-radio>
+          <el-radio value="yearly">可连续预约（ ）年的</el-radio>
           <el-radio value="no_continuous">不可连续预约</el-radio>
           <el-radio value="no_limit">无限制预约</el-radio>
         </el-radio-group>
@@ -125,7 +129,7 @@ export default {
   name: 'ContinuousBookingSettings',
   components: {
     Plus,
-    Upload
+    Upload,
   },
   setup() {
     // 响应式变量
@@ -134,13 +138,13 @@ export default {
     const currentPage = ref(1)
     const pageSize = ref(20)
     const totalClassrooms = computed(() => filteredClassrooms.value.length)
-    
+
     // 弹出框相关变量
     const continuousDaysDialogVisible = ref(false)
     const selectedContinuousDays = ref('unlimited')
     const currentEditingRow = ref(null)
     const isBatchMode = ref(false)
-    
+
     // 楼层选项
     const floorOptions = [
       { label: '全部', value: 'all' },
@@ -154,45 +158,108 @@ export default {
       { label: '5F', value: '5f' },
       { label: '6F', value: '6f' },
       { label: '高层楼', value: 'gaoceng' },
-      { label: '博雅楼', value: 'boya' }
+      { label: '博雅楼', value: 'boya' },
     ]
 
     // 教室数据
     const classroomsData = ref([
-      { id: 1, roomName: '多媒体教室（101）', roomCode: '101', building: '科研楼', continuousDays: 15 },
-      { id: 2, roomName: '多媒体教室（102）', roomCode: '102', building: '科研楼', continuousDays: 15 },
-      { id: 3, roomName: '多媒体教室（103）', roomCode: '103', building: '科研楼', continuousDays: 15 },
-      { id: 4, roomName: '多媒体教室（104）', roomCode: '104', building: '科研楼', continuousDays: 15 },
-      { id: 5, roomName: '多媒体教室（105）', roomCode: '105', building: '科研楼', continuousDays: '不可连续预约' },
-      { id: 6, roomName: '多媒体教室（106）', roomCode: '106', building: '科研楼', continuousDays: '一天' },
-      { id: 7, roomName: '多媒体教室（107）', roomCode: '107', building: '科研楼', continuousDays: '一年' },
-      { id: 8, roomName: '多媒体教室（108）', roomCode: '108', building: '科研楼', continuousDays: 45 },
-      { id: 9, roomName: '多媒体教室（109）', roomCode: '109', building: '科研楼', continuousDays: 15 },
-      { id: 10, roomName: '多媒体教室（110）', roomCode: '110', building: '科研楼', continuousDays: '无限制预约' }
+      {
+        id: 1,
+        roomName: '多媒体教室（101）',
+        roomCode: '101',
+        building: '科研楼',
+        continuousDays: 15,
+      },
+      {
+        id: 2,
+        roomName: '多媒体教室（102）',
+        roomCode: '102',
+        building: '科研楼',
+        continuousDays: 15,
+      },
+      {
+        id: 3,
+        roomName: '多媒体教室（103）',
+        roomCode: '103',
+        building: '科研楼',
+        continuousDays: 15,
+      },
+      {
+        id: 4,
+        roomName: '多媒体教室（104）',
+        roomCode: '104',
+        building: '科研楼',
+        continuousDays: 15,
+      },
+      {
+        id: 5,
+        roomName: '多媒体教室（105）',
+        roomCode: '105',
+        building: '科研楼',
+        continuousDays: '不可连续预约',
+      },
+      {
+        id: 6,
+        roomName: '多媒体教室（106）',
+        roomCode: '106',
+        building: '科研楼',
+        continuousDays: '一天',
+      },
+      {
+        id: 7,
+        roomName: '多媒体教室（107）',
+        roomCode: '107',
+        building: '科研楼',
+        continuousDays: '一年',
+      },
+      {
+        id: 8,
+        roomName: '多媒体教室（108）',
+        roomCode: '108',
+        building: '科研楼',
+        continuousDays: 45,
+      },
+      {
+        id: 9,
+        roomName: '多媒体教室（109）',
+        roomCode: '109',
+        building: '科研楼',
+        continuousDays: 15,
+      },
+      {
+        id: 10,
+        roomName: '多媒体教室（110）',
+        roomCode: '110',
+        building: '科研楼',
+        continuousDays: '无限制预约',
+      },
     ])
 
     // 过滤后的教室数据
     const filteredClassrooms = computed(() => {
       let filtered = classroomsData.value
-      
+
       // 按楼层过滤
       if (selectedFloor.value !== 'all') {
         // 根据选择的楼层过滤，这里暂时显示所有数据，因为示例数据都是科研楼
         if (selectedFloor.value === 'gaoceng') {
-          filtered = filtered.filter(room => room.building === '科研楼')
+          filtered = filtered.filter((room) => room.building === '科研楼')
         } else {
-          filtered = filtered.filter(room => room.building.includes(selectedFloor.value) || room.building === '科研楼')
+          filtered = filtered.filter(
+            (room) => room.building.includes(selectedFloor.value) || room.building === '科研楼',
+          )
         }
       }
-      
+
       // 按搜索关键词过滤
       if (floorSearchKeyword.value) {
-        filtered = filtered.filter(room => 
-          room.roomName.toLowerCase().includes(floorSearchKeyword.value.toLowerCase()) ||
-          room.building.includes(floorSearchKeyword.value)
+        filtered = filtered.filter(
+          (room) =>
+            room.roomName.toLowerCase().includes(floorSearchKeyword.value.toLowerCase()) ||
+            room.building.includes(floorSearchKeyword.value),
         )
       }
-      
+
       return filtered
     })
 
@@ -250,9 +317,9 @@ export default {
       selectedContinuousDays,
       currentEditingRow,
       isBatchMode,
-      confirmContinuousDays
+      confirmContinuousDays,
     }
-  }
+  },
 }
 </script>
 
@@ -327,7 +394,7 @@ export default {
 }
 
 .floor-filter-sidebar .floor-item.active {
-  background: #4A90E2;
+  background: #4a90e2;
   color: white;
 }
 
@@ -341,7 +408,7 @@ export default {
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 16px;
-  border-left: 4px solid #4A90E2;
+  border-left: 4px solid #4a90e2;
 }
 
 .tips-text {

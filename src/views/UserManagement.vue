@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <div class="header">
       <div class="header-left">
-        <div class="logo" @click="goToHome" style="cursor: pointer;">
+        <div class="logo" @click="goToHome" style="cursor: pointer">
           <el-icon size="24"><home-filled /></el-icon>
         </div>
         <span class="title">用户信息管理</span>
@@ -32,17 +32,13 @@
       <div class="sidebar" v-if="activeTab === 'userList'">
         <!-- 搜索框 -->
         <div class="search-header">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="请输入部门名称"
-            clearable
-          >
+          <el-input v-model="searchKeyword" placeholder="请输入部门名称" clearable>
             <template #append>
               <el-button type="primary">搜索</el-button>
             </template>
           </el-input>
         </div>
-        
+
         <div class="tree-container">
           <el-tree
             :data="treeData"
@@ -54,8 +50,12 @@
           >
             <template #default="{ node, data }">
               <div class="tree-node">
-                <el-icon v-if="data.type === 'company'" class="tree-icon company-icon"><office-building /></el-icon>
-                <el-icon v-else-if="data.type === 'department'" class="tree-icon department-icon"><folder /></el-icon>
+                <el-icon v-if="data.type === 'company'" class="tree-icon company-icon"
+                  ><office-building
+                /></el-icon>
+                <el-icon v-else-if="data.type === 'department'" class="tree-icon department-icon"
+                  ><folder
+                /></el-icon>
                 <el-icon v-else class="tree-icon group-icon"><files /></el-icon>
                 <span class="node-label">{{ data.name }}</span>
                 <span class="node-count">({{ data.count || 0 }})</span>
@@ -75,35 +75,35 @@
               <div class="search-area">
                 <el-form :model="searchForm" inline class="search-form">
                   <el-form-item label="姓名:">
-                    <el-input 
-                      v-model="searchForm.realName" 
-                      placeholder="请输入姓名" 
-                      clearable 
-                      style="width: 180px;"
+                    <el-input
+                      v-model="searchForm.realName"
+                      placeholder="请输入姓名"
+                      clearable
+                      style="width: 180px"
                     />
                   </el-form-item>
                   <el-form-item label="手机号:">
-                    <el-input 
-                      v-model="searchForm.phone" 
-                      placeholder="请输入手机号" 
-                      clearable 
-                      style="width: 180px;"
+                    <el-input
+                      v-model="searchForm.phone"
+                      placeholder="请输入手机号"
+                      clearable
+                      style="width: 180px"
                     />
                   </el-form-item>
                   <el-form-item label="工号:">
-                    <el-input 
-                      v-model="searchForm.jobNumber" 
-                      placeholder="请输入工号" 
-                      clearable 
-                      style="width: 150px;"
+                    <el-input
+                      v-model="searchForm.jobNumber"
+                      placeholder="请输入工号"
+                      clearable
+                      style="width: 150px"
                     />
                   </el-form-item>
                   <el-form-item label="状态:">
-                    <el-select 
-                      v-model="searchForm.status" 
-                      placeholder="请选择状态" 
-                      clearable 
-                      style="width: 120px;"
+                    <el-select
+                      v-model="searchForm.status"
+                      placeholder="请选择状态"
+                      clearable
+                      style="width: 120px"
                     >
                       <el-option label="正常" value="正常" />
                       <el-option label="禁用" value="禁用" />
@@ -149,37 +149,32 @@
 
               <!-- 用户表格 -->
               <div class="table-container">
-                  <el-table
-                    :data="tableData"
-                    style="width: 100%;"
-                    border
-                    stripe
-                  >
-                    <el-table-column type="index" label="序号" width="60" />
-                    <el-table-column prop="avatar" label="头像" width="80" />
-                    <el-table-column prop="status" label="人脸识别" width="80">
-                      <template #default="{ row }">
-                        <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
-                          {{ row.status }}
-                        </el-tag>
-                      </template>
-                    </el-table-column>
-                    <el-table-column prop="realName" label="姓名" width="100" />
-                    <el-table-column prop="gender" label="性别" width="80" />
-                    <el-table-column prop="phone" label="手机号" width="130" />
-                    <el-table-column prop="department" label="所属部门" width="120" />
-                    <el-table-column prop="jobNumber" label="工号" width="120" />
-                    <el-table-column prop="position" label="职务" width="120" />
-                    <el-table-column prop="jobTitle" label="职称" width="120" />
-                    <el-table-column prop="createTime" label="账号添加时间" width="160" />
-                    <el-table-column label="操作" width="200" fixed="right">
+                <el-table :data="tableData" style="width: 100%" border stripe>
+                  <el-table-column type="index" label="序号" width="60" />
+                  <el-table-column prop="avatar" label="头像" width="180" />
+                  <el-table-column prop="status" label="人脸识别" width="180">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
+                        {{ row.status }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="realName" label="姓名" />
+                  <el-table-column prop="gender" label="性别" />
+                  <el-table-column prop="phone" label="手机号" />
+                  <el-table-column prop="department" label="所属部门" />
+                  <el-table-column prop="jobNumber" label="工号" />
+                  <el-table-column prop="position" label="职务" />
+                  <el-table-column prop="jobTitle" label="职称" />
+                  <el-table-column prop="createTime" label="账号添加时间" width="160" />
+                  <el-table-column label="操作" width="200" fixed="right">
                     <template #default="{ row }">
                       <el-button type="text" size="small" @click="handleEdit(row)">编辑</el-button>
                       <el-button
                         type="text"
                         size="small"
                         @click="handleDelete(row)"
-                        style="color: #f56c6c;"
+                        style="color: #f56c6c"
                       >
                         删除
                       </el-button>
@@ -209,7 +204,7 @@
                   v-model="orgSearchKeyword"
                   placeholder="搜索组织"
                   clearable
-                  style="width: 200px;"
+                  style="width: 200px"
                   @input="handleOrgSearch"
                 >
                   <template #prefix>
@@ -218,9 +213,17 @@
                 </el-input>
               </div>
 
-              <div style="display: flex; gap: 20px; height: calc(100vh - 300px);">
+              <div style="display: flex; gap: 20px; height: calc(100vh - 300px)">
                 <!-- 左侧组织树 -->
-                <div style="width: 300px; background: white; border: 1px solid #e8e8e8; border-radius: 6px; padding: 15px;">
+                <div
+                  style="
+                    width: 300px;
+                    background: white;
+                    border: 1px solid #e8e8e8;
+                    border-radius: 6px;
+                    padding: 15px;
+                  "
+                >
                   <el-tree
                     ref="orgTreeRef"
                     :data="orgTreeData"
@@ -233,7 +236,7 @@
                 </div>
 
                 <!-- 右侧详情和成员 -->
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 20px">
                   <!-- 组织详情 -->
                   <div class="detail-area">
                     <div class="detail-header">
@@ -245,17 +248,17 @@
                         <el-button type="success" size="small" @click="handleAddOrgChild">
                           添加子级
                         </el-button>
-                        <el-button 
-                          type="warning" 
-                          size="small" 
+                        <el-button
+                          type="warning"
+                          size="small"
                           @click="handleEditOrg"
                           :disabled="!selectedOrgNode"
                         >
                           编辑
                         </el-button>
-                        <el-button 
-                          type="danger" 
-                          size="small" 
+                        <el-button
+                          type="danger"
+                          size="small"
                           @click="handleDeleteOrg"
                           :disabled="!selectedOrgNode"
                         >
@@ -263,7 +266,7 @@
                         </el-button>
                       </div>
                     </div>
-                    
+
                     <div v-if="selectedOrgNode" class="org-form">
                       <el-form
                         ref="orgFormRef"
@@ -298,7 +301,7 @@
                         </el-form-item>
                       </el-form>
                     </div>
-                    <div v-else style="text-align: center; padding: 40px 20px; color: #999;">
+                    <div v-else style="text-align: center; padding: 40px 20px; color: #999">
                       <el-icon size="48" color="#ccc"><folder /></el-icon>
                       <p>请从左侧选择一个组织查看详情</p>
                     </div>
@@ -313,18 +316,18 @@
                       </el-button>
                     </div>
                     <div class="members-table">
-                      <el-table :data="orgMembersData" style="width: 100%;" border>
+                      <el-table :data="orgMembersData" style="width: 100%" border>
                         <el-table-column prop="realName" label="姓名" width="120" />
                         <el-table-column prop="jobNumber" label="工号" width="120" />
                         <el-table-column prop="position" label="职务" width="150" />
                         <el-table-column prop="phone" label="手机号" width="130" />
                         <el-table-column label="操作" width="100">
                           <template #default="{ row }">
-                            <el-button 
-                              type="text" 
-                              size="small" 
+                            <el-button
+                              type="text"
+                              size="small"
                               @click="handleRemoveOrgMember(row)"
-                              style="color: #f56c6c;"
+                              style="color: #f56c6c"
                             >
                               移除
                             </el-button>
@@ -343,11 +346,11 @@
               <div class="position-search-area">
                 <el-form inline>
                   <el-form-item label="职务名称:">
-                    <el-input 
-                      v-model="positionSearchKeyword" 
-                      placeholder="请输入职务名称" 
-                      clearable 
-                      style="width: 200px;"
+                    <el-input
+                      v-model="positionSearchKeyword"
+                      placeholder="请输入职务名称"
+                      clearable
+                      style="width: 200px"
                     />
                   </el-form-item>
                   <el-form-item>
@@ -394,18 +397,20 @@
                   </el-dropdown>
                 </div>
 
-                <el-table :data="positionTableData" style="width: 100%;" border stripe>
+                <el-table :data="positionTableData" style="width: 100%" border stripe>
                   <el-table-column prop="name" label="职务名称" width="200" />
                   <el-table-column prop="description" label="职务描述" />
                   <el-table-column prop="createTime" label="创建时间" width="180" />
                   <el-table-column label="操作" width="200">
                     <template #default="{ row }">
-                      <el-button type="text" size="small" @click="handleEditPosition(row)">编辑</el-button>
-                      <el-button 
-                        type="text" 
-                        size="small" 
-                        @click="handleDeletePosition(row)" 
-                        style="color: #f56c6c;"
+                      <el-button type="text" size="small" @click="handleEditPosition(row)"
+                        >编辑</el-button
+                      >
+                      <el-button
+                        type="text"
+                        size="small"
+                        @click="handleDeletePosition(row)"
+                        style="color: #f56c6c"
                       >
                         删除
                       </el-button>
@@ -434,11 +439,11 @@
               <div class="title-search-area">
                 <el-form inline>
                   <el-form-item label="职称名称:">
-                    <el-input 
-                      v-model="titleSearchKeyword" 
-                      placeholder="请输入职称名称" 
-                      clearable 
-                      style="width: 200px;"
+                    <el-input
+                      v-model="titleSearchKeyword"
+                      placeholder="请输入职称名称"
+                      clearable
+                      style="width: 200px"
                     />
                   </el-form-item>
                   <el-form-item>
@@ -458,7 +463,7 @@
                     justify-content: space-between;
                   "
                 >
-                  <div style="display: flex; gap: 10px; margin-left: auto;">
+                  <div style="display: flex; gap: 10px; margin-left: auto">
                     <el-button type="primary" @click="handleAddTitle">
                       <el-icon><plus /></el-icon>
                       新增职称
@@ -486,18 +491,20 @@
                   </div>
                 </div>
 
-                <el-table :data="titleTableData" style="width: 100%;" border stripe>
+                <el-table :data="titleTableData" style="width: 100%" border stripe>
                   <el-table-column prop="name" label="职称名称" width="200" />
                   <el-table-column prop="description" label="职称描述" />
                   <el-table-column prop="createTime" label="创建时间" width="180" />
                   <el-table-column label="操作" width="200">
                     <template #default="{ row }">
-                      <el-button type="text" size="small" @click="handleEditTitle(row)">编辑</el-button>
-                      <el-button 
-                        type="text" 
-                        size="small" 
-                        @click="handleDeleteTitle(row)" 
-                        style="color: #f56c6c;"
+                      <el-button type="text" size="small" @click="handleEditTitle(row)"
+                        >编辑</el-button
+                      >
+                      <el-button
+                        type="text"
+                        size="small"
+                        @click="handleDeleteTitle(row)"
+                        style="color: #f56c6c"
                       >
                         删除
                       </el-button>
@@ -547,12 +554,7 @@
       width="700px"
       @close="handleDialogClose"
     >
-      <el-form
-        ref="formRef"
-        :model="userForm"
-        :rules="formRules"
-        label-width="90px"
-      >
+      <el-form ref="formRef" :model="userForm" :rules="formRules" label-width="90px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="头像" prop="avatar">
@@ -607,7 +609,12 @@
           <el-col :span="12">
             <el-form-item label="所属部门" prop="department">
               <el-select v-model="userForm.department" placeholder="请选择部门" style="width: 100%">
-                <el-option v-for="item in departments" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option
+                  v-for="item in departments"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -622,7 +629,12 @@
           <el-col :span="12">
             <el-form-item label="职务" prop="position">
               <el-select v-model="userForm.position" placeholder="请选择职务" style="width: 100%">
-                <el-option v-for="item in positions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option
+                  v-for="item in positions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -632,7 +644,12 @@
           <el-col :span="12">
             <el-form-item label="职称" prop="jobTitle">
               <el-select v-model="userForm.jobTitle" placeholder="请选择职称" style="width: 100%">
-                <el-option v-for="item in titles" :key="item.value" :label="item.label" :value="item.value" />
+                <el-option
+                  v-for="item in titles"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -767,8 +784,8 @@
     <!-- 同步进度对话框 -->
     <el-dialog v-model="syncDialogVisible" title="同步进度" width="600px">
       <el-progress :percentage="syncProgress" :status="syncProgress < 100 ? 'active' : 'success'" />
-      <p style="margin-top: 10px;">本次同步耗时 {{ syncDuration }} 秒</p>
-      <el-table :data="syncSummary" border stripe style="margin-top: 20px;">
+      <p style="margin-top: 10px">本次同步耗时 {{ syncDuration }} 秒</p>
+      <el-table :data="syncSummary" border stripe style="margin-top: 20px">
         <el-table-column prop="object" label="同步对象" />
         <el-table-column prop="auto" label="是否自动同步" />
         <el-table-column prop="lastTime" label="最近一次同步时间" />
@@ -777,7 +794,7 @@
 
     <!-- 同步记录对话框 -->
     <el-dialog v-model="syncLogDialogVisible" title="同步记录" width="600px">
-      <el-table :data="syncLogData" border stripe style="width: 100%; margin-bottom: 20px;">
+      <el-table :data="syncLogData" border stripe style="width: 100%; margin-bottom: 20px">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="object" label="同步对象" />
         <el-table-column prop="status" label="同步状态" />
@@ -818,17 +835,17 @@ export default {
     return {
       // 用户管理相关
       ...userManagement,
-      
+
       // 组织架构管理相关
       ...organizationManagement,
-      
+
       // 职务管理相关
       ...positionManagement,
-      
+
       // 职称管理相关
-      ...titleManagement
+      ...titleManagement,
     }
-  }
+  },
 }
 </script>
 
@@ -840,7 +857,7 @@ export default {
 }
 
 .header {
-  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
   color: white;
   padding: 15px 30px;
   display: flex;
@@ -860,7 +877,7 @@ export default {
   height: 40px;
   border-radius: 8px;
   background: white;
-  color: #4A90E2;
+  color: #4a90e2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -943,15 +960,15 @@ export default {
 }
 
 .company-icon {
-  color: #4A90E2;
+  color: #4a90e2;
 }
 
 .department-icon {
-  color: #F39C12;
+  color: #f39c12;
 }
 
 .group-icon {
-  color: #27AE60;
+  color: #27ae60;
 }
 
 .node-label {
@@ -1226,20 +1243,20 @@ export default {
 }
 
 :deep(.el-tabs__active-bar) {
-  background-color: #4A90E2;
+  background-color: #4a90e2;
 }
 
 :deep(.el-tabs__item.is-active) {
-  color: #4A90E2;
+  color: #4a90e2;
 }
 
 :deep(.el-button--primary) {
-  background-color: #4A90E2;
-  border-color: #4A90E2;
+  background-color: #4a90e2;
+  border-color: #4a90e2;
 }
 
 :deep(.el-button--primary:hover) {
-  background-color: #357ABD;
-  border-color: #357ABD;
+  background-color: #357abd;
+  border-color: #357abd;
 }
 </style>
