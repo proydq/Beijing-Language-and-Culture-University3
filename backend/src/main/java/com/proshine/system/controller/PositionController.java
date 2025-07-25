@@ -2,6 +2,7 @@ package com.proshine.system.controller;
 
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.dto.OptionVO;
 import com.proshine.system.dto.SearchPositionDTO;
 import com.proshine.system.entity.SysPosition;
 import com.proshine.system.service.PositionService;
@@ -23,6 +24,9 @@ public class PositionController {
     @Autowired
     private PositionService positionService;
 
+    @Autowired
+    private com.proshine.system.repository.SysPositionRepository positionRepository;
+
     /**
      * Search positions with pagination.
      */
@@ -36,6 +40,17 @@ public class PositionController {
             log.error("查询职务列表失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
+    }
+
+    /**
+     * 职务下拉列表
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<OptionVO>> all() {
+        List<OptionVO> list = positionRepository.findAll().stream()
+                .map(p -> new OptionVO(p.getName(), p.getId()))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.success(list);
     }
 
     /**

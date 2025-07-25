@@ -1,8 +1,10 @@
 package com.proshine.system.controller;
 
 import com.proshine.common.response.ResponseEntity;
+import com.proshine.system.dto.OptionVO;
 import com.proshine.system.entity.SysOrganization;
 import com.proshine.system.service.OrganizationService;
+import com.proshine.system.repository.SysOrganizationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,21 @@ public class OrganizationController {
 
     @Autowired
     private OrganizationService organizationService;
+
+    @Autowired
+    private SysOrganizationRepository organizationRepository;
+
+    /**
+     * 获取部门下拉列表
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<OptionVO>> all() {
+        List<OptionVO> list = organizationRepository.findAll()
+                .stream()
+                .map(o -> new OptionVO(o.getName(), o.getId()))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.success(list);
+    }
 
     /**
      * 获取组织树结构

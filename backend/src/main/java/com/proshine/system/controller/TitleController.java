@@ -2,6 +2,7 @@ package com.proshine.system.controller;
 
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.dto.OptionVO;
 import com.proshine.system.dto.SearchTitleDTO;
 import com.proshine.system.dto.TitleVo;
 import com.proshine.system.entity.SysTitle;
@@ -23,6 +24,9 @@ public class TitleController {
 
     @Autowired
     private TitleService titleService;
+
+    @Autowired
+    private com.proshine.system.repository.SysTitleRepository titleRepository;
 
     /**
      * Search titles with pagination.
@@ -105,5 +109,16 @@ public class TitleController {
             log.error("导入职称数据失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
+    }
+
+    /**
+     * 职称下拉列表
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<OptionVO>> all() {
+        List<OptionVO> list = titleRepository.findAll().stream()
+                .map(t -> new OptionVO(t.getName(), t.getId()))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.success(list);
     }
 }
