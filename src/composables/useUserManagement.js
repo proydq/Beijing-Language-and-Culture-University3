@@ -2,6 +2,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
+import { uploadFile } from '@/api/upload.js'
 
 export function useUserManagement() {
   const router = useRouter()
@@ -347,24 +348,48 @@ export function useUserManagement() {
   const handleSaveUser = async () => {
     try {
       await formRef.value.validate()
-      ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
-      handleDialogClose()
+      const payload = { ...userForm }
+      let res
+      if (isEdit.value && payload.id) {
+        res = await request.put(`/api/user/${payload.id}`, payload)
+      } else {
+        res = await request.post('/api/user', payload)
+      }
+      if (res.code === 200) {
+        ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
+        handleDialogClose()
+        fetchUserList()
+      } else {
+        ElMessage.error(res.message || '保存失败')
+      }
     } catch (error) {
-      console.log('表单验证失败:', error)
+      ElMessage.error(error.message || '保存失败')
     }
   }
 
-  const handleAvatarChange = (file, fileList) => {
+  const handleAvatarChange = async (file, fileList) => {
     avatarList.value = fileList.slice(-1)
-    if (file.raw) {
-      userForm.avatar = URL.createObjectURL(file.raw)
+    if (!file.raw) return
+    const formData = new FormData()
+    formData.append('file', file.raw)
+    try {
+      const res = await uploadFile(formData)
+      userForm.avatar = res.data.url
+    } catch (e) {
+      ElMessage.error('头像上传失败')
     }
   }
 
-  const handleFaceChange = (file, fileList) => {
+  const handleFaceChange = async (file, fileList) => {
     faceList.value = fileList.slice(-1)
-    if (file.raw) {
-      userForm.faceImage = URL.createObjectURL(file.raw)
+    if (!file.raw) return
+    const formData = new FormData()
+    formData.append('file', file.raw)
+    try {
+      const res = await uploadFile(formData)
+      userForm.faceImage = res.data.url
+    } catch (e) {
+      ElMessage.error('人脸照片上传失败')
     }
   }
 
