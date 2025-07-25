@@ -17,6 +17,8 @@ public class UserVO {
     private String departmentName;
     private String positionName;
     private String titleName;
+    private String avatarUrl;
+    private String faceImageUrl;
     private String status;
     private LocalDateTime createTime;
 }

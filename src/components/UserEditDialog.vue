@@ -21,26 +21,22 @@
             class="avatar-uploader"
             :show-file-list="false"
             :before-upload="beforeAvatarUpload"
-            action="#"
-            :auto-upload="false"
-            :on-change="handleAvatarChange"
+            :http-request="handleAvatarUpload"
           >
-            <img v-if="formData.avatar" :src="formData.avatar" class="avatar" />
+            <img v-if="formData.avatarUrl" :src="formData.avatarUrl" class="avatar" />
             <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </div>
-        
+
         <div class="photo-item">
           <div class="photo-label">人脸识别</div>
           <el-upload
             class="face-uploader"
             :show-file-list="false"
             :before-upload="beforeFaceUpload"
-            action="#"
-            :auto-upload="false"
-            :on-change="handleFaceChange"
+            :http-request="handleFaceUpload"
           >
-            <img v-if="formData.faceImage" :src="formData.faceImage" class="face-image" />
+            <img v-if="formData.faceImageUrl" :src="formData.faceImageUrl" class="face-image" />
             <el-icon v-else class="face-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </div>
@@ -166,36 +162,31 @@ import { ElMessage } from 'element-plus'
 import { useOrganizationManagement } from '@/composables/useOrganizationManagement.js'
 import { usePositionManagement } from '@/composables/usePositionManagement.js'
 import { useTitleManagement } from '@/composables/useTitleManagement.js'
+import { uploadFile } from '@/api/upload.js'
 
 export default {
   name: 'UserEditDialog',
   props: {
     visible: {
       type: Boolean,
-      default: false
+      default: false,
     },
     userData: {
       type: Object,
-      default: () => ({})
+      default: () => ({}),
     },
     isEdit: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   emits: ['update:visible', 'submit'],
   setup(props, { emit }) {
     const dialogVisible = ref(false)
     const formRef = ref()
 
-    const {
-      departmentOptions: departments,
-      departmentLoading,
-    } = useOrganizationManagement()
-    const {
-      positionOptions: positions,
-      positionOptionsLoading,
-    } = usePositionManagement()
+    const { departmentOptions: departments, departmentLoading } = useOrganizationManagement()
+    const { positionOptions: positions, positionOptionsLoading } = usePositionManagement()
     const { titleOptions: titles, titleOptionsLoading } = useTitleManagement()
 
     const formData = reactive({
@@ -208,40 +199,35 @@ export default {
       role: '',
       cardNumber: '',
       attendanceNumber: '',
-      avatar: '',
-      faceImage: ''
+      avatarUrl: '',
+      faceImageUrl: '',
     })
 
     const formRules = {
-      name: [
-        { required: true, message: '请输入姓名', trigger: 'blur' }
-      ],
-      gender: [
-        { required: true, message: '请选择性别', trigger: 'change' }
-      ],
+      name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+      gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
       phone: [
         { required: true, message: '请输入手机号', trigger: 'blur' },
-        { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+        { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' },
       ],
-      department: [
-        { required: true, message: '请选择所属部门', trigger: 'change' }
-      ],
-      employeeId: [
-        { required: true, message: '请输入工号', trigger: 'blur' }
-      ]
+      department: [{ required: true, message: '请选择所属部门', trigger: 'change' }],
+      employeeId: [{ required: true, message: '请输入工号', trigger: 'blur' }],
     }
 
     // 监听弹窗显示状态
-    watch(() => props.visible, (newVal) => {
-      dialogVisible.value = newVal
-      if (newVal && props.isEdit && props.userData) {
-        // 编辑模式，填充数据
-        Object.assign(formData, props.userData)
-      } else if (newVal && !props.isEdit) {
-        // 新增模式，清空数据
-        resetForm()
-      }
-    })
+    watch(
+      () => props.visible,
+      (newVal) => {
+        dialogVisible.value = newVal
+        if (newVal && props.isEdit && props.userData) {
+          // 编辑模式，填充数据
+          Object.assign(formData, props.userData)
+        } else if (newVal && !props.isEdit) {
+          // 新增模式，清空数据
+          resetForm()
+        }
+      },
+    )
 
     // 监听内部弹窗状态变化
     watch(dialogVisible, (newVal) => {
@@ -249,7 +235,7 @@ export default {
     })
 
     const resetForm = () => {
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         formData[key] = ''
       })
     }
@@ -286,9 +272,17 @@ export default {
       return true
     }
 
-    const handleAvatarChange = (file) => {
-      if (beforeAvatarUpload(file.raw)) {
-        formData.avatar = URL.createObjectURL(file.raw)
+    const handleAvatarUpload = async ({ file, onSuccess, onError }) => {
+      if (!beforeAvatarUpload(file)) return onError()
+      const form = new FormData()
+      form.append('file', file)
+      try {
+        const res = await uploadFile(form)
+        formData.avatarUrl = res.data.url
+        onSuccess(res)
+      } catch (e) {
+        console.error(e)
+        onError(e)
       }
     }
 
@@ -308,9 +302,17 @@ export default {
       return true
     }
 
-    const handleFaceChange = (file) => {
-      if (beforeFaceUpload(file.raw)) {
-        formData.faceImage = URL.createObjectURL(file.raw)
+    const handleFaceUpload = async ({ file, onSuccess, onError }) => {
+      if (!beforeFaceUpload(file)) return onError()
+      const form = new FormData()
+      form.append('file', file)
+      try {
+        const res = await uploadFile(form)
+        formData.faceImageUrl = res.data.url
+        onSuccess(res)
+      } catch (e) {
+        console.error(e)
+        onError(e)
       }
     }
 
@@ -329,11 +331,11 @@ export default {
       handleClose,
       handleSubmit,
       beforeAvatarUpload,
-      handleAvatarChange,
+      handleAvatarUpload,
       beforeFaceUpload,
-      handleFaceChange
+      handleFaceUpload,
     }
-  }
+  },
 }
 </script>
 
@@ -359,7 +361,8 @@ export default {
   color: #333;
 }
 
-.avatar-uploader, .face-uploader {
+.avatar-uploader,
+.face-uploader {
   border: 2px dashed #d9d9d9;
   border-radius: 6px;
   cursor: pointer;
@@ -373,18 +376,21 @@ export default {
   justify-content: center;
 }
 
-.avatar-uploader:hover, .face-uploader:hover {
+.avatar-uploader:hover,
+.face-uploader:hover {
   border-color: #409eff;
 }
 
-.avatar, .face-image {
+.avatar,
+.face-image {
   width: 120px;
   height: 120px;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.avatar-uploader-icon, .face-uploader-icon {
+.avatar-uploader-icon,
+.face-uploader-icon {
   font-size: 28px;
   color: #8c939d;
 }

@@ -251,6 +251,8 @@ public class UserServiceImpl implements UserService {
         vo.setDepartmentName(user.getDepartmentName());
         vo.setPositionName(user.getPositionName());
         vo.setTitleName(user.getTitleName());
+        vo.setAvatarUrl(user.getAvatarUrl());
+        vo.setFaceImageUrl(user.getFaceImageUrl());
         vo.setStatus(user.getStatus() != null ? user.getStatus().name() : null);
         vo.setCreateTime(user.getCreateTime());
         return vo;
