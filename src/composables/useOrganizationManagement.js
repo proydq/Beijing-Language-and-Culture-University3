@@ -1,5 +1,6 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@/utils/request'
 
 export function useOrganizationManagement() {
   // 组织架构管理相关 ref
@@ -94,6 +95,94 @@ export function useOrganizationManagement() {
     ]
   }
 
+  // ====================== 后端请求 ======================
+  const fetchOrganizationTree = async () => {
+    try {
+      const { code, message, data } = await request.get('/api/organization/tree')
+      if (code === 200) {
+        orgTreeData.value = data || []
+      } else {
+        ElMessage.error(message || '获取组织树失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取组织树失败')
+    }
+  }
+
+  const loadOrganizationDetail = async (id) => {
+    try {
+      const { code, message, data } = await request.get(`/api/organization/${id}`)
+      if (code === 200) {
+        Object.assign(orgFormData, {
+          name: data.name || '',
+          code: data.code || '',
+          description: data.description || ''
+        })
+        if (orgDialogMode.value === 'edit') {
+          Object.assign(orgDialogFormData, {
+            name: data.name || '',
+            code: data.code || '',
+            parentId: data.parentId || null,
+            description: data.description || ''
+          })
+        }
+      } else {
+        ElMessage.error(message || '获取组织详情失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '获取组织详情失败')
+    }
+  }
+
+  const createOrganization = async () => {
+    try {
+      const { code, message } = await request.post('/api/organization', orgDialogFormData)
+      if (code === 200) {
+        ElMessage.success('新增成功')
+        handleOrgDialogClose()
+        fetchOrganizationTree()
+      } else {
+        ElMessage.error(message || '新增失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '新增失败')
+    }
+  }
+
+  const updateOrganization = async () => {
+    try {
+      const id = selectedOrgNode.value?.id
+      const { code, message } = await request.put(`/api/organization/${id}`, orgDialogFormData)
+      if (code === 200) {
+        ElMessage.success('编辑成功')
+        handleOrgDialogClose()
+        fetchOrganizationTree()
+        if (id) {
+          loadOrganizationDetail(id)
+        }
+      } else {
+        ElMessage.error(message || '编辑失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '编辑失败')
+    }
+  }
+
+  const deleteOrganization = async (id) => {
+    try {
+      const { code, message } = await request.delete(`/api/organization/${id}`)
+      if (code === 200) {
+        ElMessage.success('删除成功')
+        fetchOrganizationTree()
+        selectedOrgNode.value = null
+      } else {
+        ElMessage.error(message || '删除失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
+
   // 组织架构管理方法
   const handleOrgSearch = () => {
     console.log('搜索组织:', orgSearchKeyword.value)
@@ -102,12 +191,7 @@ export function useOrganizationManagement() {
   const handleOrgTreeNodeClick = (data) => {
     selectedOrgNode.value = data
     orgEditMode.value = false
-    // 更新表单数据
-    Object.assign(orgFormData, {
-      name: data.name,
-      code: data.code,
-      description: data.description
-    })
+    loadOrganizationDetail(data.id)
   }
 
   const handleAddOrgParent = () => {
@@ -148,17 +232,19 @@ export function useOrganizationManagement() {
       cancelButtonText: '取消',
       type: 'warning'
     }).then(() => {
-      ElMessage.success('删除成功')
-      // 这里实现删除逻辑
+      deleteOrganization(selectedOrgNode.value.id)
     })
   }
 
-  const handleEditOrg = () => {
+  const handleEditOrg = async () => {
     if (!selectedOrgNode.value) {
       ElMessage.warning('请先选择一个组织节点')
       return
     }
-    orgEditMode.value = true
+    orgActionType.value = 'edit'
+    orgDialogMode.value = 'edit'
+    await loadOrganizationDetail(selectedOrgNode.value.id)
+    orgDialogVisible.value = true
   }
 
   const handleCancelOrgEdit = () => {
@@ -220,13 +306,19 @@ export function useOrganizationManagement() {
   const handleOrgDialogSubmit = async () => {
     try {
       await orgDialogFormRef.value.validate()
-      ElMessage.success(orgDialogMode.value === 'add' ? '新增成功' : '编辑成功')
-      handleOrgDialogClose()
-      // 这里实现提交逻辑
+      if (orgDialogMode.value === 'add') {
+        await createOrganization()
+      } else {
+        await updateOrganization()
+      }
     } catch (error) {
       console.log('表单验证失败:', error)
     }
   }
+
+  onMounted(() => {
+    fetchOrganizationTree()
+  })
 
   return {
     // 组织架构管理相关数据
