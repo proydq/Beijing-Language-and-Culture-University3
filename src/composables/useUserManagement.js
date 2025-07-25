@@ -1,6 +1,7 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@/utils/request'
 
 export function useUserManagement() {
   const router = useRouter()
@@ -19,14 +20,16 @@ export function useUserManagement() {
   // 分页数据
   const currentPage = ref(1)
   const pageSize = ref(10)
-  const total = ref(100)
+  const total = ref(0)
   
   // 表单数据
   const searchForm = reactive({
     realName: '',
     phone: '',
     jobNumber: '',
-    status: ''
+    status: '',
+    // 当前选中组织ID，用于组织树筛选
+    organizationId: null
   })
 
   const userForm = reactive({
@@ -98,44 +101,27 @@ export function useUserManagement() {
     label: 'name'
   }
 
-  const tableData = ref([
-    {
-      id: 1,
-      realName: '张三',
-      gender: '男',
-      phone: '13800138001',
-      jobNumber: 'JS001',
-      department: '技术部',
-      position: '前端工程师',
-      jobTitle: '高级工程师',
-      status: '正常',
-      createTime: '2023-01-15 10:30:00'
-    },
-    {
-      id: 2,
-      realName: '李四',
-      gender: '女',
-      phone: '13800138002',
-      jobNumber: 'JS002',
-      department: '行政部',
-      position: '人事专员',
-      jobTitle: '中级专员',
-      status: '正常',
-      createTime: '2023-02-20 14:20:00'
-    },
-    {
-      id: 3,
-      realName: '王五',
-      gender: '男',
-      phone: '13800138003',
-      jobNumber: 'JS003',
-      department: '技术部',
-      position: '后端工程师',
-      jobTitle: '高级工程师',
-      status: '禁用',
-      createTime: '2023-03-10 09:15:00'
+  // 用户表格数据
+  const tableData = ref([])
+
+  // 获取用户列表
+  const fetchUserList = async () => {
+    try {
+      const { code, data, message } = await request.post('/api/user/search', {
+        ...searchForm,
+        pageNumber: currentPage.value,
+        pageSize: pageSize.value
+      })
+      if (code === 200) {
+        tableData.value = data?.rows || []
+        total.value = data?.total || 0
+      } else {
+        ElMessage.error(message || '查询失败')
+      }
+    } catch (error) {
+      ElMessage.error(error.message || '查询失败')
     }
-  ])
+  }
 
   // 同步相关数据
   const syncDialogVisible = ref(false)
@@ -212,8 +198,10 @@ export function useUserManagement() {
   }
 
   const handleTreeNodeClick = (data) => {
-    console.log('选择部门:', data)
-    // 根据选择的部门过滤用户数据
+    // 组织树节点点击，设置组织ID并查询
+    searchForm.organizationId = data.id
+    currentPage.value = 1
+    fetchUserList()
   }
 
   const handleTabClick = (tab) => {
@@ -222,7 +210,8 @@ export function useUserManagement() {
 
   // 用户管理方法
   const handleSearch = () => {
-    console.log('搜索用户:', searchForm)
+    currentPage.value = 1
+    fetchUserList()
   }
 
   const handleReset = () => {
@@ -230,8 +219,12 @@ export function useUserManagement() {
       realName: '',
       phone: '',
       jobNumber: '',
-      status: ''
+      status: '',
+      // 组织ID 不重置
+      organizationId: searchForm.organizationId
     })
+    currentPage.value = 1
+    fetchUserList()
   }
 
   let syncTimer = null
@@ -339,10 +332,12 @@ export function useUserManagement() {
 
   const handleSizeChange = (size) => {
     pageSize.value = size
+    fetchUserList()
   }
 
   const handleCurrentChange = (page) => {
     currentPage.value = page
+    fetchUserList()
   }
 
   const handleLogSizeChange = (size) => {
@@ -352,6 +347,8 @@ export function useUserManagement() {
   const handleLogCurrentChange = (page) => {
     logCurrentPage.value = page
   }
+
+  onMounted(fetchUserList)
 
   return {
     // 基础数据
@@ -416,6 +413,7 @@ export function useUserManagement() {
     handleFaceChange,
     handleSaveUser,
     handleSizeChange,
-    handleCurrentChange
+    handleCurrentChange,
+    fetchUserList
   }
 }
