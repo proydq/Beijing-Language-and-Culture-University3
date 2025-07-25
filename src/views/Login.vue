@@ -42,6 +42,18 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="customerId">客户域</label>
+          <input
+            type="text"
+            id="customerId"
+            v-model="loginForm.customerId"
+            placeholder="请输入客户域ID"
+            required
+            :disabled="loading"
+          />
+        </div>
+
         <div class="form-options">
           <div class="remember-me">
             <input
@@ -68,6 +80,8 @@
 </template>
 
 <script>
+import { authAPI } from '@/api/auth'
+
 export default {
   name: 'LoginPage',
   data() {
@@ -76,6 +90,7 @@ export default {
       loginForm: {
         username: '',
         password: '',
+        customerId: '',
         remember: false
       },
       // 状态控制
@@ -93,7 +108,7 @@ export default {
       this.hideMessages();
       
       // 基本验证
-      if (!this.loginForm.username || !this.loginForm.password) {
+      if (!this.loginForm.username || !this.loginForm.password || !this.loginForm.customerId) {
         this.showErrorMessage('请填写完整的登录信息');
         return;
       }
@@ -101,69 +116,72 @@ export default {
       this.loading = true;
 
       try {
-        // 模拟API调用
-        const result = await this.simulateLogin();
+        // 调用后端登录API
+        const response = await authAPI.login({
+          username: this.loginForm.username,
+          password: this.loginForm.password,
+          customerId: this.loginForm.customerId
+        });
         
-        if (result.success) {
-          this.showSuccessMessage('登录成功！正在跳转...');
-          
+        console.log('登录API响应:', response);
+        
+        // 检查响应状态码
+        if (response.code === 200) {
           // 如果选择了记住我，保存到本地存储
           if (this.loginForm.remember) {
             localStorage.setItem('rememberedUser', this.loginForm.username);
           }
           
-          // 2秒后跳转
-          setTimeout(() => {
-            this.handleLoginSuccess(result.data);
-          }, 2000);
+          // 立即处理登录成功
+          this.handleLoginSuccess(response.data);
+          this.showSuccessMessage('登录成功！正在跳转...');
         } else {
-          this.showErrorMessage(result.message || '登录失败，请重试');
+          this.showErrorMessage(response.message || '登录失败，请重试');
         }
       } catch (error) {
-        this.showErrorMessage('网络错误，请检查网络连接');
+        console.error('登录错误:', error);
+        // 处理不同类型的错误
+        if (error.response && error.response.data) {
+          this.showErrorMessage(error.response.data.message || '登录失败，请重试');
+        } else {
+          this.showErrorMessage('网络错误，请检查网络连接');
+        }
       } finally {
         this.loading = false;
       }
     },
 
-    // 模拟登录API（您需要替换为真实的API调用）
-    simulateLogin() {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 这里是模拟的验证逻辑
-          if (this.loginForm.username === 'admin' && this.loginForm.password === '123456') {
-            resolve({
-              success: true,
-              data: {
-                token: 'mock-jwt-token',
-                user: {
-                  id: 1,
-                  username: this.loginForm.username,
-                  email: 'admin@example.com'
-                }
-              }
-            });
-          } else {
-            resolve({
-              success: false,
-              message: '用户名或密码错误'
-            });
-          }
-        }, 1000); // 模拟网络延迟
-      });
-    },
+
 
     // 登录成功处理
     handleLoginSuccess(userData) {
-      // 保存用户信息到vuex或本地存储
+      console.log('开始处理登录成功，用户数据:', userData);
+      
+      // 保存用户信息到本地存储
       localStorage.setItem('userToken', userData.token);
-      localStorage.setItem('userInfo', JSON.stringify(userData.user));
+      localStorage.setItem('userInfo', JSON.stringify({
+        id: userData.userId,
+        username: userData.username,
+        realName: userData.realName,
+        customerId: userData.customerId
+      }));
+      
+      console.log('Token已保存:', localStorage.getItem('userToken'));
       
       // 发送登录成功事件给父组件
       this.$emit('loginSuccess', userData);
       
-      // 跳转到首页（根据您的路由配置修改）
-      this.$router.push('/dashboard');
+      // 使用nextTick确保DOM更新后再跳转
+      this.$nextTick(() => {
+        console.log('准备跳转到dashboard');
+        this.$router.push('/dashboard').then(() => {
+          console.log('跳转到首页成功');
+        }).catch(err => {
+          console.error('跳转失败:', err);
+          // 如果跳转失败，尝试使用replace
+          this.$router.replace('/dashboard');
+        });
+      });
     },
 
     // 处理忘记密码
