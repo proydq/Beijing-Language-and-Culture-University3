@@ -31,7 +31,7 @@
     >
       <el-table-column type="index" label="序号" width="60" />
       <el-table-column prop="avatar" label="头像" width="80" />
-      <el-table-column prop="status" label="人脸识别" width="80">
+      <el-table-column prop="faceImageUrl" label="人脸识别" width="80">
         <template #default="{ row }">
           <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
             {{ row.status }}
@@ -50,10 +50,10 @@
         <template #default="{ row }">
           <el-button type="text" size="small" @click="handleView(row)">查看</el-button>
           <el-button type="text" size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button 
-            type="text" 
-            size="small" 
-            @click="handleDelete(row)" 
+          <el-button
+            type="text"
+            size="small"
+            @click="handleDelete(row)"
             style="color: #f56c6c;"
           >
             删除
@@ -100,14 +100,14 @@ export default {
     }
   },
   emits: [
-    'add', 
-    'sync', 
-    'import', 
-    'export', 
-    'view', 
-    'edit', 
-    'delete', 
-    'size-change', 
+    'add',
+    'sync',
+    'import',
+    'export',
+    'view',
+    'edit',
+    'delete',
+    'size-change',
     'current-change'
   ],
   setup(props, { emit }) {

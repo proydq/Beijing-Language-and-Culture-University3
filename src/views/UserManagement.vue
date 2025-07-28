@@ -151,16 +151,39 @@
               <div class="table-container">
                 <el-table :data="tableData" style="width: 100%" border stripe>
                   <el-table-column type="index" label="序号" width="60" />
-                  <el-table-column prop="avatar" label="头像" width="180" />
-                  <el-table-column prop="status" label="人脸识别" width="180">
+                  <el-table-column prop="avatar" label="头像" width="180">
+                    <template #default="{ row }">
+                      <el-image
+                        v-if="row.avatar"
+                        :src="row.avatar"
+                        style="width: 50px; height: 50px; border-radius: 50%"
+                        fit="cover"
+                        :preview-src-list="[row.avatar]"
+                      />
+                      <span v-else style="color: #999">暂无头像</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="faceImage" label="人脸识别" width="180">
+                    <template #default="{ row }">
+                      <el-image
+                        v-if="row.faceImage"
+                        :src="row.faceImage"
+                        style="width: 50px; height: 50px; border-radius: 50%"
+                        fit="cover"
+                        :preview-src-list="[row.faceImage]"
+                      />
+                      <span v-else style="color: #999">暂无人脸图片</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="realName" label="姓名" />
+                  <el-table-column prop="gender" label="性别" />
+                  <el-table-column prop="status" label="状态" width="100">
                     <template #default="{ row }">
                       <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
                         {{ row.status }}
                       </el-tag>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="realName" label="姓名" />
-                  <el-table-column prop="gender" label="性别" />
                   <el-table-column prop="phone" label="手机号" />
                   <el-table-column prop="department" label="所属部门" />
                   <el-table-column prop="jobNumber" label="工号" />
