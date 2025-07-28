@@ -2,7 +2,11 @@
   <div class="dashboard-content">
     <DashboardStats 
       :stats="stats"
+      :distribution-data="distributionData"
+      :trend-data="trendData"
+      :loading="loading"
       @time-range-change="handleTimeRangeChange"
+      @custom-range-change="handleCustomRangeChange"
     />
   </div>
 </template>
@@ -23,16 +27,33 @@ export default {
         teacherBookings: 0,
         studentBookings: 0
       })
+    },
+    distributionData: {
+      type: Array,
+      default: () => []
+    },
+    trendData: {
+      type: Array,
+      default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['time-range-change'],
+  emits: ['time-range-change', 'custom-range-change'],
   setup(props, { emit }) {
     const handleTimeRangeChange = (timeRange) => {
       emit('time-range-change', timeRange)
     }
 
+    const handleCustomRangeChange = (startDate, endDate) => {
+      emit('custom-range-change', startDate, endDate)
+    }
+
     return {
-      handleTimeRangeChange
+      handleTimeRangeChange,
+      handleCustomRangeChange
     }
   }
 }

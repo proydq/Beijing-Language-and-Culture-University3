@@ -1,27 +1,31 @@
 <template>
   <div class="room-booking">
     <!-- 顶部导航栏 -->
-    <RoomBookingHeader 
+    <RoomBookingHeader
       @profile="handleProfile"
       @logout="handleLogout"
     />
 
     <!-- 主导航菜单 -->
-    <MainNavigation 
+    <MainNavigation
       v-model="activeMainTab"
     />
 
     <!-- 主内容区域 -->
     <div class="main-content">
       <!-- 数据看板 -->
-      <DashboardContent 
+      <DashboardContent
         v-if="activeMainTab === 'dashboard'"
         :stats="stats"
+        :distribution-data="distributionData"
+        :trend-data="trendData"
+        :loading="loading"
         @time-range-change="handleTimeRangeChange"
+        @custom-range-change="handleCustomRangeChange"
       />
 
       <!-- 借用管理 -->
-      <BookingManagement 
+      <BookingManagement
         v-else-if="activeMainTab === 'booking'"
         :booking-data="bookingData"
         :all-booking-data="allBookingData"
@@ -32,7 +36,7 @@
       />
 
       <!-- 审批管理 -->
-      <ApprovalManagement 
+      <ApprovalManagement
         v-else-if="activeMainTab === 'approval'"
         :approval-data="approvalData"
         @approve="handleApprovalSubmit"
@@ -40,7 +44,7 @@
       />
 
       <!-- 数据记录 -->
-      <RecordsManagement 
+      <RecordsManagement
         v-else-if="activeMainTab === 'records'"
         :records-data="recordsData"
       />
@@ -72,6 +76,7 @@
 import { ref, onMounted, defineAsyncComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
+import { useRoomBooking } from '@/composables/useRoomBooking'
 
 // 导入拆分后的组件
 import RoomBookingHeader from '@/components/RoomBooking/Layout/RoomBookingHeader.vue'
@@ -99,17 +104,24 @@ export default {
     Document
   },
   setup() {
+    // 使用房屋借用管理组合式函数
+    const {
+      loading,
+      stats,
+      getBookingStats,
+      getBookingDistribution,
+      getBookingTrend,
+      getBookingTrendCustom
+    } = useRoomBooking()
+
     // 主导航状态
     const activeMainTab = ref('dashboard')
     const bookDialogVisible = ref(false)
     const selectedRoom = ref(null)
 
-    // 各种数据状态
-    const stats = ref({
-      totalBookings: 1234,
-      teacherBookings: 34,
-      studentBookings: 1200
-    })
+    // 数据分布和趋势数据
+    const distributionData = ref([])
+    const trendData = ref([])
 
     const bookingData = ref([
       {
@@ -219,45 +231,45 @@ export default {
     ])
 
     const rooms = ref([
-      { 
-        id: 1, 
-        name: '多媒体教室（101）', 
-        capacity: '未设置', 
-        available: false, 
-        building: '达力楼', 
-        floor: '1F' 
+      {
+        id: 1,
+        name: '多媒体教室（101）',
+        capacity: '未设置',
+        available: false,
+        building: '达力楼',
+        floor: '1F'
       },
-      { 
-        id: 2, 
-        name: '多媒体教室（102）', 
-        capacity: '20人', 
-        available: true, 
-        building: '达力楼', 
-        floor: '1F' 
+      {
+        id: 2,
+        name: '多媒体教室（102）',
+        capacity: '20人',
+        available: true,
+        building: '达力楼',
+        floor: '1F'
       },
-      { 
-        id: 3, 
-        name: '多媒体教室（103）', 
-        capacity: '20人', 
-        available: true, 
-        building: '达力楼', 
-        floor: '1F' 
+      {
+        id: 3,
+        name: '多媒体教室（103）',
+        capacity: '20人',
+        available: true,
+        building: '达力楼',
+        floor: '1F'
       },
-      { 
-        id: 4, 
-        name: '多媒体教室（104）', 
-        capacity: '20人', 
-        available: true, 
-        building: '达力楼', 
-        floor: '1F' 
+      {
+        id: 4,
+        name: '多媒体教室（104）',
+        capacity: '20人',
+        available: true,
+        building: '达力楼',
+        floor: '1F'
       },
-      { 
-        id: 5, 
-        name: '多媒体教室（105）', 
-        capacity: '20人', 
-        available: true, 
-        building: '达力楼', 
-        floor: '2F' 
+      {
+        id: 5,
+        name: '多媒体教室（105）',
+        capacity: '20人',
+        available: true,
+        building: '达力楼',
+        floor: '2F'
       }
     ])
 
@@ -348,10 +360,16 @@ export default {
       ElMessage.info('退出登录')
     }
 
-    const handleTimeRangeChange = (timeRange) => {
+    const handleTimeRangeChange = async (timeRange) => {
       console.log('时间范围变更:', timeRange)
       // 重新加载统计数据
-      loadStats(timeRange)
+      await loadStats(timeRange)
+    }
+
+    const handleCustomRangeChange = async (startDate, endDate) => {
+      console.log('自定义时间范围变更:', startDate, endDate)
+      // 加载自定义时间范围的数据
+      await loadCustomRangeStats(startDate, endDate)
     }
 
     const handleEdit = (row) => {
@@ -392,12 +410,80 @@ export default {
     }
 
     // 数据加载函数
-    const loadStats = async (timeRange) => {
+    const loadStats = async (timeRange = null) => {
       try {
-        // 这里调用API加载统计数据
-        console.log('加载统计数据', timeRange)
+        let startTime = null
+        let endTime = null
+
+        // 根据时间范围计算开始和结束时间
+        if (timeRange) {
+          const now = new Date()
+          endTime = now
+          
+          switch (timeRange) {
+            case '近7天':
+              startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+              break
+            case '近15天':
+              startTime = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000)
+              break
+            case '近30天':
+              startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+              break
+            case '近90天':
+              startTime = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+              break
+          }
+        }
+
+        // 加载统计数据
+        await getBookingStats(startTime, endTime)
+        
+        // 加载数据分布
+        const distribution = await getBookingDistribution(startTime, endTime)
+        distributionData.value = distribution
+        
+        // 加载趋势数据
+        let trend = []
+        if (timeRange) {
+          const days = timeRange === '近7天' ? 7 : 
+                      timeRange === '近15天' ? 15 : 
+                      timeRange === '近30天' ? 30 : 90
+          trend = await getBookingTrend(days)
+        } else {
+          // 默认加载近15天的趋势数据
+          trend = await getBookingTrend(15)
+        }
+        trendData.value = trend
+        
+        console.log('统计数据加载完成', { stats: stats.value, distribution, trend })
       } catch (error) {
+        console.error('加载统计数据失败:', error)
         ElMessage.error('加载统计数据失败')
+      }
+    }
+
+    // 加载自定义时间范围的数据
+    const loadCustomRangeStats = async (startDate, endDate) => {
+      try {
+        const startTime = new Date(startDate)
+        const endTime = new Date(endDate)
+        
+        // 加载统计数据
+        await getBookingStats(startTime, endTime)
+        
+        // 加载数据分布
+        const distribution = await getBookingDistribution(startTime, endTime)
+        distributionData.value = distribution
+        
+        // 加载趋势数据
+        const trend = await getBookingTrendCustom(startTime, endTime)
+        trendData.value = trend
+        
+        console.log('自定义时间范围数据加载完成', { stats: stats.value, distribution, trend })
+      } catch (error) {
+        console.error('加载自定义时间范围数据失败:', error)
+        ElMessage.error('加载数据失败')
       }
     }
 
@@ -418,7 +504,10 @@ export default {
 
     return {
       activeMainTab,
+      loading,
       stats,
+      distributionData,
+      trendData,
       bookingData,
       allBookingData,
       rooms,
@@ -428,6 +517,7 @@ export default {
       handleProfile,
       handleLogout,
       handleTimeRangeChange,
+      handleCustomRangeChange,
       handleEdit,
       handleApprove,
       handleBookRoom,

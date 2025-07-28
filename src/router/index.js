@@ -116,7 +116,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('userToken')
-  
+
   // 如果路由需要认证
   if (to.meta.requiresAuth) {
     if (token) {

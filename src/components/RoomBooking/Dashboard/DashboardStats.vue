@@ -69,7 +69,7 @@
               size="small"
               style="width: 140px;"
             />
-            <el-button type="primary" size="small">筛选</el-button>
+            <el-button type="primary" size="small" @click="handleCustomFilter">筛选</el-button>
           </div>
         </div>
       </div>
@@ -81,7 +81,8 @@
 </template>
 
 <script>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'DashboardStats',
@@ -94,14 +95,26 @@ export default {
         teacherBookings: 0,
         studentBookings: 0
       })
+    },
+    distributionData: {
+      type: Array,
+      default: () => []
+    },
+    trendData: {
+      type: Array,
+      default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['time-range-change'],
+  emits: ['time-range-change', 'custom-range-change'],
   setup(props, { emit }) {
     const studentChart = ref(null)
     const teacherChart = ref(null)
     const trendChart = ref(null)
-    
+
     const timeRanges = ['近7天', '近15天', '近30天', '近90天']
     const activeTimeRange = ref('近15天')
     const startDate = ref('')
@@ -112,16 +125,80 @@ export default {
       emit('time-range-change', timeRange)
     }
 
-    // 模拟图表数据
-    const createPieChart = (container, title, data) => {
-      if (!container) return
+    const handleCustomFilter = () => {
+      if (!startDate.value || !endDate.value) {
+        ElMessage.warning('请选择开始和结束日期')
+        return
+      }
       
-      // 模拟饼图的创建（实际项目中可以使用 ECharts 或其他图表库）
+      const start = new Date(startDate.value)
+      const end = new Date(endDate.value)
+      
+      if (start >= end) {
+        ElMessage.warning('开始日期必须小于结束日期')
+        return
+      }
+      
+      const diffTime = Math.abs(end - start)
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      
+      if (diffDays > 180) {
+        ElMessage.warning('时间跨度不能超过180天')
+        return
+      }
+      
+      // 清除快捷选择的激活状态
+      activeTimeRange.value = ''
+      emit('custom-range-change', startDate.value, endDate.value)
+    }
+
+    // 创建饼图
+    const createPieChart = (container, title, data) => {
+      if (!container || !data || data.length === 0) {
+        container.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 200px; color: #999;">
+            <div style="text-align: center;">
+              <div style="font-size: 48px; margin-bottom: 10px;">📊</div>
+              <div>暂无${title}数据</div>
+            </div>
+          </div>
+        `
+        return
+      }
+
+      // 计算角度
+      let currentAngle = 0
+      const colors = ['#52c41a', '#ff4d4f', '#faad14', '#1890ff', '#722ed1']
+      
+      let pathElements = ''
+      data.forEach((item, index) => {
+        const percentage = item.percentage || 0
+        const angle = (percentage / 100) * 360
+        const largeArcFlag = angle > 180 ? 1 : 0
+        
+        const startAngle = (currentAngle * Math.PI) / 180
+        const endAngle = ((currentAngle + angle) * Math.PI) / 180
+        
+        const x1 = 100 + 80 * Math.cos(startAngle)
+        const y1 = 100 + 80 * Math.sin(startAngle)
+        const x2 = 100 + 80 * Math.cos(endAngle)
+        const y2 = 100 + 80 * Math.sin(endAngle)
+        
+        if (percentage > 0) {
+          pathElements += `
+            <path d="M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2} Z" 
+                  fill="${colors[index % colors.length]}" 
+                  stroke="#fff" 
+                  stroke-width="2"/>
+          `
+        }
+        
+        currentAngle += angle
+      })
+
       container.innerHTML = `
         <svg width="200" height="200" viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="80" fill="#52c41a" stroke="#fff" stroke-width="2"/>
-          <path d="M 100 20 A 80 80 0 0 1 180 100 L 100 100 Z" fill="#ff4d4f" stroke="#fff" stroke-width="2"/>
-          <path d="M 180 100 A 80 80 0 0 1 100 180 L 100 100 Z" fill="#faad14" stroke="#fff" stroke-width="2"/>
+          ${pathElements}
         </svg>
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
           <div style="font-size: 16px; font-weight: bold;">${title}</div>
@@ -129,85 +206,124 @@ export default {
       `
     }
 
-    const createTrendChart = (container) => {
+    const createTrendChart = (container, data) => {
       if (!container) return
+
+      if (!data || data.length === 0) {
+        container.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 300px; color: #999; background: #f9f9f9; border-radius: 8px;">
+            <div style="text-align: center;">
+              <div style="font-size: 48px; margin-bottom: 10px;">📈</div>
+              <div>暂无趋势数据</div>
+            </div>
+          </div>
+        `
+        return
+      }
+
+      const chartWidth = 800
+      const chartHeight = 300
+      const padding = { left: 60, right: 60, top: 60, bottom: 60 }
+      const dataWidth = chartWidth - padding.left - padding.right
+      const dataHeight = chartHeight - padding.top - padding.bottom
       
-      // 模拟趋势图的创建
+      // 计算数据点位置
+      const stepX = dataWidth / (data.length - 1 || 1)
+      let studentPoints = ''
+      let teacherPoints = ''
+      let studentCircles = ''
+      let teacherCircles = ''
+      let xLabels = ''
+      
+      data.forEach((item, index) => {
+        const x = padding.left + index * stepX
+        const studentY = padding.top + dataHeight - (item.studentPercentage || 0) / 100 * dataHeight
+        const teacherY = padding.top + dataHeight - (item.teacherPercentage || 0) / 100 * dataHeight
+        
+        studentPoints += `${x},${studentY} `
+        teacherPoints += `${x},${teacherY} `
+        
+        studentCircles += `<circle cx="${x}" cy="${studentY}" r="4" fill="#52c41a"/>`
+        teacherCircles += `<circle cx="${x}" cy="${teacherY}" r="4" fill="#ff7875"/>`
+        
+        // 格式化日期标签
+        const date = new Date(item.date)
+        const dateStr = `${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')}`
+        xLabels += `<text x="${x}" y="${chartHeight - 20}" font-size="12" fill="#666" text-anchor="middle">${dateStr}</text>`
+      })
+      
+      // Y轴标签
+      const yLabels = [100, 80, 60, 40, 20, 0].map(value => {
+        const y = padding.top + (100 - value) / 100 * dataHeight
+        return `<text x="${padding.left - 10}" y="${y + 5}" font-size="12" fill="#666" text-anchor="end">${value}%</text>`
+      }).join('')
+      
+      // 网格线
+      const gridLines = [100, 80, 60, 40, 20, 0].map(value => {
+        const y = padding.top + (100 - value) / 100 * dataHeight
+        return `<line x1="${padding.left}" y1="${y}" x2="${chartWidth - padding.right}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`
+      }).join('')
+
       container.innerHTML = `
-        <svg width="100%" height="300" viewBox="0 0 800 300" style="background: #f9f9f9;">
-          <!-- 背景网格 -->
-          <defs>
-            <pattern id="grid" width="40" height="30" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 30" fill="none" stroke="#e0e0e0" stroke-width="1"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+        <svg width="100%" height="300" viewBox="0 0 ${chartWidth} ${chartHeight}" style="background: #f9f9f9;">
+          <!-- 网格线 -->
+          ${gridLines}
           
-          <!-- 学生数据线 -->
-          <polyline 
-            points="50,250 100,200 150,180 200,160 250,140 300,120 350,100 400,90 450,85 500,95 550,110 600,130 650,150 700,140 750,120"
-            fill="none" 
-            stroke="#52c41a" 
-            stroke-width="3"
-          />
-          
-          <!-- 教师数据线 -->
-          <polyline 
-            points="50,280 100,270 150,260 200,250 250,240 300,230 350,220 400,210 450,205 500,215 550,225 600,235 650,245 700,240 750,230"
-            fill="none" 
-            stroke="#ff7875" 
-            stroke-width="3"
-          />
+          <!-- 数据线 -->
+          <polyline points="${studentPoints.trim()}" fill="none" stroke="#52c41a" stroke-width="3"/>
+          <polyline points="${teacherPoints.trim()}" fill="none" stroke="#ff7875" stroke-width="3"/>
           
           <!-- 数据点 -->
-          <circle cx="100" cy="200" r="4" fill="#52c41a"/>
-          <circle cx="200" cy="160" r="4" fill="#52c41a"/>
-          <circle cx="300" cy="120" r="4" fill="#52c41a"/>
-          <circle cx="400" cy="90" r="4" fill="#52c41a"/>
-          <circle cx="500" cy="95" r="4" fill="#52c41a"/>
-          <circle cx="600" cy="130" r="4" fill="#52c41a"/>
-          <circle cx="700" cy="140" r="4" fill="#52c41a"/>
+          ${studentCircles}
+          ${teacherCircles}
           
-          <circle cx="100" cy="270" r="4" fill="#ff7875"/>
-          <circle cx="200" cy="250" r="4" fill="#ff7875"/>
-          <circle cx="300" cy="230" r="4" fill="#ff7875"/>
-          <circle cx="400" cy="210" r="4" fill="#ff7875"/>
-          <circle cx="500" cy="215" r="4" fill="#ff7875"/>
-          <circle cx="600" cy="235" r="4" fill="#ff7875"/>
-          <circle cx="700" cy="240" r="4" fill="#ff7875"/>
-          
-          <!-- Y轴标签 -->
-          <text x="30" y="50" font-size="12" fill="#666">100%</text>
-          <text x="30" y="100" font-size="12" fill="#666">80%</text>
-          <text x="30" y="150" font-size="12" fill="#666">60%</text>
-          <text x="30" y="200" font-size="12" fill="#666">40%</text>
-          <text x="30" y="250" font-size="12" fill="#666">20%</text>
-          <text x="30" y="290" font-size="12" fill="#666">0%</text>
-          
-          <!-- X轴标签 -->
-          <text x="50" y="320" font-size="12" fill="#666">04.07</text>
-          <text x="150" y="320" font-size="12" fill="#666">04.09</text>
-          <text x="250" y="320" font-size="12" fill="#666">04.11</text>
-          <text x="350" y="320" font-size="12" fill="#666">04.13</text>
-          <text x="450" y="320" font-size="12" fill="#666">04.15</text>
-          <text x="550" y="320" font-size="12" fill="#666">04.17</text>
-          <text x="650" y="320" font-size="12" fill="#666">04.19</text>
-          <text x="750" y="320" font-size="12" fill="#666">04.21</text>
+          <!-- 坐标轴标签 -->
+          ${yLabels}
+          ${xLabels}
           
           <!-- 图例 -->
-          <circle cx="650" cy="40" r="6" fill="#52c41a"/>
-          <text x="665" y="45" font-size="12" fill="#666">学生</text>
-          <circle cx="720" cy="40" r="6" fill="#ff7875"/>
-          <text x="735" y="45" font-size="12" fill="#666">教师</text>
+          <circle cx="${chartWidth - 150}" cy="40" r="6" fill="#52c41a"/>
+          <text x="${chartWidth - 135}" y="45" font-size="12" fill="#666">学生</text>
+          <circle cx="${chartWidth - 80}" cy="40" r="6" fill="#ff7875"/>
+          <text x="${chartWidth - 65}" y="45" font-size="12" fill="#666">教师</text>
         </svg>
       `
     }
 
+    // 监听数据变化，更新图表
+    watch(
+      () => props.distributionData,
+      (newData) => {
+        if (newData && newData.length > 0) {
+          nextTick(() => {
+            const studentData = newData.filter(item => item.type === '学生')
+            const teacherData = newData.filter(item => item.type === '教师')
+            createPieChart(studentChart.value, '学生', studentData)
+            createPieChart(teacherChart.value, '教师', teacherData)
+          })
+        }
+      },
+      { immediate: true }
+    )
+
+    watch(
+      () => props.trendData,
+      (newData) => {
+        if (newData) {
+          nextTick(() => {
+            createTrendChart(trendChart.value, newData)
+          })
+        }
+      },
+      { immediate: true }
+    )
+
     onMounted(() => {
       nextTick(() => {
+        // 初始化图表
         createPieChart(studentChart.value, '学生', [])
         createPieChart(teacherChart.value, '教师', [])
-        createTrendChart(trendChart.value)
+        createTrendChart(trendChart.value, [])
       })
     })
 
@@ -219,7 +335,8 @@ export default {
       activeTimeRange,
       startDate,
       endDate,
-      setActiveTimeRange
+      setActiveTimeRange,
+      handleCustomFilter
     }
   }
 }
@@ -375,11 +492,11 @@ export default {
     flex-direction: column;
     gap: 20px;
   }
-  
+
   .chart-container {
     gap: 20px;
   }
-  
+
   .trend-header {
     flex-direction: column;
     align-items: stretch;
@@ -391,18 +508,18 @@ export default {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .pie-chart {
     width: 150px;
     height: 150px;
   }
-  
+
   .time-filter {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
-  
+
   .date-range {
     justify-content: center;
   }

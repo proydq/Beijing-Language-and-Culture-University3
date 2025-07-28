@@ -5,9 +5,13 @@ com\proshine\system\dto\RoomVo.class
 com\proshine\system\exception\RoomException$RoomImportException.class
 com\proshine\system\exception\RoomException.class
 com\proshine\system\dto\RoomTypeVo.class
-com\proshine\system\dto\SearchRoomCondition.class
+com\proshine\system\service\impl\RoomServiceImpl.class
 com\proshine\system\exception\RoomException$RoomDuplicateException.class
+com\proshine\system\service\impl\AreaServiceImpl.class
+com\proshine\system\service\RoomService.class
+com\proshine\system\controller\RoomController.class
 com\proshine\system\repository\RoomRepository.class
 com\proshine\system\exception\RoomException$RoomNotFoundException.class
+com\proshine\system\service\AreaService.class
 com\proshine\system\entity\Room.class
 com\proshine\system\entity\Room$RoomType.class
