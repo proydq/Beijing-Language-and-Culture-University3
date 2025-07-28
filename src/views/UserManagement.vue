@@ -151,26 +151,26 @@
               <div class="table-container">
                 <el-table :data="tableData" style="width: 100%" border stripe>
                   <el-table-column type="index" label="序号" width="60" />
-                  <el-table-column prop="avatar" label="头像" width="180">
+                  <el-table-column prop="avatarUrl" label="头像" width="180">
                     <template #default="{ row }">
                       <el-image
-                        v-if="row.avatar"
-                        :src="row.avatar"
+                        v-if="row.avatarUrl"
+                        :src="row.avatarUrl"
                         style="width: 50px; height: 50px; border-radius: 50%"
                         fit="cover"
-                        :preview-src-list="[row.avatar]"
+                        :preview-src-list="[row.avatarUrl]"
                       />
                       <span v-else style="color: #999">暂无头像</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="faceImage" label="人脸识别" width="180">
+                  <el-table-column prop="faceImageUrl" label="人脸识别" width="180">
                     <template #default="{ row }">
                       <el-image
-                        v-if="row.faceImage"
-                        :src="row.faceImage"
+                        v-if="row.faceImageUrl"
+                        :src="row.faceImageUrl"
                         style="width: 50px; height: 50px; border-radius: 50%"
                         fit="cover"
-                        :preview-src-list="[row.faceImage]"
+                        :preview-src-list="[row.faceImageUrl]"
                       />
                       <span v-else style="color: #999">暂无人脸图片</span>
                     </template>
@@ -179,16 +179,16 @@
                   <el-table-column prop="gender" label="性别" />
                   <el-table-column prop="status" label="状态" width="100">
                     <template #default="{ row }">
-                      <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
-                        {{ row.status }}
+                      <el-tag :type="row.status === 'NORMAL' ? 'success' : 'danger'">
+                        {{ row.status === 'NORMAL' ? '正常' : '禁用' }}
                       </el-tag>
                     </template>
                   </el-table-column>
                   <el-table-column prop="phone" label="手机号" />
-                  <el-table-column prop="department" label="所属部门" />
+                  <el-table-column prop="departmentName" label="所属部门" />
                   <el-table-column prop="jobNumber" label="工号" />
-                  <el-table-column prop="position" label="职务" />
-                  <el-table-column prop="jobTitle" label="职称" />
+                  <el-table-column prop="positionName" label="职务" />
+                  <el-table-column prop="titleName" label="职称" />
                   <el-table-column prop="createTime" label="账号添加时间" width="160" />
                   <el-table-column label="操作" width="200" fixed="right">
                     <template #default="{ row }">
