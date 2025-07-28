@@ -1,6 +1,7 @@
 package com.proshine.system.user.service;
 
 import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.entity.SysUser;
 import com.proshine.system.user.dto.SearchUserCondition;
 import com.proshine.system.user.dto.UserSaveRequest;
 import com.proshine.system.user.dto.UserVO;
@@ -11,7 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 public interface UserService {
     ResponsePageDataEntity<UserVO> search(SearchUserCondition condition);
 
-    UserVO findById(String id);
+    SysUser findById(String id);
 
     UserVO create(UserSaveRequest request);
 

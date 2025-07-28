@@ -105,8 +105,8 @@
                       clearable
                       style="width: 120px"
                     >
-                      <el-option label="正常" value="正常" />
-                      <el-option label="禁用" value="禁用" />
+                      <el-option label="正常" value="NORMAL" />
+                      <el-option label="禁用" value="DISABLED" />
                     </el-select>
                   </el-form-item>
                   <el-form-item>

@@ -2,6 +2,7 @@ package com.proshine.system.user.controller;
 
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.entity.SysUser;
 import com.proshine.system.user.dto.SearchUserCondition;
 import com.proshine.system.user.dto.UserSaveRequest;
 import com.proshine.system.user.dto.UserVO;
@@ -47,9 +48,9 @@ public class UserController {
      * Get detail
      */
     @GetMapping("/{id}")
-    public ResponseEntity<UserVO> detail(@PathVariable String id) {
+    public ResponseEntity<SysUser> detail(@PathVariable String id) {
         try {
-            UserVO vo = userService.findById(id);
+            SysUser vo = userService.findById(id);
             return ResponseEntity.success(vo);
         } catch (Exception e) {
             log.error("查询用户详情失败", e);

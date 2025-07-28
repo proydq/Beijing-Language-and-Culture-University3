@@ -6,7 +6,7 @@ import { uploadFile } from '@/api/upload.js'
 
 export function useUserManagement() {
   const router = useRouter()
-  
+
   // 基础数据
   const activeTab = ref('userList')
   const searchKeyword = ref('')
@@ -17,12 +17,12 @@ export function useUserManagement() {
   const formRef = ref()
   const avatarList = ref([])
   const faceList = ref([])
-  
+
   // 分页数据
   const currentPage = ref(1)
   const pageSize = ref(10)
   const total = ref(0)
-  
+
   // 表单数据
   const searchForm = reactive({
     realName: '',
@@ -299,8 +299,21 @@ export function useUserManagement() {
   }
 
   const resetForm = () => {
-    Object.keys(userForm).forEach(key => {
-      userForm[key] = ''
+    // 重置表单到初始状态
+    Object.assign(userForm, {
+      id: undefined,
+      avatar: '',
+      faceImage: '',
+      realName: '',
+      gender: '',
+      phone: '',
+      department: '',
+      jobNumber: '',
+      position: '',
+      jobTitle: '',
+      cardNumber: '',
+      attendanceNumber: '',
+      status: '正常'
     })
     avatarList.value = []
     faceList.value = []
@@ -322,22 +335,64 @@ export function useUserManagement() {
     detailDialogVisible.value = true
   }
 
-  const handleEdit = (row) => {
-    isEdit.value = true
-    Object.assign(userForm, row)
-    avatarList.value = userForm.avatar ? [{ url: userForm.avatar }] : []
-    faceList.value = userForm.faceImage ? [{ url: userForm.faceImage }] : []
-    editDialogVisible.value = true
+  const handleEdit = async (row) => {
+    try {
+      isEdit.value = true
+      // 调用后端接口获取用户详情
+      const res = await request.get(`/api/user/${row.id}`)
+      if (res.code === 200) {
+        // 使用后端返回的完整数据填充表单
+        Object.assign(userForm, {
+          id: res.data.id,
+          realName: res.data.realName,
+          gender: res.data.gender,
+          phone: res.data.phone,
+          jobNumber: res.data.jobNumber,
+          department: res.data.departmentId,
+          position: res.data.positionId,
+          jobTitle: res.data.titleId,
+          avatar: res.data.avatarUrl,
+          faceImage: res.data.faceImageUrl,
+          cardNumber: res.data.cardNumber,
+          attendanceNumber: res.data.attendanceNumber,
+          status: res.data.status
+        })
+        // 设置头像和人脸识别图片预览
+        avatarList.value = userForm.avatar ? [{ url: userForm.avatar }] : []
+        faceList.value = userForm.faceImage ? [{ url: userForm.faceImage }] : []
+        editDialogVisible.value = true
+      } else {
+        ElMessage.error(res.message || '获取用户详情失败')
+      }
+    } catch (error) {
+      ElMessage.error('获取用户详情失败')
+      console.error('获取用户详情失败:', error)
+    }
   }
 
-  const handleDelete = (row) => {
-    ElMessageBox.confirm(`确定要删除用户"${row.realName}"吗？`, '确认删除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(() => {
-      ElMessage.success('删除成功')
-    })
+  const handleDelete = async (row) => {
+    try {
+      await ElMessageBox.confirm(`确定要删除用户"${row.realName}"吗？`, '确认删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+
+      // 调用后端删除接口
+      const res = await request.delete(`/api/user/${row.id}`)
+      if (res.code === 200) {
+        ElMessage.success('删除成功')
+        // 刷新用户列表
+        fetchUserList()
+      } else {
+        ElMessage.error(res.message || '删除失败')
+      }
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('删除失败')
+        console.error('删除用户失败:', error)
+      }
+    }
   }
 
   const handleDialogClose = () => {
@@ -445,16 +500,16 @@ export function useUserManagement() {
     currentPage,
     pageSize,
     total,
-    
+
     // 表单数据
     searchForm,
     userForm,
-    
+
     // 模拟数据
     treeData,
     treeProps,
     tableData,
-    
+
     // 表单验证规则
     formRules,
     departments,
@@ -466,14 +521,14 @@ export function useUserManagement() {
     fetchDepartments,
     fetchPositions,
     fetchTitles,
-    
+
     // 基础方法
     goToHome,
     goToPersonalCenter,
     logout,
     handleTreeNodeClick,
     handleTabClick,
-    
+
     // 用户管理方法
     handleSearch,
     handleReset,

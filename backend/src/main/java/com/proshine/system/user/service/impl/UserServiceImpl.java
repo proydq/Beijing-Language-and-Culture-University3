@@ -1,9 +1,12 @@
 package com.proshine.system.user.service.impl;
 
+import com.proshine.common.enums.GlobalEnum;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.entity.SysOrganization;
 import com.proshine.system.entity.SysUser;
 import com.proshine.system.repository.SysOrganizationRepository;
+import com.proshine.system.repository.SysPositionRepository;
+import com.proshine.system.repository.SysTitleRepository;
 import com.proshine.system.repository.SysUserRepository;
 import com.proshine.system.user.dto.SearchUserCondition;
 import com.proshine.system.user.dto.UserSaveRequest;
@@ -43,6 +46,12 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private SysOrganizationRepository organizationRepository;
 
+    @Autowired
+    private SysPositionRepository positionRepository;
+
+    @Autowired
+    private SysTitleRepository titleRepository;
+
     @Override
     public ResponsePageDataEntity<UserVO> search(SearchUserCondition condition) {
         Specification<SysUser> spec = buildSpec(condition);
@@ -70,7 +79,10 @@ public class UserServiceImpl implements UserService {
                 predicates.add(cb.like(root.get("jobNumber"), "%" + condition.getJobNumber() + "%"));
             }
             if (StringUtils.hasText(condition.getStatus())) {
-                predicates.add(cb.equal(root.get("status"), SysUser.Status.valueOf(condition.getStatus())));
+                SysUser.Status status = convertStatusFromChinese(condition.getStatus());
+                if (status != null) {
+                    predicates.add(cb.equal(root.get("status"), status));
+                }
             }
             if (StringUtils.hasText(condition.getOrganizationId())) {
                 List<String> ids = collectOrgIds(condition.getOrganizationId());
@@ -80,6 +92,18 @@ public class UserServiceImpl implements UserService {
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    /**
+     * 将中文状态值转换为枚举
+     */
+    private SysUser.Status convertStatusFromChinese(String chineseStatus) {
+        if ("正常".equals(chineseStatus) || "NORMAL".equals(chineseStatus)) {
+            return SysUser.Status.NORMAL;
+        } else if ("禁用".equals(chineseStatus) || "DISABLED".equals(chineseStatus)) {
+            return SysUser.Status.DISABLED;
+        }
+        return null;
     }
 
     private List<String> collectOrgIds(String orgId) {
@@ -99,10 +123,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserVO findById(String id) {
+    public SysUser findById(String id) {
         return userRepository.findById(id)
                 .filter(u -> !Boolean.TRUE.equals(u.getDeleted()))
-                .map(this::toVo)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
     }
 
@@ -111,10 +134,14 @@ public class UserServiceImpl implements UserService {
     public UserVO create(UserSaveRequest request) {
         SysUser user = new SysUser();
         BeanUtils.copyProperties(request, user);
+        user.setPositionName(positionRepository.findById(request.getPositionId()).get().getName());
+        user.setTitleName(titleRepository.findById(request.getTitleId()).get().getName());
+        user.setDepartmentName(organizationRepository.findById(request.getDepartmentId()).get().getName());
         user.setStatus(SysUser.Status.NORMAL);
         user.setDeleted(false);
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
+        user.setCustomerId(GlobalEnum.DEFAULT_CUSTOMER_ID);
         SysUser saved = userRepository.save(user);
         return toVo(saved);
     }
@@ -137,12 +164,15 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(request.getDepartmentId())) {
             user.setDepartmentId(request.getDepartmentId());
+            user.setDepartmentName(organizationRepository.findById(request.getDepartmentId()).get().getName());
         }
         if (StringUtils.hasText(request.getPositionId())) {
             user.setPositionId(request.getPositionId());
+            user.setPositionName(positionRepository.findById(request.getPositionId()).get().getName());
         }
         if (StringUtils.hasText(request.getTitleId())) {
             user.setTitleId(request.getTitleId());
+            user.setTitleName(titleRepository.findById(request.getTitleId()).get().getName());
         }
         if (StringUtils.hasText(request.getAvatarUrl())) {
             user.setAvatarUrl(request.getAvatarUrl());
