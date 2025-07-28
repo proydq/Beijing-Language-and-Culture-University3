@@ -63,15 +63,14 @@ export function useRoomBooking() {
         pageSize: pagination.pageSize
       }
 
-      const response = await request.post(`${API_BASE}/search`, params)
+      const { code, message, data } = await request.post(`${API_BASE}/search`, params)
 
-      if (response.data.code === 200) {
-        const data = response.data.data
+      if (code === 200) {
         bookingList.value = data.content || []
         pagination.total = data.totalElements || 0
         pagination.current = data.number + 1 || 1
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
       }
     } catch (error) {
       console.error('查询预约列表失败:', error)
@@ -87,13 +86,13 @@ export function useRoomBooking() {
   const getBookingById = async (id) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/${id}`)
+      const { code, message, data } = await request.get(`${API_BASE}/${id}`)
 
-      if (response.data.code === 200) {
-        currentBooking.value = response.data.data
-        return response.data.data
+      if (code === 200) {
+        currentBooking.value = data
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return null
       }
     } catch (error) {
@@ -111,14 +110,14 @@ export function useRoomBooking() {
   const createBooking = async (bookingData) => {
     loading.value = true
     try {
-      const response = await request.post(API_BASE, bookingData)
+      const { code, message, data } = await request.post(API_BASE, bookingData)
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('预约创建成功')
         await searchBookings() // 刷新列表
-        return response.data.data
+        return data
       } else {
-        ElMessage.error(response.data.message || '创建失败')
+        ElMessage.error(message || '创建失败')
         return null
       }
     } catch (error) {
@@ -136,14 +135,14 @@ export function useRoomBooking() {
   const updateBooking = async (id, bookingData) => {
     loading.value = true
     try {
-      const response = await request.put(`${API_BASE}/${id}`, bookingData)
+      const { code, message, data } = await request.put(`${API_BASE}/${id}`, bookingData)
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('预约更新成功')
         await searchBookings() // 刷新列表
-        return response.data.data
+        return data
       } else {
-        ElMessage.error(response.data.message || '更新失败')
+        ElMessage.error(message || '更新失败')
         return null
       }
     } catch (error) {
@@ -165,14 +164,14 @@ export function useRoomBooking() {
       })
 
       loading.value = true
-      const response = await request.delete(`${API_BASE}/${id}`)
+      const { code, message } = await request.delete(`${API_BASE}/${id}`)
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('删除成功')
         await searchBookings() // 刷新列表
         return true
       } else {
-        ElMessage.error(response.data.message || '删除失败')
+        ElMessage.error(message || '删除失败')
         return false
       }
     } catch (error) {
@@ -196,14 +195,14 @@ export function useRoomBooking() {
       })
 
       loading.value = true
-      const response = await request.delete(`${API_BASE}/batch`, { data: ids })
+      const { code, message } = await request.delete(`${API_BASE}/batch`, { data: ids })
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('批量删除成功')
         await searchBookings() // 刷新列表
         return true
       } else {
-        ElMessage.error(response.data.message || '删除失败')
+        ElMessage.error(message || '删除失败')
         return false
       }
     } catch (error) {
@@ -223,16 +222,16 @@ export function useRoomBooking() {
   const cancelBooking = async (id, cancelReason) => {
     loading.value = true
     try {
-      const response = await request.put(`${API_BASE}/${id}/cancel`, null, {
+      const { code, message } = await request.put(`${API_BASE}/${id}/cancel`, null, {
         params: { cancelReason }
       })
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('预约取消成功')
         await searchBookings() // 刷新列表
         return true
       } else {
-        ElMessage.error(response.data.message || '取消失败')
+        ElMessage.error(message || '取消失败')
         return false
       }
     } catch (error) {
@@ -250,17 +249,17 @@ export function useRoomBooking() {
   const approveBooking = async (id, approvalStatus, approvalComment = '') => {
     loading.value = true
     try {
-      const response = await request.put(`${API_BASE}/${id}/approve`, null, {
+      const { code, message } = await request.put(`${API_BASE}/${id}/approve`, null, {
         params: { approvalStatus, approvalComment }
       })
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         const action = approvalStatus === 'APPROVED' ? '通过' : '拒绝'
         ElMessage.success(`审批${action}成功`)
         await searchBookings() // 刷新列表
         return true
       } else {
-        ElMessage.error(response.data.message || '审批失败')
+        ElMessage.error(message || '审批失败')
         return false
       }
     } catch (error) {
@@ -287,12 +286,12 @@ export function useRoomBooking() {
         params.excludeBookingId = excludeBookingId
       }
 
-      const response = await request.get(`${API_BASE}/check-conflict`, { params })
+      const { code, data, message } = await request.get(`${API_BASE}/check-conflict`, { params })
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        console.error('检查时间冲突失败:', response.data.message)
+        console.error('检查时间冲突失败:', message)
         return false
       }
     } catch (error) {
@@ -307,14 +306,14 @@ export function useRoomBooking() {
   const getMyBookings = async (applicantId) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/my-bookings`, {
+      const { code, message, data } = await request.get(`${API_BASE}/my-bookings`, {
         params: { applicantId }
       })
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -332,12 +331,12 @@ export function useRoomBooking() {
   const getPendingApprovals = async () => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/pending-approvals`)
+      const { code, message, data } = await request.get(`${API_BASE}/pending-approvals`)
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -363,13 +362,13 @@ export function useRoomBooking() {
         params.endTime = endTime.toISOString().slice(0, 19).replace('T', ' ')
       }
 
-      const response = await request.get(`${API_BASE}/stats`, { params })
+      const { code, message, data } = await request.get(`${API_BASE}/stats`, { params })
 
-      if (response.data.code === 200) {
-        stats.value = response.data.data
-        return response.data.data
+      if (code === 200) {
+        stats.value = data
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return null
       }
     } catch (error) {
@@ -395,12 +394,12 @@ export function useRoomBooking() {
         params.endTime = endTime.toISOString().slice(0, 19).replace('T', ' ')
       }
 
-      const response = await request.get(`${API_BASE}/distribution`, { params })
+      const { code, message, data } = await request.get(`${API_BASE}/distribution`, { params })
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -418,14 +417,14 @@ export function useRoomBooking() {
   const getBookingTrend = async (days) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/trend`, {
+      const { code, message, data } = await request.get(`${API_BASE}/trend`, {
         params: { days }
       })
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -448,12 +447,12 @@ export function useRoomBooking() {
         endTime: endTime.toISOString().slice(0, 19).replace('T', ' ')
       }
 
-      const response = await request.get(`${API_BASE}/trend/custom`, { params })
+      const { code, message, data } = await request.get(`${API_BASE}/trend/custom`, { params })
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -471,16 +470,16 @@ export function useRoomBooking() {
   const updateUsageStatus = async (id, usageStatus) => {
     loading.value = true
     try {
-      const response = await request.put(`${API_BASE}/${id}/usage-status`, null, {
+      const { code, message } = await request.put(`${API_BASE}/${id}/usage-status`, null, {
         params: { usageStatus }
       })
 
-      if (response.data.code === 200) {
+      if (code === 200) {
         ElMessage.success('状态更新成功')
         await searchBookings() // 刷新列表
         return true
       } else {
-        ElMessage.error(response.data.message || '更新失败')
+        ElMessage.error(message || '更新失败')
         return false
       }
     } catch (error) {
@@ -498,12 +497,12 @@ export function useRoomBooking() {
   const getBookingsByRoom = async (roomId) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/by-room/${roomId}`)
+      const { code, message, data } = await request.get(`${API_BASE}/by-room/${roomId}`)
 
-      if (response.data.code === 200) {
-        return response.data.data
+      if (code === 200) {
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -520,8 +519,8 @@ export function useRoomBooking() {
    */
   const canEditBooking = async (id) => {
     try {
-      const response = await request.get(`${API_BASE}/${id}/can-edit`)
-      return response.data.code === 200 ? response.data.data : false
+      const { code, data } = await request.get(`${API_BASE}/${id}/can-edit`)
+      return code === 200 ? data : false
     } catch (error) {
       console.error('检查预约是否可以编辑失败:', error)
       return false
@@ -533,8 +532,8 @@ export function useRoomBooking() {
    */
   const canCancelBooking = async (id) => {
     try {
-      const response = await request.get(`${API_BASE}/${id}/can-cancel`)
-      return response.data.code === 200 ? response.data.data : false
+      const { code, data } = await request.get(`${API_BASE}/${id}/can-cancel`)
+      return code === 200 ? data : false
     } catch (error) {
       console.error('检查预约是否可以取消失败:', error)
       return false
@@ -639,13 +638,13 @@ export function useBookingApproval() {
   const getApprovalsByBookingId = async (bookingId) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/by-booking/${bookingId}`)
+      const { code, message, data } = await request.get(`${API_BASE}/by-booking/${bookingId}`)
 
-      if (response.data.code === 200) {
-        approvalList.value = response.data.data
-        return response.data.data
+      if (code === 200) {
+        approvalList.value = data
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -680,13 +679,13 @@ export function useBookingRecord() {
   const getRecordsByBookingId = async (bookingId) => {
     loading.value = true
     try {
-      const response = await request.get(`${API_BASE}/by-booking/${bookingId}`)
+      const { code, message, data } = await request.get(`${API_BASE}/by-booking/${bookingId}`)
 
-      if (response.data.code === 200) {
-        recordList.value = response.data.data
-        return response.data.data
+      if (code === 200) {
+        recordList.value = data
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return []
       }
     } catch (error) {
@@ -712,13 +711,13 @@ export function useBookingRecord() {
         params.endTime = endTime.toISOString().slice(0, 19).replace('T', ' ')
       }
 
-      const response = await request.get(`${API_BASE}/stats`, { params })
+      const { code, message, data } = await request.get(`${API_BASE}/stats`, { params })
 
-      if (response.data.code === 200) {
-        recordStats.value = response.data.data
-        return response.data.data
+      if (code === 200) {
+        recordStats.value = data
+        return data
       } else {
-        ElMessage.error(response.data.message || '查询失败')
+        ElMessage.error(message || '查询失败')
         return null
       }
     } catch (error) {
