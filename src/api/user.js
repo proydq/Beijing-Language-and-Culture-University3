@@ -19,7 +19,7 @@ export const userAPI = {
    * @returns {Promise} 用户详情响应
    */
   getUserById(id) {
-    return api.get(`/sys/user/${id}`)
+    return api.get(`/api/user/${id}`)
   },
 
   /**
@@ -28,7 +28,7 @@ export const userAPI = {
    * @returns {Promise} 保存响应
    */
   saveUser(userData) {
-    return api.post('/sys/user/save', userData)
+    return api.post('/api/user', userData)
   },
 
   /**
@@ -37,7 +37,7 @@ export const userAPI = {
    * @returns {Promise} 更新响应
    */
   updateUser(userData) {
-    return api.post('/sys/user/update', userData)
+    return api.put(`/api/user/${userData.id}`, userData)
   },
 
   /**

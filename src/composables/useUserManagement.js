@@ -348,10 +348,23 @@ export function useUserManagement() {
   const handleSaveUser = async () => {
     try {
       await formRef.value.validate()
-      const payload = { ...userForm }
+      const payload = {
+        realName: userForm.realName,
+        gender: userForm.gender,
+        phone: userForm.phone,
+        jobNumber: userForm.jobNumber,
+        departmentId: userForm.department,
+        positionId: userForm.position,
+        titleId: userForm.jobTitle,
+        avatarUrl: userForm.avatar,
+        faceImageUrl: userForm.faceImage,
+        cardNumber: userForm.cardNumber,
+        attendanceNumber: userForm.attendanceNumber,
+        status: userForm.status
+      }
       let res
-      if (isEdit.value && payload.id) {
-        res = await request.put(`/api/user/${payload.id}`, payload)
+      if (isEdit.value && userForm.id) {
+        res = await request.put(`/api/user/${userForm.id}`, payload)
       } else {
         res = await request.post('/api/user', payload)
       }
