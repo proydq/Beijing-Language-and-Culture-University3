@@ -49,25 +49,27 @@
                     <el-icon><search /></el-icon>
                   </template>
                 </el-input>
-                <el-tree :data="buildingTreeData" default-expand-all class="structure-tree" />
+                <el-tree :data="buildingTreeData" default-expand-all class="structure-tree" @node-click="handleBuildingNodeClick" />
               </div>
               <div class="house-page-main">
                 <!-- 搜索筛选区域 -->
                 <div class="search-area">
                   <el-form :model="searchForm" :inline="true">
                     <el-form-item label="房间号码:">
-                      <el-input v-model="searchForm.roomNumber" placeholder="请输入房间号码" />
+                      <el-input v-model="searchForm.roomNo" placeholder="请输入房间号码" />
                     </el-form-item>
                     <el-form-item label="房屋名称:">
                       <el-input v-model="searchForm.roomName" placeholder="请输入房屋名称" />
                     </el-form-item>
                     <el-form-item label="房屋类型:">
-                      <el-select v-model="searchForm.roomType" placeholder="请选择房屋类型">
+                      <el-select v-model="searchForm.roomTypeName" placeholder="请选择房屋类型">
                         <el-option label="全部" value="" />
-                        <el-option label="教室" value="教室" />
-                        <el-option label="会议室" value="会议室" />
-                        <el-option label="实验室" value="实验室" />
-                        <el-option label="办公室" value="办公室" />
+                        <el-option 
+                          v-for="roomType in roomTypeOptions" 
+                          :key="roomType.id" 
+                          :label="roomType.typeName" 
+                          :value="roomType.typeName" 
+                        />
                       </el-select>
                     </el-form-item>
                     <el-form-item>
@@ -91,20 +93,20 @@
 
                 <!-- 房屋列表表格 -->
                 <div class="house-table">
-                  <el-table :data="houseTableData" style="width: 100%" stripe>
+                  <el-table :data="houseTableData" style="width: 100%" stripe v-loading="loading" element-loading-text="加载中...">
                     <el-table-column prop="roomCode" label="房间编码" width="120" />
                     <el-table-column prop="roomName" label="房屋名称" />
-                    <el-table-column prop="roomNumber" label="房间号码" width="100" />
-                    <el-table-column prop="roomType" label="房屋类型" width="100">
+                    <el-table-column prop="roomNo" label="房间号码" width="100" />
+                    <el-table-column prop="roomTypeName" label="房屋类型" width="100">
                       <template #default="scope">
-                        <el-tag :type="getRoomTypeTagType(scope.row.roomType)">
-                          {{ scope.row.roomType }}
+                        <el-tag :type="getRoomTypeTagType(scope.row.roomTypeName)">
+                          {{ scope.row.roomTypeName }}
                         </el-tag>
                       </template>
                     </el-table-column>
                     <el-table-column prop="roomArea" label="房间面积(㎡)" width="120" />
                     <el-table-column prop="capacity" label="容纳人数" width="100" />
-                    <el-table-column prop="updateTime" label="更新时间" width="150" />
+                    <el-table-column prop="lastUpdateTime" label="更新时间" width="150" />
                     <el-table-column label="操作" width="180" fixed="right">
                       <template #default="scope">
                         <el-button type="primary" size="small" @click="handleEditRoom(scope.row)">编辑</el-button>
@@ -140,26 +142,27 @@
 
             <!-- 楼宇树形结构 -->
             <div class="tree-area">
-              <el-tree
-                ref="treeRef"
-                :data="treeData"
-                :props="treeProps"
-                node-key="id"
-                default-expand-all
-                highlight-current
-                @node-click="handleNodeClick"
-              >
-                <template #default="{ node, data }">
-                  <span class="tree-node">
-                    <el-icon v-if="data.type === 'root'"><office-building /></el-icon>
-                    <el-icon v-else-if="data.type === 'building'"><office-building /></el-icon>
-                    <el-icon v-else-if="data.type === 'floor'"><menu /></el-icon>
-                    <el-icon v-else><home /></el-icon>
-                    <span class="node-text">{{ node.label }}</span>
-                    <span class="node-count" v-if="data.count !== undefined">[{{ data.count }}]</span>
-                  </span>
-                </template>
-              </el-tree>
+              <div v-loading="treeLoading" element-loading-text="加载中...">
+                <el-tree
+                  ref="treeRef"
+                  :data="treeData"
+                  :props="treeProps"
+                  node-key="id"
+                  default-expand-all
+                  highlight-current
+                  @node-click="handleNodeClick"
+                >
+                  <template #default="{ node, data }">
+                    <span class="tree-node">
+                      <el-icon v-if="data.type === 'building'"><office-building /></el-icon>
+                      <el-icon v-else-if="data.type === 'floor'"><menu /></el-icon>
+                      <el-icon v-else><home /></el-icon>
+                      <span class="node-text">{{ node.label }}</span>
+                      <span class="node-count" v-if="data.count !== undefined">[{{ data.count }}]</span>
+                    </span>
+                  </template>
+                </el-tree>
+              </div>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -186,17 +189,19 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="房间号码:" prop="roomNumber">
-              <el-input v-model="roomForm.roomNumber" placeholder="请输入房间号码" />
+            <el-form-item label="房间号码:" prop="roomNo">
+              <el-input v-model="roomForm.roomNo" placeholder="请输入房间号码" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="房屋类型:" prop="roomType">
-              <el-select v-model="roomForm.roomType" placeholder="请选择房屋类型">
-                <el-option label="教室" value="教室" />
-                <el-option label="会议室" value="会议室" />
-                <el-option label="实验室" value="实验室" />
-                <el-option label="办公室" value="办公室" />
+            <el-form-item label="房屋类型:" prop="roomTypeName">
+              <el-select v-model="roomForm.roomTypeName" placeholder="请选择房屋类型" @change="handleRoomTypeChange">
+                <el-option 
+                  v-for="roomType in roomTypeOptions" 
+                  :key="roomType.id" 
+                  :label="roomType.typeName" 
+                  :value="roomType.typeName" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -266,10 +271,35 @@
 </template>
 
 <script>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import {
+  getAreaTree,
+  getAreaById,
+  addArea,
+  updateArea,
+  deleteArea,
+  cascadeDeleteArea,
+  searchArea,
+  AREA_TYPES,
+  AREA_TYPE_LABELS
+} from '@/api/area.js'
+import {
+  searchRooms,
+  getRoomById,
+  addRoom,
+  updateRoom,
+  deleteRoom,
+  batchDeleteRooms,
+  getRoomTypes,
+  checkRoomUniqueness,
+  importRooms,
+  exportRooms,
+  ROOM_TYPES,
+  ROOM_TYPE_LABELS
+} from '@/api/room.js'
 
 export default {
   name: 'HouseManagement',
@@ -288,17 +318,27 @@ export default {
 
     // 搜索表单
     const searchForm = reactive({
-      roomNumber: '',
+      roomNo: '',
       roomName: '',
-      roomType: ''
+      roomTypeName: '',
+      roomAreaId: '',
+      roomAreaName: '',
+      roomCode: ''
     })
 
     // 房间表单
     const roomForm = reactive({
-      roomCode: '',
+      id: '',
       roomName: '',
-      roomNumber: '',
-      roomType: '教室',
+      roomAreaId: '',
+      roomAreaName: '',
+      roomNo: '',
+      roomTypeId: '',
+      roomTypeName: '教室',
+      roomVolume: '',
+      remark: '',
+      roomCode: '',
+      extend2: '',
       roomArea: '',
       capacity: ''
     })
@@ -320,10 +360,10 @@ export default {
       roomName: [
         { required: true, message: '请输入房屋名称', trigger: 'blur' }
       ],
-      roomNumber: [
+      roomNo: [
         { required: true, message: '请输入房间号码', trigger: 'blur' }
       ],
-      roomType: [
+      roomTypeName: [
         { required: true, message: '请选择房屋类型', trigger: 'change' }
       ]
     }
@@ -336,130 +376,35 @@ export default {
 
     // 楼栋结构树及搜索关键字
     const buildingKeyword = ref('')
-    const buildingTreeData = ref([
-      {
-        label: '达才楼',
-        children: [
-          { label: 'B2' },
-          { label: 'B1' },
-          { label: '1F' },
-          { label: '2F' },
-          { label: '3F' },
-          { label: '4F' },
-          { label: '5F' },
-          { label: '6F' }
-        ]
-      },
-      { label: '成彦楼' },
-      { label: '笃行楼' },
-      { label: '博雅楼' },
-      { label: '正芯楼' },
-      { label: '学华楼' }
-    ])
+    const buildingTreeData = ref([])
+    
+    // 当前选中的楼栋区域信息
+    const selectedBuildingArea = ref(null)
 
     // 楼宇树形数据
-    const treeData = ref([
-      {
-        id: 1,
-        label: '总部大楼',
-        type: 'root',
-        count: 156,
-        children: [
-          {
-            id: 2,
-            label: '1楼',
-            type: 'floor',
-            count: 45,
-            children: [
-              {
-                id: 3,
-                label: '101',
-                type: 'room',
-                count: 0
-              },
-              {
-                id: 4,
-                label: '102',
-                type: 'room',
-                count: 0
-              }
-            ]
-          },
-          {
-            id: 5,
-            label: '2楼',
-            type: 'floor',
-            count: 32
-          }
-        ]
-      }
-    ])
+    const treeData = ref([])
 
     const treeProps = {
       children: 'children',
-      label: 'label'
+      label: 'areaName'
     }
 
     // 房屋数据
-    const houseTableData = ref([
-      {
-        id: 1,
-        roomCode: '010CL010101',
-        roomName: '房屋名称1',
-        roomNumber: '101',
-        roomType: '会议室',
-        roomArea: '500',
-        capacity: '100',
-        updateTime: '2021.12.10 13:34'
-      },
-      {
-        id: 2,
-        roomCode: '010CL010102',
-        roomName: '房屋名称2',
-        roomNumber: '102',
-        roomType: '实验室',
-        roomArea: '500',
-        capacity: '100',
-        updateTime: '2021.12.10 13:34'
-      },
-      {
-        id: 3,
-        roomCode: '010CL010103',
-        roomName: '房屋名称3',
-        roomNumber: '103',
-        roomType: '教室',
-        roomArea: '500',
-        capacity: '100',
-        updateTime: '2021.12.10 13:34'
-      },
-      {
-        id: 4,
-        roomCode: '010CL010104',
-        roomName: '房屋名称4',
-        roomNumber: '104',
-        roomType: '办公室',
-        roomArea: '500',
-        capacity: '100',
-        updateTime: '2021.12.10 13:34'
-      },
-      {
-        id: 5,
-        roomCode: '010CL010105',
-        roomName: '房屋名称5',
-        roomNumber: '105',
-        roomType: '会议室',
-        roomArea: '500',
-        capacity: '100',
-        updateTime: '2021.12.10 13:34'
-      }
-    ])
+    const houseTableData = ref([])
+    
+    // 房间类型选项
+    const roomTypeOptions = ref([])
+
+    // 加载状态
+    const loading = ref(false)
+    const treeLoading = ref(false)
 
     // 计算属性
     const dialogTitle = computed(() => {
       if (actionType.value === 'parent') {
-        return selectedNode.value ? `在"${selectedNode.value.label}"同级添加主题` : '添加主题'
+        return selectedNode.value ? `在"${selectedNode.value.areaName}"同级添加主题` : '添加主题'
       } else {
-        return selectedNode.value ? `在"${selectedNode.value.label}"下添加子主题` : '添加子主题'
+        return selectedNode.value ? `在"${selectedNode.value.areaName}"下添加子主题` : '添加子主题'
       }
     })
 
@@ -487,23 +432,121 @@ export default {
       return typeMap[type] || 'default'
     }
 
+    // API调用方法
+    const loadAreaTree = async () => {
+      try {
+        treeLoading.value = true
+        const response = await getAreaTree()
+        if (response.code === 200) {
+          treeData.value = response.data || []
+        } else {
+          ElMessage.error(response.message || '获取区域树失败')
+        }
+      } catch (error) {
+        console.error('获取区域树失败:', error)
+        ElMessage.error('获取区域树失败')
+      } finally {
+        treeLoading.value = false
+      }
+    }
+
+    // 加载楼栋架构数据
+    const loadBuildingTree = async () => {
+      try {
+        const response = await getAreaTree()
+        if (response.code === 200) {
+          // 将后端返回的区域树数据转换为前端需要的格式
+          const formatTreeData = (nodes) => {
+            return nodes.map(node => ({
+              label: node.areaName,
+              id: node.id,
+              type: node.type,
+              children: node.children && node.children.length > 0 ? formatTreeData(node.children) : undefined
+            }))
+          }
+          buildingTreeData.value = formatTreeData(response.data || [])
+        } else {
+          ElMessage.error(response.message || '获取楼栋架构失败')
+        }
+      } catch (error) {
+        console.error('获取楼栋架构失败:', error)
+        ElMessage.error('获取楼栋架构失败')
+      }
+    }
+
+    const loadRoomList = async () => {
+      try {
+        loading.value = true
+        const condition = {
+          roomName: searchForm.roomName,
+          roomNo: searchForm.roomNo,
+          roomTypeName: searchForm.roomTypeName,
+          roomAreaId: searchForm.roomAreaId,
+          roomAreaName: searchForm.roomAreaName,
+          roomCode: searchForm.roomCode,
+          pageNumber: housePagination.currentPage,
+          pageSize: housePagination.pageSize
+        }
+        const response = await searchRooms(condition)
+        if (response.code === 200) {
+          const pageData = response.data
+          houseTableData.value = pageData.rows || []
+          housePagination.total = pageData.total || 0
+        } else {
+          ElMessage.error(response.message || '获取房间列表失败')
+        }
+      } catch (error) {
+        console.error('获取房间列表失败:', error)
+        ElMessage.error('获取房间列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
     // 搜索相关方法
     const handleSearch = () => {
-      console.log('搜索房屋:', searchForm)
+      housePagination.currentPage = 1
+      loadRoomList()
+    }
+
+    // 加载房间类型列表
+    const loadRoomTypes = async () => {
+      try {
+        const response = await getRoomTypes()
+        if (response.code === 200) {
+          roomTypeOptions.value = response.data || []
+        } else {
+          ElMessage.error(response.message || '获取房间类型失败')
+        }
+      } catch (error) {
+        console.error('获取房间类型失败:', error)
+        ElMessage.error('获取房间类型失败')
+      }
     }
 
     const handleReset = () => {
       Object.assign(searchForm, {
-        roomNumber: '',
+        roomNo: '',
         roomName: '',
-        roomType: ''
+        roomTypeName: '',
+        roomAreaId: '',
+        roomAreaName: '',
+        roomCode: ''
       })
+      handleSearch()
     }
 
     // 房屋管理相关方法
     const handleAddRoom = () => {
       isEditMode.value = false
       resetRoomForm()
+      
+      // 如果有选中的楼栋区域，自动填充到房间表单中
+      if (selectedBuildingArea.value) {
+        roomForm.roomAreaId = selectedBuildingArea.value.id
+        roomForm.roomAreaName = selectedBuildingArea.value.name
+      }
+      
       roomDialogVisible.value = true
     }
 
@@ -519,38 +562,106 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        const index = houseTableData.value.findIndex(item => item.id === row.id)
-        if (index !== -1) {
-          houseTableData.value.splice(index, 1)
-          housePagination.total -= 1
+      }).then(async () => {
+        try {
+          const response = await deleteRoom(row.id)
+          if (response.code === 200) {
+            ElMessage.success('删除成功')
+            await loadRoomList()
+          } else {
+            ElMessage.error(response.message || '删除失败')
+          }
+        } catch (error) {
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败')
         }
-        ElMessage.success('删除成功')
       })
     }
 
     const handleImport = () => {
-      console.log('导入房间')
+      // 创建文件输入元素
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.xlsx,.xls'
+      input.onchange = async (event) => {
+        const file = event.target.files[0]
+        if (!file) return
+        
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        try {
+          const response = await importRooms(formData)
+          if (response.code === 200) {
+            ElMessage.success(response.data || '导入成功')
+            await loadRoomList()
+          } else {
+            ElMessage.error(response.message || '导入失败')
+          }
+        } catch (error) {
+          console.error('导入失败:', error)
+          ElMessage.error('导入失败')
+        }
+      }
+      input.click()
     }
 
-    const handleExport = () => {
-      console.log('导出房间')
+    const handleExport = async () => {
+      try {
+        const condition = {
+          roomName: searchForm.roomName,
+          roomNo: searchForm.roomNo,
+          roomTypeName: searchForm.roomTypeName,
+          roomAreaId: searchForm.roomAreaId,
+          roomAreaName: searchForm.roomAreaName,
+          roomCode: searchForm.roomCode
+        }
+        
+        const response = await exportRooms(condition)
+        
+        // 创建下载链接
+        const blob = new Blob([response], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `房间数据_${new Date().toISOString().slice(0, 10)}.xlsx`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        ElMessage.success('导出成功')
+      } catch (error) {
+        console.error('导出失败:', error)
+        ElMessage.error('导出失败')
+      }
     }
 
     const handleHouseSizeChange = (size) => {
       housePagination.pageSize = size
+      loadRoomList()
     }
 
     const handleHouseCurrentChange = (page) => {
       housePagination.currentPage = page
+      loadRoomList()
     }
 
     const resetRoomForm = () => {
       Object.assign(roomForm, {
-        roomCode: '',
+        id: '',
         roomName: '',
-        roomNumber: '',
-        roomType: '教室',
+        roomAreaId: '',
+        roomAreaName: '',
+        roomNo: '',
+        roomTypeId: '',
+        roomTypeName: '教室',
+        roomVolume: '',
+        remark: '',
+        roomCode: '',
+        extend2: '',
         roomArea: '',
         capacity: ''
       })
@@ -561,37 +672,68 @@ export default {
       resetRoomForm()
     }
 
+    // 房间类型变更处理
+    const handleRoomTypeChange = (typeName) => {
+      const selectedType = roomTypeOptions.value.find(type => type.typeName === typeName)
+      if (selectedType) {
+        roomForm.roomTypeId = selectedType.id
+      }
+    }
+
     const handleRoomSubmit = async () => {
       try {
         await roomFormRef.value?.validate()
 
-        if (isEditMode.value) {
-          // 编辑房间
-          const index = houseTableData.value.findIndex(item => item.id === currentRoomData.value.id)
-          if (index !== -1) {
-            houseTableData.value[index] = {
-              ...houseTableData.value[index],
-              ...roomForm,
-              updateTime: new Date().toISOString().slice(0, 16).replace('T', ' ')
-            }
-          }
-          ElMessage.success('房间信息更新成功')
-        } else {
-          // 新增房间
-          const newRoom = {
-            id: houseTableData.value.length + 1,
-            ...roomForm,
-            roomCode: roomForm.roomCode || `010CL0101${(houseTableData.value.length + 1).toString().padStart(2, '0')}`,
-            updateTime: new Date().toISOString().slice(0, 16).replace('T', ' ')
-          }
-          houseTableData.value.unshift(newRoom)
-          housePagination.total += 1
-          ElMessage.success('房间添加成功')
+        // 检查房间唯一性
+        const uniqueResponse = await checkRoomUniqueness(
+          roomForm.roomName, 
+          roomForm.roomNo, 
+          isEditMode.value ? roomForm.id : null
+        )
+        if (uniqueResponse.code === 200 && !uniqueResponse.data) {
+          ElMessage.error('房屋名称和房间号码组合已存在')
+          return
         }
 
-        handleRoomDialogClose()
+        const roomData = {
+          roomName: roomForm.roomName,
+          roomAreaId: roomForm.roomAreaId,
+          roomAreaName: roomForm.roomAreaName,
+          roomNo: roomForm.roomNo,
+          roomTypeId: roomForm.roomTypeId,
+          roomTypeName: roomForm.roomTypeName,
+          roomVolume: roomForm.capacity ? parseInt(roomForm.capacity) : null,
+          remark: roomForm.remark,
+          roomCode: roomForm.roomCode,
+          extend2: roomForm.extend2,
+          roomArea: roomForm.roomArea,
+          capacity: roomForm.capacity
+        }
+
+        if (isEditMode.value) {
+          // 编辑房间
+          const response = await updateRoom(roomForm.id, roomData)
+          if (response.code === 200) {
+            ElMessage.success('房间信息更新成功')
+            handleRoomDialogClose()
+            await loadRoomList()
+          } else {
+            ElMessage.error(response.message || '更新失败')
+          }
+        } else {
+          // 新增房间
+          const response = await addRoom(roomData)
+          if (response.code === 200) {
+            ElMessage.success('房间添加成功')
+            handleRoomDialogClose()
+            await loadRoomList()
+          } else {
+            ElMessage.error(response.message || '添加失败')
+          }
+        }
       } catch (error) {
-        console.log('表单验证失败:', error)
+        console.error('房间操作失败:', error)
+        ElMessage.error('操作失败')
       }
     }
 
@@ -626,12 +768,24 @@ export default {
         ElMessage.warning('请先选择节点')
         return
       }
-      ElMessageBox.confirm(`确定要删除"${selectedNode.value.label}"吗？`, '确认删除', {
+      ElMessageBox.confirm(`确定要删除"${selectedNode.value.areaName}"吗？`, '确认删除', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        ElMessage.success('删除成功')
+      }).then(async () => {
+        try {
+          const response = await cascadeDeleteArea(selectedNode.value.id)
+          if (response.code === 200) {
+            ElMessage.success('删除成功')
+            selectedNode.value = null
+            await loadAreaTree()
+          } else {
+            ElMessage.error(response.message || '删除失败')
+          }
+        } catch (error) {
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败')
+        }
       })
     }
 
@@ -643,12 +797,60 @@ export default {
     const handleSubmit = async () => {
       try {
         await formRef.value?.validate()
-        ElMessage.success('添加成功')
-        handleDialogClose()
+
+        const areaData = {
+          areaName: formData.name,
+          parentId: actionType.value === 'child' ? selectedNode.value.id : selectedNode.value.parentId,
+          type: actionType.value === 'child' ? getChildType(selectedNode.value.type) : selectedNode.value.type
+        }
+
+        const response = await addArea(areaData)
+        if (response.code === 200) {
+          ElMessage.success('添加成功')
+          handleDialogClose()
+          await loadAreaTree()
+        } else {
+          ElMessage.error(response.message || '添加失败')
+        }
       } catch (error) {
-        console.log('表单验证失败:', error)
+        console.error('添加失败:', error)
+        ElMessage.error('添加失败')
       }
     }
+
+    // 根据父节点类型确定子节点类型
+    const getChildType = (parentType) => {
+      if (parentType === AREA_TYPES.BUILDING) {
+        return AREA_TYPES.FLOOR
+      } else if (parentType === AREA_TYPES.FLOOR) {
+        return AREA_TYPES.ROOM
+      }
+      return AREA_TYPES.ROOM
+    }
+
+    // 处理楼栋架构树节点点击事件
+    const handleBuildingNodeClick = (data) => {
+      // 保存选中的区域信息
+      selectedBuildingArea.value = {
+        id: data.id,
+        name: data.label
+      }
+      // 设置区域查询条件
+      searchForm.roomAreaId = data.id
+      searchForm.roomAreaName = data.label
+      // 重置分页并查询
+      housePagination.currentPage = 1
+      loadRoomList()
+      ElMessage.success(`已选择区域：${data.label}`)
+    }
+
+    // 页面初始化
+    onMounted(() => {
+      loadAreaTree()
+      loadBuildingTree()
+      loadRoomTypes()
+      loadRoomList()
+    })
 
     return {
       activeTab,
@@ -670,11 +872,15 @@ export default {
       treeData,
       treeProps,
       houseTableData,
+      roomTypeOptions,
       buildingKeyword,
       buildingTreeData,
+      selectedBuildingArea,
       dialogTitle,
+      loading,
+      treeLoading,
       Search,
-      goToHome,  // 新增返回首页方法
+      goToHome,
       goToPersonalCenter,
       logout,
       getRoomTypeTagType,
@@ -689,12 +895,20 @@ export default {
       handleHouseCurrentChange,
       handleRoomDialogClose,
       handleRoomSubmit,
+      handleRoomTypeChange,
       handleNodeClick,
       handleAddParent,
       handleAddChild,
       handleDelete,
       handleDialogClose,
-      handleSubmit
+      handleSubmit,
+      handleBuildingNodeClick,
+      loadRoomTypes,
+      loadBuildingTree,
+      AREA_TYPES,
+      AREA_TYPE_LABELS,
+      ROOM_TYPES,
+      ROOM_TYPE_LABELS
     }
   }
 }
