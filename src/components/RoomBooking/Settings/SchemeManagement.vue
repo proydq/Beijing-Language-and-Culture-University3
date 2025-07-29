@@ -2,30 +2,23 @@
   <div class="scheme-management-container">
     <!-- 左侧导航栏 -->
     <div class="sidebar">
-      <div class="search-section">
-        <el-input v-model="sidebarSearch" placeholder="请输入关键词搜索" clearable>
-          <template #suffix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+      <div class="sidebar-header">
+        <h3>楼栋架构</h3>
       </div>
-
-      <div class="nav-menu">
-        <div class="nav-item active">全部</div>
-        <div class="nav-item">设置楼</div>
-        <div class="nav-item">B2</div>
-        <div class="nav-item">B1</div>
-        <div class="nav-item">1F</div>
-        <div class="nav-item">2F</div>
-        <div class="nav-item">3F</div>
-        <div class="nav-item">4F</div>
-        <div class="nav-item">5F</div>
-        <div class="nav-item">6F</div>
-        <div class="nav-item">高楼层</div>
-        <div class="nav-item">高楼层</div>
-        <div class="nav-item">博雅楼</div>
-        <div class="nav-item">正学楼</div>
-        <div class="nav-item">客学楼</div>
+      <div class="sidebar-content">
+        <el-input
+          v-model="sidebarSearch"
+          placeholder="搜索楼栋"
+          :prefix-icon="Search"
+          clearable
+          class="search-input"
+        />
+        <el-tree
+          :data="buildingTreeData"
+          default-expand-all
+          class="structure-tree"
+          @node-click="handleBuildingNodeClick"
+        />
       </div>
     </div>
 
@@ -127,9 +120,10 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { getAreaTree } from '@/api/area.js'
 
 export default {
   name: 'SchemeManagement',
@@ -149,6 +143,12 @@ export default {
 
     // 选中的行
     const selectedRows = ref([])
+    
+    // 楼栋结构树数据
+    const buildingTreeData = ref([])
+    
+    // 当前选中的楼栋区域信息
+    const selectedBuildingArea = ref(null)
 
     // 房间数据
     const roomData = ref([
@@ -281,6 +281,47 @@ export default {
       ElMessage.info('批量设置权限功能开发中')
     }
 
+    // 加载楼栋架构数据
+    const loadBuildingTree = async () => {
+      try {
+        const response = await getAreaTree()
+        if (response.code === 200) {
+          // 将后端返回的区域树数据转换为前端需要的格式
+          const formatTreeData = (nodes) => {
+            return nodes.map(node => ({
+              label: node.areaName,
+              id: node.id,
+              type: node.type,
+              children: node.children && node.children.length > 0 ? formatTreeData(node.children) : undefined
+            }))
+          }
+          buildingTreeData.value = formatTreeData(response.data || [])
+        } else {
+          ElMessage.error(response.message || '获取楼栋架构失败')
+        }
+      } catch (error) {
+        console.error('获取楼栋架构失败:', error)
+        ElMessage.error('获取楼栋架构失败')
+      }
+    }
+
+    // 处理楼栋架构树节点点击事件
+    const handleBuildingNodeClick = (data) => {
+      // 保存选中的区域信息
+      selectedBuildingArea.value = {
+        id: data.id,
+        name: data.label
+      }
+      ElMessage.success(`已选择区域：${data.label}`)
+      // 这里可以根据选中的区域过滤房间数据
+      // 例如：根据区域ID过滤roomData
+    }
+
+    // 页面初始化
+    onMounted(() => {
+      loadBuildingTree()
+    })
+
     return {
       sidebarSearch,
       roomNameSearch,
@@ -290,6 +331,8 @@ export default {
       total,
       selectedRows,
       roomData,
+      buildingTreeData,
+      selectedBuildingArea,
       handleSelectionChange,
       handleSizeChange,
       handleCurrentChange,
@@ -299,6 +342,8 @@ export default {
       deleteSelected,
       viewDetails,
       batchSetPermissions,
+      handleBuildingNodeClick,
+      loadBuildingTree,
     }
   },
 }
@@ -313,39 +358,55 @@ export default {
 
 /* 左侧导航栏 */
 .sidebar {
-  width: 200px;
-  background: white;
+  width: 250px;
+  background-color: white;
   border-right: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
 }
 
-.search-section {
-  padding: 16px;
+.sidebar-header {
+  padding: 20px;
   border-bottom: 1px solid #e4e7ed;
 }
 
-.nav-menu {
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.sidebar-content {
   flex: 1;
-  padding: 8px 0;
+  padding: 20px;
+  overflow-y: auto;
 }
 
-.nav-item {
-  padding: 12px 20px;
-  cursor: pointer;
-  color: #606266;
+.search-input {
+  margin-bottom: 15px;
+}
+
+.structure-tree {
+  margin-top: 10px;
+}
+
+.structure-tree :deep(.el-tree-node__content) {
+  height: 32px;
+  line-height: 32px;
+}
+
+.structure-tree :deep(.el-tree-node__label) {
   font-size: 14px;
-  transition: all 0.3s;
+  color: #606266;
 }
 
-.nav-item:hover {
-  background: #f5f7fa;
-  color: #409eff;
+.structure-tree :deep(.el-tree-node:focus > .el-tree-node__content) {
+  background-color: #f5f7fa;
 }
 
-.nav-item.active {
-  background: #409eff;
-  color: white;
+.structure-tree :deep(.el-tree-node__content:hover) {
+  background-color: #f5f7fa;
 }
 
 /* 主要内容区域 */

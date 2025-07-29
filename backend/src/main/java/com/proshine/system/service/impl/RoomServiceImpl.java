@@ -274,6 +274,7 @@ public class RoomServiceImpl implements RoomService {
         RoomVo vo = new RoomVo();
         vo.setId(room.getId());
         vo.setRoomName(room.getRoomName());
+        vo.setRoomAreaId(room.getRoomAreaId());
         vo.setRoomAreaName(room.getRoomAreaName());
         vo.setRoomNo(room.getRoomNo());
         vo.setRoomTypeName(room.getRoomTypeName());

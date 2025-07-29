@@ -20,17 +20,16 @@
     <div class="time-table">
       <el-table :data="timeSlotData" style="width: 100%" border>
         <el-table-column prop="sequence" label="序号" width="80" />
-        <el-table-column prop="timeSlot" label="预约时间段" width="200" />
-        <el-table-column prop="remark" label="备注" />
-        <el-table-column prop="bookingDays" label="预约天数" width="120">
+        <el-table-column prop="advanceDays" label="预约时间（天）" width="150" >
           <template #default="{ row }">
-            <span v-if="row.bookingDays === '不限制'" class="no-limit-text">{{
-              row.bookingDays
-            }}</span>
-            <span v-else-if="row.bookingDays === '全天预约'" class="all-day-text">{{
-              row.bookingDays
-            }}</span>
-            <span v-else class="days-text">{{ row.bookingDays }}</span>
+            <span v-if="row.advanceDays === 0 || row.advanceDays === '不限制'">不限制</span>
+            <span v-else>{{ row.advanceDays }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remark" label="备注" />
+        <el-table-column prop="bindingUserCount" label="绑定人数" width="120">
+          <template #default="{ row }">
+            <span>{{ row.bindingUserCount || 0 }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="250">
@@ -39,8 +38,8 @@
               <el-button type="warning" size="small" @click="managePersonnel(row)"
                 >管理人员</el-button
               >
-              <el-button type="primary" size="small" @click="editTimeSlot(row)">编辑</el-button>
-              <el-button type="danger" size="small" @click="deleteTimeSlot(row)">删除</el-button>
+              <el-button v-if="row.id !== 'default'" type="primary" size="small" @click="editTimeSlot(row)">编辑</el-button>
+              <el-button v-if="row.id !== 'default'" type="danger" size="small" @click="deleteTimeSlot(row)">删除</el-button>
             </span>
           </template>
         </el-table-column>
@@ -50,7 +49,7 @@
     <!-- 编辑时间段对话框 -->
     <el-dialog
       v-model="editDialogVisible"
-      title="设置可预约时间天数"
+      :title="currentEditingRow ? '编辑预约时间天数' : '新增预约时间天数'"
       width="500px"
       :before-close="handleClose"
     >
@@ -102,12 +101,13 @@
         <!-- 左侧可选人员 -->
         <div class="personnel-section">
           <div class="section-header">
-            <span>1/29 条</span>
+            <span>{{ availablePersonnel.length }}/{{ availableTotal }} 条</span>
             <div class="search-box">
               <el-select
                 v-model="selectedDepartment"
                 placeholder="全部"
                 style="width: 120px; margin-right: 10px"
+                @change="handleDepartmentChange"
               >
                 <el-option label="全部" value="all"></el-option>
                 <el-option label="部门1" value="dept1"></el-option>
@@ -118,9 +118,11 @@
                 placeholder="请输入姓名/工号"
                 style="width: 200px"
                 clearable
+                @keyup.enter="handleSearch"
+                @clear="handleSearch"
               >
                 <template #suffix>
-                  <el-icon><Search /></el-icon>
+                  <el-icon @click="handleSearch" style="cursor: pointer"><Search /></el-icon>
                 </template>
               </el-input>
             </div>
@@ -143,6 +145,7 @@
               :total="availableTotal"
               layout="prev, pager, next"
               small
+              @current-change="handleAvailablePageChange"
             />
           </div>
         </div>
@@ -166,7 +169,7 @@
         <!-- 右侧已选人员 -->
         <div class="personnel-section">
           <div class="section-header">
-            <span>1 条</span>
+            <span>{{ assignedPersonnel.length }} 条</span>
             <div class="search-box">
               <el-input
                 v-model="assignedSearchKeyword"
@@ -198,6 +201,7 @@
               :total="assignedTotal"
               layout="prev, pager, next"
               small
+              @current-change="handleAssignedPageChange"
             />
           </div>
         </div>
@@ -214,9 +218,27 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, ArrowRight, ArrowLeft } from '@element-plus/icons-vue'
+// 导入预约相关API
+import {
+  getUserBookingLimit,
+  setUserBookingLimit,
+  batchSetUserBookingLimits,
+  deleteUserBookingLimit,
+  getAllUserBookingLimits,
+  getBookingTimeRuleList,
+  getBookingTimeRuleById,
+  createBookingTimeRule,
+  updateBookingTimeRule,
+  deleteBookingTimeRule,
+  getBookingTimeRulesByUserId,
+  checkBookingTime,
+  getAvailableBookingTimes
+} from '@/api/booking'
+// 导入用户相关API
+import { userAPI } from '@/api/user'
 
 export default {
   name: 'BookingTimeSettings',
@@ -224,26 +246,11 @@ export default {
     // 预约时间段数据
     const timeSlotData = ref([
       {
-        id: 1,
+        id: 'default',
         sequence: 1,
-        timeSlot: '不限制',
-        remark:
-          '表示预约时间时，可预约的天数限制规则，可预约时间为：3月1日-3月16日，3月16日后不可预约；单独预约的改：3月17日-4月1日，4月2日不可预约；',
-        bookingDays: 3000,
-      },
-      {
-        id: 2,
-        sequence: 2,
-        timeSlot: '10',
-        remark: '全天预约时间',
-        bookingDays: 20,
-      },
-      {
-        id: 3,
-        sequence: 3,
-        timeSlot: '30',
-        remark: '全天预约时间',
-        bookingDays: 10,
+        advanceDays: '不限制',
+        remark: '当前时间为默认时间，所有可预约人均默认在此时间周期内，如需要更改请新建提前时间，进行授权',
+        bindingUserCount: '未更改的用户数',
       },
     ])
 
@@ -284,13 +291,189 @@ export default {
     // 已选人员数据
     const assignedPersonnel = ref([{ id: 11, workId: 'A219214', name: '李四' }])
 
+    // 加载预约时间规则数据
+    const loadTimeRules = async () => {
+      try {
+        const params = {
+          pageNum: 1,
+          pageSize: 100
+        }
+        const response = await getBookingTimeRuleList(params)
+
+        if (response.data && response.data.rows) {
+          // 保留默认数据，将从后端获取的数据追加到默认数据之后
+          const defaultData = timeSlotData.value.find(item => item.id === 'default')
+          const backendData = response.data.rows.map((rule, index) => ({
+            id: rule.id,
+            sequence: index + 2, // 从2开始，因为默认数据占用序号1
+            advanceDays: rule.advanceBookingDays || '不限制',
+            remark: rule.ruleName || '',
+            bindingUserCount: rule.bindingUserCount || 0
+          }))
+
+          timeSlotData.value = defaultData ? [defaultData, ...backendData] : backendData
+        }
+      } catch (error) {
+        console.error('加载预约时间规则失败:', error)
+        ElMessage.error('加载预约时间规则失败: ' + (error.message || '未知错误'))
+      }
+    }
+
+    // 加载用户预约限制数据
+    const loadUserBookingLimits = async () => {
+      try {
+        const response = await getAllUserBookingLimits()
+        if (response.data) {
+          console.log('用户预约限制数据:', response.data)
+        }
+      } catch (error) {
+        console.error('加载用户预约限制失败:', error)
+        ElMessage.error('加载用户预约限制失败: ' + (error.message || '未知错误'))
+      }
+    }
+
+    // 加载可选人员列表
+    const loadAvailablePersonnel = async () => {
+      try {
+        const searchCondition = {
+          pageNumber: availablePage.value,
+          pageSize: 10,
+          name: searchKeyword.value,
+          departmentId: selectedDepartment.value === 'all' ? '' : selectedDepartment.value
+        }
+
+        const response = await userAPI.searchUsers(searchCondition)
+        if (response.data && response.data.rows) {
+          // 过滤掉已分配的人员
+          const assignedIds = assignedPersonnel.value.map(p => p.id)
+          availablePersonnel.value = response.data.rows
+            .filter(user => !assignedIds.includes(user.id))
+            .map(user => ({
+              id: user.id,
+              workId: user.jobNumber || user.username,
+              name: user.realName || user.username
+            }))
+          availableTotal.value = response.data.total || 0
+        }
+      } catch (error) {
+        console.error('加载可选人员失败:', error)
+        ElMessage.error('加载可选人员失败: ' + (error.message || '未知错误'))
+      }
+    }
+
+    // 加载当前时间段对应的人员
+    const loadAssignedPersonnel = async (row) => {
+      try {
+        console.log('加载已分配人员，当前行数据:', row)
+
+        // 获取所有用户预约限制
+        const response = await getAllUserBookingLimits()
+        console.log('获取到的用户预约限制数据:', response.data)
+
+        if (response.data) {
+          // 筛选出与当前时间段匹配的用户
+          const matchedLimits = response.data.filter(limit => {
+            if (row.id === 'default') {
+              // 默认数据：显示没有特定限制的用户或限制值为0的用户
+              return !limit.limitValue || limit.limitValue === 0 || limit.limitValue === '0'
+            } else {
+              // 具体时间段：显示有对应限制的用户
+              const rowAdvanceDays = typeof row.advanceDays === 'string' && row.advanceDays === '不限制' ? 0 : parseInt(row.advanceDays)
+              const limitValue = parseInt(limit.limitValue)
+              return limitValue === rowAdvanceDays && limit.limitType === 'ADVANCE_BOOKING'
+            }
+          })
+
+          console.log('筛选后的匹配限制:', matchedLimits)
+
+          // 根据用户ID获取用户详细信息
+          const assignedUsers = []
+          for (const limit of matchedLimits) {
+            try {
+              const userResponse = await userAPI.getUserById(limit.userId)
+              if (userResponse.data) {
+                assignedUsers.push({
+                  id: userResponse.data.id,
+                  workId: userResponse.data.jobNumber || userResponse.data.username,
+                  name: userResponse.data.name || userResponse.data.username
+                })
+              }
+            } catch (userError) {
+              console.warn('获取用户信息失败:', limit.userId, userError)
+            }
+          }
+
+          console.log('最终的已分配用户:', assignedUsers)
+          assignedPersonnel.value = assignedUsers
+          assignedTotal.value = assignedUsers.length
+        } else {
+          // 如果没有数据，清空已分配人员
+          assignedPersonnel.value = []
+          assignedTotal.value = 0
+        }
+      } catch (error) {
+        console.error('加载已分配人员失败:', error)
+        ElMessage.error('加载已分配人员失败: ' + (error.message || '未知错误'))
+        // 出错时也要清空数据
+        assignedPersonnel.value = []
+        assignedTotal.value = 0
+      }
+    }
+
+    // 通过接口加载当前时间段对应的人员
+    const loadAssignedPersonnelFromAPI = async (row) => {
+      try {
+        console.log('通过接口加载已分配人员，当前行数据:', row)
+
+        // 如果是默认数据，清空已分配人员
+        if (row.id === 'default') {
+          assignedPersonnel.value = []
+          assignedTotal.value = 0
+          return
+        }
+
+        // 调用根据ID获取预约时间规则详情接口
+        const response = await getBookingTimeRuleById(row.id)
+        console.log('获取到的预约时间规则详情:', response.data)
+
+        if (response.data && response.data.applicableUsers) {
+          // 转换用户数据格式
+          const assignedUsers = response.data.applicableUsers.map(user => ({
+            id: user.userId,
+            workId: user.jobNumber || user.userId,
+            name: user.userName
+          }))
+
+          console.log('转换后的已分配用户:', assignedUsers)
+          assignedPersonnel.value = assignedUsers
+          assignedTotal.value = assignedUsers.length
+        } else {
+          // 如果没有数据，清空已分配人员
+          assignedPersonnel.value = []
+          assignedTotal.value = 0
+        }
+      } catch (error) {
+        console.error('通过接口加载已分配人员失败:', error)
+        ElMessage.error('加载已分配人员失败: ' + (error.message || '未知错误'))
+        // 出错时也要清空数据
+        assignedPersonnel.value = []
+        assignedTotal.value = 0
+      }
+    }
+
     const addTimeSlot = () => {
-      ElMessage.info('新增时间段功能开发中...')
+      // 重置表单
+      editForm.value = {
+        days: '',
+        remark: ''
+      }
+      currentEditingRow.value = null
+      editDialogVisible.value = true
     }
 
     const editTimeSlot = (row) => {
       currentEditingRow.value = row
-      editForm.value.days = row.bookingDays
+      editForm.value.days = row.advanceDays === '不限制' ? '' : row.advanceDays
       editForm.value.remark = row.remark
       editDialogVisible.value = true
     }
@@ -304,27 +487,63 @@ export default {
       currentEditingRow.value = null
     }
 
-    const confirmEdit = () => {
+    const confirmEdit = async () => {
       if (!editForm.value.days) {
         ElMessage.warning('请输入预约天数')
         return
       }
 
-      // 更新数据
-      if (currentEditingRow.value) {
-        const index = timeSlotData.value.findIndex((item) => item.id === currentEditingRow.value.id)
-        if (index > -1) {
-          timeSlotData.value[index].bookingDays = parseInt(editForm.value.days)
-          timeSlotData.value[index].remark = editForm.value.remark
-        }
-      }
+      try {
+        if (currentEditingRow.value) {
+          // 编辑模式：更新预约时间规则
+          const updateData = {
+            advanceBookingDays: parseInt(editForm.value.days),
+            ruleName: editForm.value.remark,
+            isActive: true
+          }
 
-      ElMessage.success('修改成功')
-      handleClose()
+          await updateBookingTimeRule(currentEditingRow.value.id, updateData)
+
+          // 更新本地数据
+          const index = timeSlotData.value.findIndex((item) => item.id === currentEditingRow.value.id)
+          if (index > -1) {
+            timeSlotData.value[index].advanceDays = parseInt(editForm.value.days)
+            timeSlotData.value[index].remark = editForm.value.remark
+          }
+
+          ElMessage.success('修改成功')
+        } else {
+          // 新增模式：创建新的预约时间规则
+          const newRule = {
+            ruleName: editForm.value.remark || `预约时间规则-${editForm.value.days}天`,
+            ruleType: 'ADVANCE_BOOKING',
+            advanceBookingDays: parseInt(editForm.value.days),
+            isActive: true
+          }
+
+          await createBookingTimeRule(newRule)
+          ElMessage.success('新增时间段成功')
+
+          // 重新加载数据
+          await loadTimeRules()
+        }
+
+        handleClose()
+      } catch (error) {
+        console.error(currentEditingRow.value ? '修改失败:' : '新增失败:', error)
+        ElMessage.error((currentEditingRow.value ? '修改失败: ' : '新增失败: ') + (error.message || '未知错误'))
+      }
     }
 
-    const managePersonnel = (row) => {
+    const managePersonnel = async (row) => {
+      currentEditingRow.value = row
       personnelDialogVisible.value = true
+
+      // 加载可选人员列表
+      await loadAvailablePersonnel()
+
+      // 通过接口获取当前时间段对应的人员
+      await loadAssignedPersonnelFromAPI(row)
     }
 
     const handlePersonnelClose = () => {
@@ -346,55 +565,120 @@ export default {
         const exists = assignedPersonnel.value.find((p) => p.id === person.id)
         if (!exists) {
           assignedPersonnel.value.push({ ...person })
-          const index = availablePersonnel.value.findIndex((p) => p.id === person.id)
-          if (index > -1) {
-            availablePersonnel.value.splice(index, 1)
-          }
         }
       })
       selectedAvailable.value = []
       assignedTotal.value = assignedPersonnel.value.length
-      availableTotal.value = availablePersonnel.value.length
+      // 重新加载可选人员列表以更新过滤
+      loadAvailablePersonnel()
     }
 
     const removePersonnel = () => {
       selectedAssigned.value.forEach((person) => {
-        const exists = availablePersonnel.value.find((p) => p.id === person.id)
-        if (!exists) {
-          availablePersonnel.value.push({ ...person })
-          const index = assignedPersonnel.value.findIndex((p) => p.id === person.id)
-          if (index > -1) {
-            assignedPersonnel.value.splice(index, 1)
-          }
+        const index = assignedPersonnel.value.findIndex((p) => p.id === person.id)
+        if (index > -1) {
+          assignedPersonnel.value.splice(index, 1)
         }
       })
       selectedAssigned.value = []
       assignedTotal.value = assignedPersonnel.value.length
-      availableTotal.value = availablePersonnel.value.length
+      // 重新加载可选人员列表以更新过滤
+      loadAvailablePersonnel()
     }
 
-    const confirmPersonnel = () => {
-      ElMessage.success('人员设置成功')
-      handlePersonnelClose()
+    const confirmPersonnel = async () => {
+      try {
+        // 如果是默认数据，不允许设置人员
+        if (currentEditingRow.value.id === 'default') {
+          ElMessage.warning('默认时间段不支持设置人员')
+          return
+        }
+
+        console.log('设置人员，当前行:', currentEditingRow.value)
+        console.log('已分配人员:', assignedPersonnel.value)
+
+        // 准备更新数据
+        const updateData = {
+          ruleName: currentEditingRow.value.remark || currentEditingRow.value.ruleName,
+          advanceBookingDays: currentEditingRow.value.advanceDays,
+          applicableUserIds: assignedPersonnel.value.map(person => person.id),
+          isActive: true
+        }
+
+        console.log('准备更新的规则数据:', updateData)
+
+        // 调用编辑预约时间规则接口
+        await updateBookingTimeRule(currentEditingRow.value.id, updateData)
+
+        // 更新本地数据中的绑定人数
+        const index = timeSlotData.value.findIndex(item => item.id === currentEditingRow.value.id)
+        if (index > -1) {
+          timeSlotData.value[index].bindingUserCount = assignedPersonnel.value.length
+        }
+
+        ElMessage.success('人员设置成功')
+        handlePersonnelClose()
+      } catch (error) {
+        console.error('人员设置失败:', error)
+        ElMessage.error('人员设置失败: ' + (error.message || '未知错误'))
+      }
     }
 
     const deleteTimeSlot = (row) => {
-      ElMessageBox.confirm(`确定要删除时间段 "${row.timeSlot}" 吗？`, '确认删除', {
+      ElMessageBox.confirm(`确定要删除预约时间 "${row.advanceDays === 0 ? '不限制' : row.advanceDays + '天'}" 吗？`, '确认删除', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning',
       })
-        .then(() => {
-          const index = timeSlotData.value.findIndex((item) => item.id === row.id)
-          if (index > -1) {
-            timeSlotData.value.splice(index, 1)
-            ElMessage.success('删除成功')
+        .then(async () => {
+          try {
+            // 调用删除API
+            await deleteBookingTimeRule(row.id)
+
+            // 更新本地数据
+            const index = timeSlotData.value.findIndex((item) => item.id === row.id)
+            if (index > -1) {
+              timeSlotData.value.splice(index, 1)
+              ElMessage.success('删除成功')
+            }
+          } catch (error) {
+            console.error('删除失败:', error)
+            ElMessage.error('删除失败: ' + (error.message || '未知错误'))
           }
         })
         .catch(() => {
           ElMessage.info('已取消删除')
         })
     }
+
+    // 搜索功能
+    const handleSearch = () => {
+      availablePage.value = 1
+      loadAvailablePersonnel()
+    }
+
+    // 分页变化处理
+    const handleAvailablePageChange = (page) => {
+      availablePage.value = page
+      loadAvailablePersonnel()
+    }
+
+    const handleAssignedPageChange = (page) => {
+      assignedPage.value = page
+      // 已分配人员暂时不需要分页，因为数据量较小
+    }
+
+    // 部门选择变化处理
+    const handleDepartmentChange = () => {
+      availablePage.value = 1
+      loadAvailablePersonnel()
+    }
+
+    // 组件挂载时加载数据
+    onMounted(() => {
+      loadTimeRules()
+      loadUserBookingLimits()
+    })
 
     return {
       timeSlotData,
@@ -425,6 +709,10 @@ export default {
       addPersonnel,
       removePersonnel,
       confirmPersonnel,
+      handleSearch,
+      handleAvailablePageChange,
+      handleAssignedPageChange,
+      handleDepartmentChange,
       Search,
       ArrowRight,
       ArrowLeft,

@@ -47,9 +47,9 @@
           @selection-change="userSelectionChange"
         >
           <el-table-column type="selection" width="50" />
-          <el-table-column prop="name" label="姓名" width="120" />
+          <el-table-column prop="realName" label="姓名" width="120" />
           <el-table-column prop="jobNumber" label="工号" width="160" />
-          <el-table-column prop="department" label="所属部门" />
+          <el-table-column prop="departmentName" label="所属部门" />
         </el-table>
         <div class="pagination-section">
           <el-pagination
@@ -102,8 +102,8 @@
         >
           <el-table-column type="selection" width="50" />
           <el-table-column prop="roomName" label="预约教室" />
-          <el-table-column prop="roomCode" label="房间号" width="120" />
-          <el-table-column prop="building" label="所属楼栋" />
+          <el-table-column prop="roomNo" label="房间号" width="120" />
+          <el-table-column prop="roomAreaName" label="所属楼栋" />
         </el-table>
         <div class="pagination-section">
           <el-pagination
@@ -201,11 +201,11 @@ const filterListByTypeAndKeyword = (list, filter) => {
     const kw = filter.keyword.toLowerCase()
     result = result.filter(
       (item) =>
-        (item.name && item.name.includes(filter.keyword)) ||
+        (item.realName && item.realName.includes(filter.keyword)) ||
         (item.jobNumber && String(item.jobNumber).toLowerCase().includes(kw)) ||
         (item.roomName && item.roomName.includes(filter.keyword)) ||
-        (item.roomCode && String(item.roomCode).toLowerCase().includes(kw)) ||
-        (item.building && item.building.includes(filter.keyword))
+        (item.roomNo && String(item.roomNo).toLowerCase().includes(kw)) ||
+        (item.roomAreaName && item.roomAreaName.includes(filter.keyword))
     )
   }
   return result

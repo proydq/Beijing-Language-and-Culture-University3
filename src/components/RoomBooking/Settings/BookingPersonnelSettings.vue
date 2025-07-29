@@ -5,12 +5,21 @@
         <h2>预约人员权限列表</h2>
       </div>
       <div class="header-actions">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="请输入关键词搜索"
+          style="width: 200px; margin-right: 10px"
+          clearable
+          @clear="loadPermissionList"
+          @keyup.enter="loadPermissionList"
+        />
+        <el-button @click="loadPermissionList">搜索</el-button>
         <el-button type="primary" @click="addPersonnelPermission"> 新增 </el-button>
         <el-button @click="exportPersonnelList"> 导出 </el-button>
       </div>
     </div>
 
-    <el-table :data="personnelPermissionData" style="width: 100%" border>
+    <el-table :data="personnelPermissionData" style="width: 100%" border v-loading="loading">
       <el-table-column prop="subject" label="主题" width="200" />
       <el-table-column prop="authorizedPersonnel" label="权限人员" min-width="300">
         <template #default="{ row }">
@@ -55,6 +64,19 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 分页组件 -->
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="pagination.pageNum"
+        v-model:page-size="pagination.pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="pagination.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
     <!-- 权限人员详情弹出框 -->
     <el-dialog v-model="personnelDetailDialogVisible" title="权限人员" width="600px" destroy-on-close>
       <div class="personnel-detail-container">
@@ -170,10 +192,14 @@
         <div class="permission-side">
           <h3 class="side-title">权限人员名单</h3>
           <div class="search-bar">
-            <el-select v-model="userFilter.type" class="filter-select">
-              <el-option label="全部" value="all" />
-              <el-option label="老师" value="teacher" />
-              <el-option label="学生" value="student" />
+            <el-select v-model="userFilter.organizationId" class="filter-select" placeholder="选择组织机构">
+              <el-option label="全部" value="" />
+              <el-option
+                v-for="org in organizationOptions"
+                :key="org.value"
+                :label="org.label"
+                :value="org.value"
+              />
             </el-select>
             <el-input
               v-model="userFilter.keyword"
@@ -256,50 +282,135 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 用户选择弹窗 -->
+    <el-dialog v-model="userSelectDialogVisible" title="选择用户" width="800px" destroy-on-close>
+      <div class="select-dialog-content">
+        <div class="search-section">
+          <el-input
+            v-model="userFilter.keyword"
+            placeholder="请输入姓名/工号"
+            style="width: 200px; margin-right: 10px"
+            clearable
+            @keyup.enter="loadAvailableUsers"
+          />
+          <el-button type="primary" @click="loadAvailableUsers">搜索</el-button>
+        </div>
+
+        <el-table
+          :data="availableUsers"
+          border
+          style="width: 100%"
+          v-loading="userSelectLoading"
+          @selection-change="handleUserSelectChange"
+        >
+          <el-table-column type="selection" width="50" />
+          <el-table-column prop="realName" label="姓名" width="120" />
+          <el-table-column prop="jobNumber" label="工号" width="160" />
+          <el-table-column prop="departmentName" label="所属部门" />
+        </el-table>
+
+        <div class="pagination-section">
+          <el-pagination
+            v-model:current-page="userSelectPagination.pageNum"
+            v-model:page-size="userSelectPagination.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="userSelectPagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            small
+            @size-change="handleUserSelectSizeChange"
+            @current-change="handleUserSelectCurrentChange"
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="userSelectDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmAddUsers">确定添加</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 房间选择弹窗 -->
+    <el-dialog v-model="roomSelectDialogVisible" title="选择房间" width="800px" destroy-on-close>
+      <div class="select-dialog-content">
+        <div class="search-section">
+          <el-input
+            v-model="roomFilter.keyword"
+            placeholder="请输入房间名称"
+            style="width: 200px; margin-right: 10px"
+            clearable
+            @keyup.enter="loadAvailableRooms"
+          />
+          <el-button type="primary" @click="loadAvailableRooms">搜索</el-button>
+        </div>
+
+        <el-table
+          :data="availableRooms"
+          border
+          style="width: 100%"
+          v-loading="roomSelectLoading"
+          @selection-change="handleRoomSelectChange"
+        >
+          <el-table-column type="selection" width="50" />
+          <el-table-column prop="roomName" label="房间名称" />
+          <el-table-column prop="roomNo" label="房间号" width="120" />
+          <el-table-column prop="roomAreaName" label="所属区域" />
+        </el-table>
+
+        <div class="pagination-section">
+          <el-pagination
+            v-model:current-page="roomSelectPagination.pageNum"
+            v-model:page-size="roomSelectPagination.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="roomSelectPagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            small
+            @size-change="handleRoomSelectSizeChange"
+            @current-change="handleRoomSelectCurrentChange"
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="roomSelectDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmAddRooms">确定添加</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  getPermissionList,
+  createPermission,
+  updatePermission,
+  deletePermission,
+  exportPermissions,
+  getAvailableUsers,
+  getAvailableRooms
+} from '@/api/bookingPersonnelPermission.js'
+import { getOrganizationOptions } from '@/api/organization.js'
 
 export default {
   name: 'BookingPersonnelSettings',
   setup() {
-    // 预约人员权限数据 - 根据截图的实际数据结构
-    const personnelPermissionData = ref([
-      {
-        id: 1,
-        subject: '物理实验室一层、二层、三层可预约人员',
-        authorizedPersonnel:
-          '杨超；郭辉；邓伯雯；赵芳；潘欣妍；张宇；吴俊杰；刘敏；孙辉；高颖；王丽；陈杰；周琼；赵诗雅；徐赠；王宇轩；黄斯；李鸥；荣意；贾永强；张良嘉；曹明红；郑子豪......',
-        authorizedUsers: [
-          { name: '张三', jobNumber: 'H0001234', department: '科技处' },
-          { name: '李四', jobNumber: 'H0001235', department: '信息化办公室' },
-        ],
-        bookingRooms:
-          '多媒体教室（101）；多媒体教室（102）；多媒体教室（103）；多媒体教室（104）；多媒体教室（105）；多媒体教室（106）；多媒体教室（107）；多媒体教室（108）；多媒体教室（109）；多媒体教室（110）......',
-        roomList: [
-          { roomName: '多媒体教室（101）', roomCode: '101', building: '科研楼' },
-          { roomName: '多媒体教室（102）', roomCode: '102', building: '科研楼' },
-        ],
-        creator: '张三',
-        createTime: '2024.03.08 09:16:26',
-      },
-      {
-        id: 2,
-        subject: '物理实验室四层可预约人员',
-        authorizedPersonnel: '杨超；郭辉；邓伯雯；赵芳；潘欣妍；',
-        authorizedUsers: [
-          { name: '王五', jobNumber: 'H0001236', department: '后勤处' },
-          { name: '赵六', jobNumber: 'H0001237', department: '资产管理处' },
-        ],
-        bookingRooms: '清洁间',
-        roomList: [{ roomName: '清洁间', roomCode: '401', building: '达才楼' }],
-        creator: '张三',
-        createTime: '2024.03.08 09:16:26',
-      },
-    ])
+    // 数据定义
+    const personnelPermissionData = ref([])
+    const loading = ref(false)
+    const searchKeyword = ref('')
+
+    // 分页数据
+    const pagination = ref({
+      pageNum: 1,
+      pageSize: 10,
+      total: 0
+    })
 
 
 
@@ -337,8 +448,61 @@ export default {
     const selectedRoomRows = ref([])
 
     // 过滤条件
-    const userFilter = ref({ type: 'all', keyword: '' })
+    const userFilter = ref({ organizationId: '', keyword: '' })
     const roomFilter = ref({ type: 'all', keyword: '' })
+
+    // 组织机构选项
+    const organizationOptions = ref([])
+
+    // 加载权限列表
+    const loadPermissionList = async () => {
+      try {
+        loading.value = true
+        const params = {
+          pageNum: pagination.value.pageNum,
+          pageSize: pagination.value.pageSize,
+          keyword: searchKeyword.value
+        }
+        const response = await getPermissionList(params)
+        if (response.code === 200) {
+          personnelPermissionData.value = response.data.rows || []
+          pagination.value.total = response.data.total || 0
+        } else {
+          ElMessage.error(response.message || '获取权限列表失败')
+        }
+      } catch (error) {
+        console.error('获取权限列表失败:', error)
+        ElMessage.error('获取权限列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 加载组织机构选项
+    const loadOrganizationOptions = async () => {
+      try {
+        const response = await getOrganizationOptions()
+        if (response && response.code === 200) {
+          organizationOptions.value = response.data || []
+        } else {
+          console.error('获取组织机构选项失败:', response)
+        }
+      } catch (error) {
+        console.error('获取组织机构选项失败:', error)
+      }
+    }
+
+    // 分页处理
+    const handleSizeChange = (val) => {
+      pagination.value.pageSize = val
+      pagination.value.pageNum = 1
+      loadPermissionList()
+    }
+
+    const handleCurrentChange = (val) => {
+      pagination.value.pageNum = val
+      loadPermissionList()
+    }
 
     const addPersonnelPermission = () => {
       isEdit.value = false
@@ -349,10 +513,36 @@ export default {
       selectedRoomData.value = []
       currentEditingRow.value = null
       editDialogVisible.value = true
+
+      // 预加载可选用户和房间列表
+      loadAvailableUsers()
+      loadAvailableRooms()
     }
 
-    const exportPersonnelList = () => {
-      ElMessage.success('正在导出预约人员列表...')
+    const exportPersonnelList = async () => {
+      try {
+        ElMessage.info('正在导出预约人员列表...')
+        const params = {
+          keyword: searchKeyword.value
+        }
+        const response = await exportPermissions(params)
+
+        // 创建下载链接
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `预约人员权限列表_${new Date().toLocaleDateString()}.xlsx`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        ElMessage.success('导出成功')
+      } catch (error) {
+        console.error('导出失败:', error)
+        ElMessage.error('导出失败')
+      }
     }
 
     const viewPersonnelDetails = (row) => {
@@ -396,46 +586,74 @@ export default {
       selectedRoomData.value = row.roomList || []
       currentEditingRow.value = row
       editDialogVisible.value = true
+
+      // 预加载可选用户和房间列表
+      loadAvailableUsers()
+      loadAvailableRooms()
     }
 
     const deletePersonnelPermission = async (row) => {
       try {
         await ElMessageBox.confirm(`确认删除"${row.subject}"的权限设置吗？`, '删除确认')
-        ElMessage.success('权限设置已删除')
-      } catch {
-        // 用户取消
+
+        const response = await deletePermission(row.id)
+        if (response.code === 200) {
+          ElMessage.success('权限设置已删除')
+          loadPermissionList() // 刷新列表
+        } else {
+          ElMessage.error(response.message || '删除失败')
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败')
+        }
       }
     }
 
-    const handleTestSubmit = () => {
+    const handleTestSubmit = async () => {
       if (!subjectValue.value.trim()) {
         ElMessage.warning('请输入主题')
         return
       }
 
-      if (isEdit.value && currentEditingRow.value) {
-        // 编辑模式：更新现有数据
-        currentEditingRow.value.subject = subjectValue.value
-        currentEditingRow.value.authorizedUsers = [...userData.value]
-        currentEditingRow.value.roomList = [...roomData.value]
-        ElMessage.success('权限配置已更新')
-      } else {
-        // 新增模式：添加新数据
-        const newPermission = {
-          id: Date.now(),
-          subject: subjectValue.value,
-          authorizedPersonnel: userData.value.map(u => u.name).join('；') || '暂无',
-          authorizedUsers: [...userData.value],
-          bookingRooms: roomData.value.map(r => r.roomName).join('；') || '暂无',
-          roomList: [...roomData.value],
-          creator: '当前用户',
-          createTime: new Date().toLocaleString('zh-CN')
-        }
-        personnelPermissionData.value.push(newPermission)
-        ElMessage.success('权限配置已添加')
+      if (userData.value.length === 0) {
+        ElMessage.warning('请至少添加一个权限人员')
+        return
       }
 
-      editDialogVisible.value = false
+      if (roomData.value.length === 0) {
+        ElMessage.warning('请至少添加一个房间')
+        return
+      }
+
+      try {
+        const requestData = {
+          subject: subjectValue.value,
+          userIds: userData.value.map(user => user.id),
+          roomIds: roomData.value.map(room => room.id)
+        }
+
+        let response
+        if (isEdit.value && currentEditingRow.value) {
+          // 编辑模式
+          response = await updatePermission(currentEditingRow.value.id, requestData)
+        } else {
+          // 新增模式
+          response = await createPermission(requestData)
+        }
+
+        if (response.code === 200) {
+          ElMessage.success(isEdit.value ? '权限配置已更新' : '权限配置已添加')
+          editDialogVisible.value = false
+          loadPermissionList() // 刷新列表
+        } else {
+          ElMessage.error(response.message || '操作失败')
+        }
+      } catch (error) {
+        console.error('提交失败:', error)
+        ElMessage.error('提交失败')
+      }
     }
 
     // 弹出框相关方法
@@ -463,39 +681,211 @@ export default {
       ElMessage.success('已移除选中的房间')
     }
 
+    // 用户选择弹窗相关
+    const userSelectDialogVisible = ref(false)
+    const availableUsers = ref([])
+    const userSelectLoading = ref(false)
+    const userSelectPagination = ref({ pageNum: 1, pageSize: 10, total: 0 })
+
+    // 房间选择弹窗相关
+    const roomSelectDialogVisible = ref(false)
+    const availableRooms = ref([])
+    const roomSelectLoading = ref(false)
+    const roomSelectPagination = ref({ pageNum: 1, pageSize: 10, total: 0 })
+
     const handleAddUser = () => {
-      // 模拟添加用户
-      const newUser = {
-        id: Date.now(),
-        name: '新用户' + Math.floor(Math.random() * 100),
-        jobNumber: 'H' + Math.floor(Math.random() * 1000000),
-        department: '测试部门'
+      userSelectDialogVisible.value = true
+      loadAvailableUsers()
+    }
+
+    const loadAvailableUsers = async () => {
+      try {
+        userSelectLoading.value = true
+        const params = {
+          pageNum: userSelectPagination.value.pageNum,
+          pageSize: userSelectPagination.value.pageSize,
+          realNameAndJobNumber: userFilter.value.keyword || '',
+          organizationId: userFilter.value.organizationId || ''
+        }
+        console.log('=== 用户接口调试信息 ===')
+        console.log('请求URL: /api/user/available')
+        console.log('请求参数:', params)
+        console.log('当前用户分页状态:', userSelectPagination.value)
+        
+        const response = await getAvailableUsers(params)
+        console.log('原始响应:', response)
+        console.log('响应类型:', typeof response)
+        console.log('响应结构:', Object.keys(response || {}))
+        
+        if (response && response.code === 200 && response.data) {
+          availableUsers.value = response.data.rows || []
+          userSelectPagination.value.total = response.data.total || 0
+          console.log('解析后用户列表:', availableUsers.value)
+          console.log('用户总数:', userSelectPagination.value.total)
+          console.log('用户列表长度:', availableUsers.value.length)
+          if (availableUsers.value.length === 0) {
+            console.warn('⚠️ 用户列表为空，请检查后端数据')
+            ElMessage.warning('暂无可选用户数据')
+          }
+        } else {
+          console.error('❌ 用户接口响应异常:', response)
+          ElMessage.error(response?.message || '获取可选用户失败')
+        }
+      } catch (error) {
+        console.error('❌ 获取可选用户失败:', error)
+        console.error('错误详情:', error.response || error)
+        ElMessage.error('获取可选用户失败: ' + (error.message || '网络错误'))
+      } finally {
+        userSelectLoading.value = false
+        console.log('=== 用户接口调试结束 ===')
       }
-      userData.value.push(newUser)
-      ElMessage.success('已添加用户')
     }
 
     const handleAddRoom = () => {
-      // 模拟添加房间
-      const newRoom = {
-        id: Date.now(),
-        roomName: '测试教室' + Math.floor(Math.random() * 100),
-        roomCode: Math.floor(Math.random() * 999) + 1,
-        building: '测试楼'
-      }
-      roomData.value.push(newRoom)
-      ElMessage.success('已添加房间')
+      roomSelectDialogVisible.value = true
+      loadAvailableRooms()
     }
 
+    const loadAvailableRooms = async () => {
+      try {
+        roomSelectLoading.value = true
+        const params = {
+          pageNum: roomSelectPagination.value.pageNum,
+          pageSize: roomSelectPagination.value.pageSize,
+          roomName: roomFilter.value.keyword || ''
+        }
+        console.log('=== 房间接口调试信息 ===')
+        console.log('请求URL: /api/room/available')
+        console.log('请求参数:', params)
+        console.log('当前房间分页状态:', roomSelectPagination.value)
+        
+        const response = await getAvailableRooms(params)
+        console.log('原始响应:', response)
+        console.log('响应类型:', typeof response)
+        console.log('响应结构:', Object.keys(response || {}))
+        
+        if (response && response.code === 200 && response.data) {
+          availableRooms.value = response.data.rows || []
+          roomSelectPagination.value.total = response.data.total || 0
+          console.log('解析后房间列表:', availableRooms.value)
+          console.log('房间总数:', roomSelectPagination.value.total)
+          console.log('房间列表长度:', availableRooms.value.length)
+          if (availableRooms.value.length === 0) {
+            console.warn('⚠️ 房间列表为空，请检查后端数据')
+            ElMessage.warning('暂无可选房间数据')
+          }
+        } else {
+          console.error('❌ 房间接口响应异常:', response)
+          ElMessage.error(response?.message || '获取可选房间失败')
+        }
+      } catch (error) {
+        console.error('❌ 获取可选房间失败:', error)
+        console.error('错误详情:', error.response || error)
+        ElMessage.error('获取可选房间失败: ' + (error.message || '网络错误'))
+      } finally {
+        roomSelectLoading.value = false
+        console.log('=== 房间接口调试结束 ===')
+      }
+    }
+
+    // 用户选择变化处理
+    const selectedUsers = ref([])
+    const handleUserSelectChange = (selection) => {
+      selectedUsers.value = selection
+    }
+
+    // 房间选择变化处理
+    const selectedRooms = ref([])
+    const handleRoomSelectChange = (selection) => {
+      selectedRooms.value = selection
+    }
+
+    // 用户选择分页处理
+    const handleUserSelectSizeChange = (size) => {
+      userSelectPagination.value.pageSize = size
+      userSelectPagination.value.pageNum = 1
+      loadAvailableUsers()
+    }
+
+    const handleUserSelectCurrentChange = (page) => {
+      userSelectPagination.value.pageNum = page
+      loadAvailableUsers()
+    }
+
+    // 房间选择分页处理
+    const handleRoomSelectSizeChange = (size) => {
+      roomSelectPagination.value.pageSize = size
+      roomSelectPagination.value.pageNum = 1
+      loadAvailableRooms()
+    }
+
+    const handleRoomSelectCurrentChange = (page) => {
+      roomSelectPagination.value.pageNum = page
+      loadAvailableRooms()
+    }
+
+    // 确认添加用户
+    const confirmAddUsers = () => {
+      if (selectedUsers.value.length === 0) {
+        ElMessage.warning('请选择要添加的用户')
+        return
+      }
+
+      selectedUsers.value.forEach(user => {
+        const exists = userData.value.some(p => p.id === user.id)
+        if (!exists) {
+          userData.value.push({
+            id: user.id,
+            name: user.realName,
+            jobNumber: user.jobNumber,
+            department: user.departmentName
+          })
+        }
+      })
+
+      userSelectDialogVisible.value = false
+      const addedCount = selectedUsers.value.length
+      selectedUsers.value = []
+      ElMessage.success(`成功添加 ${addedCount} 个用户`)
+    }
+
+    // 确认添加房间
+    const confirmAddRooms = () => {
+      if (selectedRooms.value.length === 0) {
+        ElMessage.warning('请选择要添加的房间')
+        return
+      }
+
+      selectedRooms.value.forEach(room => {
+        const exists = roomData.value.some(r => r.id === room.id)
+        if (!exists) {
+          roomData.value.push({
+            id: room.id,
+            roomName: room.roomName,
+            roomCode: room.roomNo || room.roomCode,
+            building: room.roomAreaName || room.areaName
+          })
+        }
+      })
+
+      roomSelectDialogVisible.value = false
+      const addedCount = selectedRooms.value.length
+      selectedRooms.value = []
+      ElMessage.success(`成功添加 ${addedCount} 个房间`)
+    }
+
+    // 组件挂载时初始化
+    onMounted(() => {
+      loadPermissionList()
+      loadOrganizationOptions()
+    })
+
     return {
+      // 数据
       personnelPermissionData,
-      addPersonnelPermission,
-      exportPersonnelList,
-      viewPersonnelDetails,
-      viewRoomDetails,
-      editPersonnelPermission,
-      deletePersonnelPermission,
-      handleTestSubmit,
+      loading,
+      searchKeyword,
+      pagination,
       editDialogVisible,
       isEdit,
       selectedUserData,
@@ -506,24 +896,56 @@ export default {
       currentPersonnelDetails,
       personnelDetailFilter,
       personnelDetailPagination,
-      removePersonnelFromDetail,
       roomDetailDialogVisible,
       currentRoomDetails,
       roomDetailFilter,
       roomDetailPagination,
-      removeRoomFromDetail,
       userData,
       roomData,
       selectedUserRows,
       selectedRoomRows,
       userFilter,
       roomFilter,
+      organizationOptions,
+      userSelectDialogVisible,
+      availableUsers,
+      userSelectLoading,
+      userSelectPagination,
+      roomSelectDialogVisible,
+      availableRooms,
+      roomSelectLoading,
+      roomSelectPagination,
+      selectedUsers,
+      selectedRooms,
+      // 方法
+      loadPermissionList,
+      handleSizeChange,
+      handleCurrentChange,
+      addPersonnelPermission,
+      exportPersonnelList,
+      viewPersonnelDetails,
+      viewRoomDetails,
+      editPersonnelPermission,
+      deletePersonnelPermission,
+      handleTestSubmit,
+      removePersonnelFromDetail,
+      removeRoomFromDetail,
       userSelectionChange,
       roomSelectionChange,
       removeSelectedUsers,
       removeSelectedRooms,
       handleAddUser,
       handleAddRoom,
+      loadAvailableUsers,
+      loadAvailableRooms,
+      handleUserSelectChange,
+      handleRoomSelectChange,
+      handleUserSelectSizeChange,
+      handleUserSelectCurrentChange,
+      handleRoomSelectSizeChange,
+      handleRoomSelectCurrentChange,
+      confirmAddUsers,
+      confirmAddRooms
     }
   },
 }
@@ -712,5 +1134,28 @@ export default {
 
 .dialog-footer {
   text-align: right;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 选择弹窗样式 */
+.select-dialog-content {
+  padding: 10px 0;
+}
+
+.search-section {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.pagination-section {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 </style>

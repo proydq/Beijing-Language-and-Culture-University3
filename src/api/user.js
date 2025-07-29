@@ -10,7 +10,7 @@ export const userAPI = {
    * @returns {Promise} 用户列表响应
    */
   searchUsers(searchCondition) {
-    return api.post('/sys/user/search', searchCondition)
+    return api.post('/api/user/search', searchCondition)
   },
 
   /**

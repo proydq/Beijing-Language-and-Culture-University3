@@ -1,10 +1,14 @@
 package com.proshine.system.service.impl;
 
-import com.proshine.common.util.SecurityUtil;
-import com.proshine.system.dto.BookingStatsDto;
+
 import com.proshine.system.dto.BookingDistributionDto;
+import com.proshine.system.dto.BookingStatsDto;
 import com.proshine.system.dto.BookingTrendDto;
 import com.proshine.system.repository.RoomBookingRepository;
+import com.proshine.system.repository.RoomRepository;
+import com.proshine.system.repository.SysUserRepository;
+import com.proshine.system.security.SecurityUtil;
+import com.proshine.system.service.BookingPersonnelPermissionService;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +16,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +34,15 @@ public class RoomBookingServiceImpl implements RoomBookingService {
 
     @Autowired
     private RoomBookingRepository roomBookingRepository;
+
+    @Autowired
+    private BookingPersonnelPermissionService permissionService;
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
+    private SysUserRepository userRepository;
 
     @Override
     public BookingStatsDto getBookingStats(LocalDateTime startTime, LocalDateTime endTime) {
@@ -126,4 +141,6 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         
         return trendData;
     }
+
+
 }

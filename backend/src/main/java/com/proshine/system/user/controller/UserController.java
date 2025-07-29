@@ -2,7 +2,9 @@ package com.proshine.system.user.controller;
 
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.dto.SearchAvailableUserCondition;
 import com.proshine.system.entity.SysUser;
+import com.proshine.system.service.BookingPersonnelPermissionService;
 import com.proshine.system.user.dto.SearchUserCondition;
 import com.proshine.system.user.dto.UserSaveRequest;
 import com.proshine.system.user.dto.UserVO;
@@ -21,6 +23,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private BookingPersonnelPermissionService permissionService;
 
     /**
      * Pagination search users
@@ -121,4 +126,33 @@ public class UserController {
             return ResponseEntity.fail(e.getMessage());
         }
     }
+
+
+    /**
+     * 获取可选择的用户列表
+     */
+    @GetMapping("/available")
+    public ResponseEntity<ResponsePageDataEntity<UserVO>> getAvailableUsers(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String realNameAndJobNumber,
+            @RequestParam(required = false) String departmentId) {
+
+        try {
+            SearchAvailableUserCondition condition = new SearchAvailableUserCondition();
+            condition.setPageNum(pageNum);
+            condition.setPageSize(pageSize);
+            condition.setRealNameAndJobNumber(realNameAndJobNumber);
+            condition.setDepartmentId(departmentId);
+
+            ResponsePageDataEntity<UserVO> result = permissionService.getAvailableUsers(condition);
+
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取可选用户列表失败：", e);
+            return ResponseEntity.fail("获取可选用户列表失败：" + e.getMessage());
+        }
+    }
+
+
 }

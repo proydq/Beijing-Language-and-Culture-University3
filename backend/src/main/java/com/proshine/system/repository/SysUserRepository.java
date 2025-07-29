@@ -3,8 +3,6 @@ package com.proshine.system.repository;
 import com.proshine.system.entity.SysUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -76,4 +74,6 @@ public interface SysUserRepository extends JpaRepository<SysUser, String>, JpaSp
      * @return 用户信息
      */
     Optional<SysUser> findByPhoneAndCustomerIdAndDeletedFalse(String phone, String customerId);
+
+    Optional<SysUser> findByIdAndDeletedFalse(String userId);
 }

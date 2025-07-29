@@ -419,7 +419,7 @@ export default {
         if (timeRange) {
           const now = new Date()
           endTime = now
-          
+
           switch (timeRange) {
             case '近7天':
               startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -438,16 +438,16 @@ export default {
 
         // 加载统计数据
         await getBookingStats(startTime, endTime)
-        
+
         // 加载数据分布
         const distribution = await getBookingDistribution(startTime, endTime)
         distributionData.value = distribution
-        
+
         // 加载趋势数据
         let trend = []
         if (timeRange) {
-          const days = timeRange === '近7天' ? 7 : 
-                      timeRange === '近15天' ? 15 : 
+          const days = timeRange === '近7天' ? 7 :
+                      timeRange === '近15天' ? 15 :
                       timeRange === '近30天' ? 30 : 90
           trend = await getBookingTrend(days)
         } else {
@@ -455,7 +455,7 @@ export default {
           trend = await getBookingTrend(15)
         }
         trendData.value = trend
-        
+
         console.log('统计数据加载完成', { stats: stats.value, distribution, trend })
       } catch (error) {
         console.error('加载统计数据失败:', error)
@@ -468,18 +468,18 @@ export default {
       try {
         const startTime = new Date(startDate)
         const endTime = new Date(endDate)
-        
+
         // 加载统计数据
         await getBookingStats(startTime, endTime)
-        
+
         // 加载数据分布
         const distribution = await getBookingDistribution(startTime, endTime)
         distributionData.value = distribution
-        
+
         // 加载趋势数据
         const trend = await getBookingTrendCustom(startTime, endTime)
         trendData.value = trend
-        
+
         console.log('自定义时间范围数据加载完成', { stats: stats.value, distribution, trend })
       } catch (error) {
         console.error('加载自定义时间范围数据失败:', error)

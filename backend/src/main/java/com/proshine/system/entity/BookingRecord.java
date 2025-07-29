@@ -24,7 +24,7 @@ public class BookingRecord {
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid2")
-    @Column(name = "id", columnDefinition = "VARCHAR(36) COMMENT '主键ID'")
+    @Column(name = "id", columnDefinition = "VARCHAR(40) COMMENT '主键ID'")
     private String id;
 
     @Column(name = "cstm_id", columnDefinition = "VARCHAR(36) COMMENT '客户域ID'")

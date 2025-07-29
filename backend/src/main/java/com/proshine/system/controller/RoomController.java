@@ -5,7 +5,9 @@ import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.RoomSaveVo;
 import com.proshine.system.dto.RoomTypeVo;
 import com.proshine.system.dto.RoomVo;
+import com.proshine.system.dto.SearchAvailableRoomCondition;
 import com.proshine.system.dto.SearchRoomCondition;
+import com.proshine.system.service.BookingPersonnelPermissionService;
 import com.proshine.system.service.RoomService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,9 @@ public class RoomController {
 
     @Autowired
     private RoomService roomService;
+    
+    @Autowired
+    private BookingPersonnelPermissionService permissionService;
 
     /**
      * 分页查询房间列表
@@ -218,6 +223,31 @@ public class RoomController {
         } catch (Exception e) {
             log.error("导出房间数据失败：", e);
             throw new RuntimeException(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取可选择的房间列表
+     */
+    @GetMapping("/available")
+    public ResponseEntity<ResponsePageDataEntity<RoomVo>> getAvailableRooms(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String roomName,
+            @RequestParam(required = false) String roomAreaId) {
+        
+        try {
+            SearchAvailableRoomCondition condition = new SearchAvailableRoomCondition();
+            condition.setPageNum(pageNum);
+            condition.setPageSize(pageSize);
+            condition.setRoomName(roomName);
+            condition.setRoomAreaId(roomAreaId);
+            
+            ResponsePageDataEntity<RoomVo> result = permissionService.getAvailableRooms(condition);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取可选房间列表失败：", e);
+            return ResponseEntity.fail(e.getMessage());
         }
     }
 }

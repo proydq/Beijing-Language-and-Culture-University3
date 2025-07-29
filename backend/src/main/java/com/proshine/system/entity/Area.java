@@ -23,7 +23,7 @@ public class Area {
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid")
-    @Column(name = "id", columnDefinition = "VARCHAR(32) COMMENT '主键UUID'")
+    @Column(name = "id", columnDefinition = "VARCHAR(40) COMMENT '主键UUID'")
     private String id;
 
     @Column(name = "area_name", columnDefinition = "VARCHAR(100) COMMENT '区域名称'")

@@ -22,6 +22,11 @@ public class RoomVo {
     private String roomName;
 
     /**
+     * 房间区域ID
+     */
+    private String roomAreaId;
+    
+    /**
      * 房间区域名称
      */
     private String roomAreaName;
