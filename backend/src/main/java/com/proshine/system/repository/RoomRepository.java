@@ -1,6 +1,8 @@
 package com.proshine.system.repository;
 
 import com.proshine.system.entity.Room;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -89,6 +91,16 @@ public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecific
     void deleteByIdAndCstmId(@Param("id") String id, @Param("cstmId") String cstmId);
 
     /**
+     * 根据房间ID列表和客户域ID查询房间列表
+     * 
+     * @param ids 房间ID列表
+     * @param cstmId 客户域ID
+     * @return 房间列表
+     */
+    @Query("SELECT r FROM Room r WHERE r.id IN :ids AND r.cstmId = :cstmId")
+    List<Room> findByIdsAndCstmId(@Param("ids") List<String> ids, @Param("cstmId") String cstmId);
+
+    /**
      * 批量删除指定客户域的房间
      * 
      * @param ids 房间ID列表
@@ -98,4 +110,82 @@ public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecific
     @Transactional
     @Query("DELETE FROM Room r WHERE r.id IN :ids AND r.cstmId = :cstmId")
     void deleteByIdsAndCstmId(@Param("ids") List<String> ids, @Param("cstmId") String cstmId);
+
+    // ========== 逻辑删除相关方法 ==========
+
+    /**
+     * 查询所有已删除的房间（分页）
+     * 
+     * @param pageable 分页参数
+     * @return 已删除房间分页数据
+     */
+    Page<Room> findByIsDeletedTrue(Pageable pageable);
+
+    /**
+     * 查询所有已删除的房间
+     * 
+     * @return 已删除房间列表
+     */
+    List<Room> findByIsDeletedTrue();
+
+    /**
+     * 根据条件查询已删除的房间
+     * 
+     * @param keyword 关键词
+     * @param roomName 房间名称
+     * @param roomAreaId 房间区域ID
+     * @param pageable 分页参数
+     * @return 已删除房间分页数据
+     */
+    @Query("SELECT r FROM Room r WHERE r.isDeleted = true " +
+           "AND (:keyword IS NULL OR :keyword = '' OR r.roomName LIKE %:keyword% OR r.roomNo LIKE %:keyword%) " +
+           "AND (:roomName IS NULL OR :roomName = '' OR r.roomName LIKE %:roomName%) " +
+           "AND (:roomAreaId IS NULL OR :roomAreaId = '' OR r.roomAreaId = :roomAreaId)")
+    Page<Room> findDeletedRoomsWithConditions(@Param("keyword") String keyword, 
+                                            @Param("roomName") String roomName,
+                                            @Param("roomAreaId") String roomAreaId, 
+                                            Pageable pageable);
+
+    /**
+     * 统计已删除房间数量
+     * 
+     * @return 已删除房间数量
+     */
+    long countByIsDeletedTrue();
+
+    /**
+     * 统计指定时间段内删除的房间数量
+     * 
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 删除房间数量
+     */
+    long countByIsDeletedTrueAndDeleteTimeBetween(Long startTime, Long endTime);
+
+    /**
+     * 统计指定时间之后删除的房间数量
+     * 
+     * @param startTime 开始时间
+     * @return 删除房间数量
+     */
+    long countByIsDeletedTrueAndDeleteTimeGreaterThanEqual(Long startTime);
+
+    /**
+     * 查询未删除的房间（用于正常业务查询）
+     * 
+     * @param cstmId 客户域ID
+     * @return 房间列表
+     */
+    @Query("SELECT r FROM Room r WHERE r.cstmId = :cstmId AND (r.isDeleted IS NULL OR r.isDeleted = false)")
+    List<Room> findActiveByCstmId(@Param("cstmId") String cstmId);
+
+    /**
+     * 查询未删除的房间（用于正常业务查询）
+     * 
+     * @param id 房间ID
+     * @param cstmId 客户域ID
+     * @return 房间信息
+     */
+    @Query("SELECT r FROM Room r WHERE r.id = :id AND r.cstmId = :cstmId AND (r.isDeleted IS NULL OR r.isDeleted = false)")
+    Optional<Room> findActiveByIdAndCstmId(@Param("id") String id, @Param("cstmId") String cstmId);
 }

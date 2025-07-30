@@ -16,6 +16,10 @@ public class ResponseEntity<T> {
         return new ResponseEntity<>(200, "success", data);
     }
 
+    public static <T> ResponseEntity<T> success() {
+        return new ResponseEntity<>(200, "success", null);
+    }
+
     public static <T> ResponseEntity<T> fail(String message) {
         return new ResponseEntity<>(500, message, null);
     }

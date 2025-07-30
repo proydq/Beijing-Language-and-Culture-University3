@@ -68,6 +68,12 @@ public class Room {
     @Column(name = "extend2", columnDefinition = "VARCHAR(255) COMMENT '扩展字段2'")
     private String extend2;
 
+    @Column(name = "is_deleted", columnDefinition = "TINYINT(1) DEFAULT 0 COMMENT '是否已删除(0:否 1:是)'")
+    private Boolean isDeleted = false;
+
+    @Column(name = "delete_time", columnDefinition = "BIGINT COMMENT '删除时间'")
+    private Long deleteTime;
+
     /**
      * 房屋类型枚举
      */

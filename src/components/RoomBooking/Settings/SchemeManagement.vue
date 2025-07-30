@@ -24,6 +24,15 @@
 
     <!-- 主要内容区域 -->
     <div class="main-content">
+      <!-- 隐藏的文件上传输入框 -->
+      <input
+        ref="uploadRef"
+        type="file"
+        style="display: none"
+        accept=".xlsx,.xls"
+        @change="handleFileUpload"
+      />
+
       <!-- 顶部操作栏 -->
       <div class="header-section">
         <div class="search-filters">
@@ -34,15 +43,20 @@
               placeholder="请输入房间名称或房间号"
               style="width: 200px"
               clearable
+              @keyup.enter="searchRooms"
             />
           </div>
           <div class="filter-item">
             <label>是否需要审批:</label>
-            <el-select v-model="approvalFilter" placeholder="全部" style="width: 120px">
+            <el-select v-model="approvalFilter" placeholder="全部" style="width: 120px" @change="searchRooms">
               <el-option label="全部" value="all"></el-option>
               <el-option label="需要" value="yes"></el-option>
               <el-option label="不需要" value="no"></el-option>
             </el-select>
+          </div>
+          <div class="filter-item">
+            <el-button type="primary" @click="searchRooms">搜索</el-button>
+            <el-button @click="resetSearch">重置</el-button>
           </div>
         </div>
 
@@ -51,7 +65,7 @@
           <el-button type="success" @click="importData">导入</el-button>
           <el-button type="danger" @click="deleteSelected">删除</el-button>
           <el-button type="primary" @click="showAddRoomDialog">添加教室</el-button>
-          <el-button type="primary" @click="viewDetails">手动同步</el-button>
+          <el-button type="primary" @click="syncRooms">手动同步</el-button>
           <el-button type="info" @click="batchSetPermissions">批量配置审批权限</el-button>
         </div>
       </div>
@@ -66,11 +80,11 @@
         >
           <el-table-column type="selection" width="55" />
           <el-table-column prop="roomName" label="教室" width="150" />
-          <el-table-column prop="roomNumber" label="房间号" width="100" />
-          <el-table-column prop="location" label="所属楼" width="100" />
-          <el-table-column label="是否交换" width="120">
+          <el-table-column prop="roomNo" label="房间号" width="100" />
+          <el-table-column prop="roomAreaName" label="所属楼" width="100" />
+          <el-table-column label="是否支持自选审批人" width="160">
             <template #default="{ row }">
-              <el-select v-model="row.isExchange" size="small">
+              <el-select v-model="row.allowBookerSelectApprover" size="small">
                 <el-option label="是" value="yes"></el-option>
                 <el-option label="否" value="no"></el-option>
               </el-select>
@@ -136,20 +150,20 @@
           <h4 class="section-title">基本信息</h4>
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="教室名称:" prop="classroomName">
-                <el-input v-model="addRoomForm.classroomName" placeholder="请输入教室名称" />
+              <el-form-item label="教室编号:">
+                <el-input v-model="addRoomForm.classroomCode" placeholder="新增后自动生成" disabled />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="房间号:" prop="roomNumber">
-                <el-input v-model="addRoomForm.roomNumber" placeholder="请输入房间号" />
+              <el-form-item label="教室名称:" prop="classroomName">
+                <el-input v-model="addRoomForm.classroomName" placeholder="请输入教室名称" />
               </el-form-item>
             </el-col>
           </el-row>
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="教室编号:">
-                <el-input v-model="addRoomForm.classroomCode" placeholder="自动生成" disabled />
+              <el-form-item label="房间号:">
+                <el-input v-model="addRoomForm.roomNumber" placeholder="请输入房间号" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -216,11 +230,11 @@
                       </template>
                     </el-input>
                     <el-button
-                      v-if="index === approvalLevels.length - 1 && index < 2"
-                      type="primary"
+                      v-if="index === approvalLevels.length - 1"
+                      type="success"
                       size="small"
                       @click="addApprovalLevel"
-                      class="add-level-btn"
+                      class="add-level-btn-inline"
                     >
                       下一级
                     </el-button>
@@ -276,7 +290,7 @@
             />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="searchPersonnel">查询</el-button>
+            <el-button type="primary" @click="searchPersonnelData">查询</el-button>
             <el-button @click="resetPersonnelSearch">重置</el-button>
           </el-form-item>
         </el-form>
@@ -406,10 +420,11 @@
             </div>
 
             <!-- 添加审批级别按钮 -->
-            <div class="add-level-btn" v-if="batchApprovalLevels.length < 3">
+            <div class="add-level-btn">
               <el-button
-                type="primary"
+                type="success"
                 @click="addBatchApprovalLevel"
+                class="add-level-btn-primary"
               >
                 添加审批级别
               </el-button>
@@ -430,9 +445,10 @@
 
 <script>
 import { ref, onMounted, watch } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Search, User } from '@element-plus/icons-vue'
 import { getAreaTree } from '@/api/area'
+import { searchClassrooms, addClassroom, updateClassroom, batchDeleteClassrooms, batchSetApproval, syncClassroomsFromRoom, searchPersonnel, exportClassrooms, importClassrooms, getClassroomDetail } from '@/api/schemeManagement'
 
 export default {
   name: 'SchemeManagement',
@@ -477,7 +493,7 @@ export default {
 
     // 审批级别管理
     const approvalLevels = ref([
-      { level: 2, approvers: [] }
+      { level: 2, approvers: '', approverIds: '' }
     ])
 
     // 人员选择弹出框相关
@@ -499,27 +515,13 @@ export default {
       total: 0
     })
 
-    // 人员列表数据（模拟数据，实际应该从后端获取）
-    const personnelList = ref([
-      { id: 1, name: '张三', department: '信息技术部', position: '部门经理', email: 'zhangsan@example.com', phone: '13800138001' },
-      { id: 2, name: '李四', department: '人力资源部', position: '主管', email: 'lisi@example.com', phone: '13800138002' },
-      { id: 3, name: '王五', department: '财务部', position: '会计', email: 'wangwu@example.com', phone: '13800138003' },
-      { id: 4, name: '赵六', department: '市场部', position: '经理', email: 'zhaoliu@example.com', phone: '13800138004' },
-      { id: 5, name: '孙七', department: '技术部', position: '工程师', email: 'sunqi@example.com', phone: '13800138005' },
-      { id: 6, name: '周八', department: '运营部', position: '专员', email: 'zhouba@example.com', phone: '13800138006' },
-      { id: 7, name: '吴九', department: '产品部', position: '产品经理', email: 'wujiu@example.com', phone: '13800138007' },
-      { id: 8, name: '郑十', department: '设计部', position: '设计师', email: 'zhengshi@example.com', phone: '13800138008' },
-      { id: 9, name: '刘备', department: '管理层', position: '总经理', email: 'liubei@example.com', phone: '13800138009' },
-      { id: 10, name: '关羽', department: '管理层', position: '副总经理', email: 'guanyu@example.com', phone: '13800138010' }
-    ])
+    // 人员列表数据
+    const personnelList = ref([])
 
     // 表单验证规则
     const addRoomRules = ref({
       classroomName: [
         { required: true, message: '请输入教室名称', trigger: 'blur' }
-      ],
-      roomNumber: [
-        { required: true, message: '请输入房间号', trigger: 'blur' }
       ],
       building: [
         { required: true, message: '请选择所属楼', trigger: 'change' }
@@ -528,74 +530,7 @@ export default {
     })
 
     // 房间数据
-    const roomData = ref([
-      {
-        id: 1,
-        roomName: '多媒体教室',
-        roomNumber: '101',
-        location: '科研楼',
-        isExchange: 'yes',
-        needApproval: 'yes',
-        firstApprover: '张三、李四、王五',
-        secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞',
-      },
-      {
-        id: 2,
-        roomName: '多媒体教室',
-        roomNumber: '102',
-        location: '科研楼',
-        isExchange: 'yes',
-        needApproval: 'yes',
-        firstApprover: '张三、李四、王五',
-        secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞',
-      },
-      {
-        id: 3,
-        roomName: '多媒体教室',
-        roomNumber: '103',
-        location: '科研楼',
-        isExchange: 'no',
-
-        firstApprover: '张三、李四、王五',
-        secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞',
-      },
-      {
-        id: 4,
-        roomName: '多媒体教室',
-        roomNumber: '104',
-        location: '科研楼',
-        isExchange: 'yes',
-        needApproval: 'yes',
-        firstApprover: '张三、李四、王五',
-        secondApprover: '赵六、孙七、周八、吴九、郑十',
-        thirdApprover: '刘备、关羽、张飞',
-      },
-      {
-        id: 5,
-        roomName: '多媒体教室',
-        roomNumber: '105',
-        location: '科研楼',
-        isExchange: 'no',
-        needApproval: 'no',
-        firstApprover: '',
-        secondApprover: '',
-        thirdApprover: '',
-      },
-      {
-        id: 6,
-        roomName: '多媒体教室',
-        roomNumber: '106',
-        location: '科研楼',
-        isExchange: 'no',
-        needApproval: 'no',
-        firstApprover: '',
-        secondApprover: '',
-        thirdApprover: '',
-      },
-    ])
+    const roomData = ref([])
 
     const handleSelectionChange = (selection) => {
       selectedRows.value = selection
@@ -603,67 +538,237 @@ export default {
 
     const handleSizeChange = (val) => {
       pageSize.value = val
+      loadRoomData()
     }
 
     const handleCurrentChange = (val) => {
       currentPage.value = val
+      loadRoomData()
     }
 
-    const managePersonnel = (row) => {
+    // 搜索教室
+    const searchRooms = () => {
+      currentPage.value = 1
+      loadRoomData()
+    }
+
+    // 重置搜索
+    const resetSearch = () => {
+      roomNameSearch.value = ''
+      approvalFilter.value = 'all'
+      selectedBuildingArea.value = null
+      currentPage.value = 1
+      loadRoomData()
+    }
+
+    const managePersonnel = async (row) => {
       // 设置为编辑模式
       isEditMode.value = true
       currentEditingRoom.value = row
 
-      // 预填充表单数据
-      addRoomForm.value = {
-        classroomName: row.roomName,
-        roomNumber: row.roomNumber,
-        classroomCode: row.roomNumber, // 使用房间号作为教室编号
-        building: row.location,
-        remarks: '',
-        allowBookerSelectApprover: 'yes' // 默认值，可根据实际需求调整
-      }
+      const loading = ElLoading.service({
+        lock: true,
+        text: '加载教室详情...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
 
-      // 解析并设置审批级别数据
-      const approvalData = []
-      if (row.firstApprover) {
-        approvalData.push({ level: 1, approvers: row.firstApprover })
-      }
-      if (row.secondApprover) {
-        approvalData.push({ level: 2, approvers: row.secondApprover })
-      }
-      if (row.thirdApprover) {
-        approvalData.push({ level: 3, approvers: row.thirdApprover })
-      }
+      try {
+        // 调用详情接口获取完整数据
+        const response = await getClassroomDetail(row.id)
+        const classroomDetail = response.data || response
 
-      // 如果没有审批数据，设置默认的第二级审批
-      if (approvalData.length === 0) {
-        approvalLevels.value = [{ level: 2, approvers: '' }]
-      } else {
-        // 判断是否有第一级审批人，如果有则说明不需要预约自选人员审批
-        if (approvalData.some(item => item.level === 1)) {
-          addRoomForm.value.allowBookerSelectApprover = 'no'
-          approvalLevels.value = approvalData
-        } else {
-          addRoomForm.value.allowBookerSelectApprover = 'yes'
-          approvalLevels.value = approvalData.length > 0 ? approvalData : [{ level: 2, approvers: '' }]
+        // 预填充表单数据
+        addRoomForm.value = {
+          classroomName: classroomDetail.classroomName || row.roomName,
+          roomNumber: classroomDetail.roomNumber || row.roomNo,
+          classroomCode: classroomDetail.classroomCode || row.roomCode || row.id,
+          building: classroomDetail.roomAreaId || row.roomAreaId,
+          remarks: classroomDetail.remarks || row.remark || '',
+          allowBookerSelectApprover: classroomDetail.allowBookerSelectApprover || row.allowBookerSelectApprover || 'yes'
         }
-      }
 
-      // 显示弹出框
-      addRoomDialogVisible.value = true
+        // 解析审批级别数据，优先使用详情接口返回的数据
+        const approvalData = []
+        // 如果详情接口返回了审批级别数据
+        if (classroomDetail.approvalLevels && classroomDetail.approvalLevels.length > 0) {
+          classroomDetail.approvalLevels.forEach(levelData => {
+            if (levelData.approvers) {
+              approvalData.push({
+                level: levelData.level,
+                approvers: levelData.approvers,
+                approverIds: levelData.approverIds || ''
+              })
+            }
+          })
+        } else {
+          // 如果没有审批级别数据，使用表格数据
+          if (classroomDetail.firstApprover || row.firstApprover) {
+            approvalData.push({
+              level: 1,
+              approvers: classroomDetail.firstApprover || row.firstApprover,
+              approverIds: classroomDetail.firstApproverIds || ''
+            })
+          }
+          if (classroomDetail.secondApprover || row.secondApprover) {
+            approvalData.push({
+              level: 2,
+              approvers: classroomDetail.secondApprover || row.secondApprover,
+              approverIds: classroomDetail.secondApproverIds || ''
+            })
+          }
+          if (classroomDetail.thirdApprover || row.thirdApprover) {
+            approvalData.push({
+              level: 3,
+              approvers: classroomDetail.thirdApprover || row.thirdApprover,
+              approverIds: classroomDetail.thirdApproverIds || ''
+            })
+          }
+        }
+
+        // 根据后端返回的配置来设置界面状态
+        const allowBookerSelect = classroomDetail.allowBookerSelectApprover === 'yes'
+        addRoomForm.value.allowBookerSelectApprover = allowBookerSelect ? 'yes' : 'no'
+
+        if (!allowBookerSelect) {
+          // 不需要预约自选人员审批 - 显示所有审批级别（包括第一级）
+          approvalLevels.value = approvalData.length > 0 ? approvalData : [{ level: 1, approvers: '', approverIds: '' }]
+        } else {
+          // 需要预约自选人员审批 - 只显示第二级和第三级审批人
+          const filteredApprovalData = approvalData.filter(item => item.level > 1)
+          approvalLevels.value = filteredApprovalData.length > 0 ? filteredApprovalData : [{ level: 2, approvers: '', approverIds: '' }]
+        }
+
+        // 显示弹出框
+        addRoomDialogVisible.value = true
+
+      } catch (error) {
+        console.error('获取教室详情失败:', error)
+        ElMessage.error('获取教室详情失败，使用列表数据')
+
+        // 如果接口调用失败，使用原来的逻辑作为兜底
+        addRoomForm.value = {
+          classroomName: row.roomName,
+          roomNumber: row.roomNo,
+          classroomCode: row.roomCode || row.id,
+          building: row.roomAreaId,
+          remarks: row.remark || '',
+          allowBookerSelectApprover: row.allowBookerSelectApprover || 'yes'
+        }
+
+        // 解析并设置审批级别数据
+        const approvalData = []
+        if (row.firstApprover) {
+          approvalData.push({ level: 1, approvers: row.firstApprover, approverIds: '' })
+        }
+        if (row.secondApprover) {
+          approvalData.push({ level: 2, approvers: row.secondApprover, approverIds: '' })
+        }
+        if (row.thirdApprover) {
+          approvalData.push({ level: 3, approvers: row.thirdApprover, approverIds: '' })
+        }
+
+        // 使用表格数据的默认逻辑（兜底逻辑）
+        const allowBookerSelect = (row.allowBookerSelectApprover === 'yes')
+        addRoomForm.value.allowBookerSelectApprover = allowBookerSelect ? 'yes' : 'no'
+
+        if (!allowBookerSelect) {
+          // 不需要预约自选人员审批 - 显示所有审批级别（包括第一级）
+          approvalLevels.value = approvalData.length > 0 ? approvalData : [{ level: 1, approvers: '', approverIds: '' }]
+        } else {
+          // 需要预约自选人员审批 - 只显示第二级和第三级审批人
+          const filteredApprovalData = approvalData.filter(item => item.level > 1)
+          approvalLevels.value = filteredApprovalData.length > 0 ? filteredApprovalData : [{ level: 2, approvers: '', approverIds: '' }]
+        }
+
+        // 显示弹出框
+        addRoomDialogVisible.value = true
+      } finally {
+        loading.close()
+      }
     }
 
-    const exportData = () => {
+    const exportData = async () => {
       if (selectedRows.value.length === 0) {
         ElMessage.warning('请先选择要导出的数据')
         return
       }
-      ElMessage.success(`正在导出 ${selectedRows.value.length} 条数据`)
+
+      const loading = ElLoading.service({
+        lock: true,
+        text: '导出中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
+      try {
+        // 获取所有选中行的ID
+        const ids = selectedRows.value.map(row => row.id)
+        // 调用导出接口
+        const response = await exportClassrooms(ids)
+
+        // 创建下载链接
+        const blob = new Blob([response], { type: 'application/vnd.ms-excel' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = `教室数据_${new Date().toLocaleDateString()}.xlsx`
+        link.click()
+        URL.revokeObjectURL(link.href)
+
+        ElMessage.success(`成功导出 ${selectedRows.value.length} 条数据`)
+      } catch (error) {
+        console.error('导出数据失败:', error)
+        ElMessage.error('导出数据失败')
+      } finally {
+        loading.close()
+      }
     }
 
+    // 文件上传引用
+    const uploadRef = ref(null)
+
     const importData = () => {
-      ElMessage.info('导入功能开发中')
+      // 触发文件选择
+      uploadRef.value.click()
+    }
+
+    // 处理文件上传
+    const handleFileUpload = async (event) => {
+      const file = event.target.files[0]
+      if (!file) return
+
+      // 检查文件类型
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        ElMessage.error('请上传Excel文件(.xlsx或.xls)')
+        return
+      }
+
+      const loading = ElLoading.service({
+        lock: true,
+        text: '导入中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        // 调用导入接口
+        const response = await importClassrooms(formData)
+
+        if (response.success) {
+          ElMessage.success(`导入成功: 共导入${response.data.successCount}条数据，失败${response.data.failCount}条`)
+          // 重新加载数据
+          loadRoomData()
+        } else {
+          ElMessage.error(`导入失败: ${response.message}`)
+        }
+      } catch (error) {
+        console.error('导入数据失败:', error)
+        ElMessage.error('导入数据失败')
+      } finally {
+        loading.close()
+        // 清空文件选择
+        event.target.value = ''
+      }
     }
 
     const deleteSelected = async () => {
@@ -676,19 +781,58 @@ export default {
           `确认删除选中的 ${selectedRows.value.length} 条数据吗？`,
           '删除确认',
         )
-        ElMessage.success('删除成功')
-        selectedRows.value = []
+
+        const loading = ElLoading.service({
+          lock: true,
+          text: '删除中...',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
+
+        try {
+          // 获取所有选中行的ID
+          const ids = selectedRows.value.map(row => row.id)
+          // 调用批量删除接口
+          await batchDeleteClassrooms(ids)
+          ElMessage.success(`已将 ${selectedRows.value.length} 个教室移动到回收站`)
+          selectedRows.value = []
+          // 重新加载数据
+          loadRoomData()
+        } catch (error) {
+          console.error('删除教室失败:', error)
+          ElMessage.error('删除教室失败')
+        } finally {
+          loading.close()
+        }
       } catch {
         // 用户取消
       }
     }
 
-    const viewDetails = () => {
-      if (selectedRows.value.length === 0) {
-        ElMessage.warning('请先选择要查看的数据')
-        return
+    // 同步教室数据
+    const syncRooms = async () => {
+      try {
+        const loading = ElLoading.service({
+          lock: true,
+          text: '同步中...',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
+
+        // 调用同步接口
+        const response = await syncClassroomsFromRoom()
+
+        if (response.success) {
+          ElMessage.success(`同步成功: 共同步${response.data}条数据`)
+          // 重新加载数据
+          loadRoomData()
+        } else {
+          ElMessage.error(`同步失败: ${response.message}`)
+        }
+
+        loading.close()
+      } catch (error) {
+        console.error('同步数据失败:', error)
+        ElMessage.error('同步数据失败')
       }
-      ElMessage.info('查看详情功能开发中')
     }
 
     // 显示添加教室弹出框
@@ -702,6 +846,26 @@ export default {
 
 
 
+    // 根据区域ID获取区域名称
+    const getBuildingNameById = (buildingId) => {
+      if (!buildingId || !buildingTreeData.value) return ''
+
+      const findBuildingName = (nodes) => {
+        for (const node of nodes) {
+          if (node.id === buildingId) {
+            return node.label
+          }
+          if (node.children && node.children.length > 0) {
+            const found = findBuildingName(node.children)
+            if (found) return found
+          }
+        }
+        return null
+      }
+
+      return findBuildingName(buildingTreeData.value) || ''
+    }
+
     // 自动生成教室编号
     const generateClassroomCode = () => {
       const { classroomName, building } = addRoomForm.value
@@ -709,19 +873,19 @@ export default {
         // 生成格式：楼栋-教室名称简码-时间戳
         const nameCode = classroomName.substring(0, 2) // 取教室名称前两个字符
         const timestamp = Date.now().toString().slice(-4) // 取时间戳后4位
-        addRoomForm.value.classroomCode = `${building}-${nameCode}${timestamp}`
+        const buildingName = getBuildingNameById(building)
+        addRoomForm.value.classroomCode = `${buildingName}-${nameCode}${timestamp}`
       }
     }
 
     // 添加审批级别
     const addApprovalLevel = () => {
-      if (approvalLevels.value.length < 3) {
-        const maxLevel = Math.max(...approvalLevels.value.map(item => item.level))
-        approvalLevels.value.push({
-          level: maxLevel + 1,
-          approvers: ''
-        })
-      }
+      const maxLevel = Math.max(...approvalLevels.value.map(item => item.level))
+      approvalLevels.value.push({
+        level: maxLevel + 1,
+        approvers: '',
+        approverIds: ''
+      })
     }
 
     // 删除审批级别
@@ -738,40 +902,67 @@ export default {
       const currentApprovers = approvalLevels.value[levelIndex].approvers
       if (currentApprovers) {
         const approverNames = currentApprovers.split('、')
-        selectedPersonnel.value = personnelList.value.filter(person =>
-          approverNames.includes(person.name)
-        )
-        // 设置表格选中状态
-        setTimeout(() => {
-          if (personnelTableRef.value) {
-            selectedPersonnel.value.forEach(person => {
-              personnelTableRef.value.toggleRowSelection(person, true)
-            })
-          }
-        }, 100)
+        // 保存已选择的人员名称，等待数据加载后再设置选中状态
+        selectedPersonnel.value = approverNames.map(name => ({ name }))
       } else {
         selectedPersonnel.value = []
       }
+
+      // 重置分页和搜索条件
+      personnelPagination.value.currentPage = 1
+      personnelSearchForm.value = {
+        name: '',
+        department: ''
+      }
+
+      // 加载人员数据
+      searchPersonnelData()
+
       personnelDialogVisible.value = true
     }
 
     // 搜索人员
-    const searchPersonnel = () => {
-      // 这里应该调用后端API进行搜索
-      // 目前使用模拟数据过滤
-      const { name, department } = personnelSearchForm.value
-      let filteredList = [...personnelList.value]
+    const searchPersonnelData = async () => {
+      try {
+        const params = {
+          pageNumber: personnelPagination.value.currentPage,
+          pageSize: personnelPagination.value.pageSize,
+          name: personnelSearchForm.value.name || '',
+          department: personnelSearchForm.value.department || '',
+          position: ''
+        }
 
-      if (name) {
-        filteredList = filteredList.filter(person => person.name.includes(name))
-      }
-      if (department) {
-        filteredList = filteredList.filter(person => person.department.includes(department))
-      }
+        const loading = ElLoading.service({
+          lock: true,
+          text: '搜索中...',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
 
-      // 更新分页信息
-      personnelPagination.value.total = filteredList.length
-      console.log('搜索人员:', personnelSearchForm.value)
+        try {
+          const res = await searchPersonnel(params)
+          personnelList.value = res.data.rows || []
+          personnelPagination.value.total = res.data.total || 0
+
+          // 设置表格选中状态
+          setTimeout(() => {
+            if (personnelTableRef.value) {
+              selectedPersonnel.value.forEach(person => {
+                const matchedPerson = personnelList.value.find(p => p.id === person.id)
+                if (matchedPerson) {
+                  personnelTableRef.value.toggleRowSelection(matchedPerson, true)
+                }
+              })
+            }
+          }, 100)
+        } catch (error) {
+          console.error('搜索人员失败:', error)
+          ElMessage.error('搜索人员失败')
+        } finally {
+          loading.close()
+        }
+      } catch (error) {
+        console.error('搜索人员参数错误:', error)
+      }
     }
 
     // 重置人员搜索
@@ -780,7 +971,14 @@ export default {
         name: '',
         department: ''
       }
-      searchPersonnel()
+      personnelPagination.value.currentPage = 1
+      searchPersonnelData()
+    }
+
+
+    const handlePersonnelCurrentPageChange = (val) => {
+      personnelPagination.value.currentPage = val
+      searchPersonnelData()
     }
 
     // 处理人员选择变化
@@ -796,14 +994,17 @@ export default {
       }
 
       const approverNames = selectedPersonnel.value.map(person => person.name).join('、')
+      const approverIds = selectedPersonnel.value.map(person => person.id).join(',')
 
       // 检查是否是批量配置模式
       if (batchPermissionDialogVisible.value) {
         // 批量配置模式下更新批量审批级别
         batchApprovalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+        batchApprovalLevels.value[currentApprovalLevelIndex.value].approverIds = approverIds
       } else {
         // 普通模式下更新审批级别
         approvalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+        approvalLevels.value[currentApprovalLevelIndex.value].approverIds = approverIds
       }
 
       personnelDialogVisible.value = false
@@ -816,17 +1017,12 @@ export default {
       selectedPersonnel.value = []
     }
 
-    // 处理人员分页变化
-    const handlePersonnelCurrentPageChange = (page) => {
-      personnelPagination.value.currentPage = page
-      searchPersonnel()
-    }
 
     // 处理人员分页大小变化
     const handlePersonnelPageSizeChange = (size) => {
       personnelPagination.value.pageSize = size
       personnelPagination.value.currentPage = 1
-      searchPersonnel()
+      searchPersonnelData()
     }
 
     // 监听表单变化，自动生成教室编号
@@ -840,18 +1036,19 @@ export default {
 
     // 监听是否需要预约自选人员审批的变化
     watch(() => addRoomForm.value.allowBookerSelectApprover, (newValue) => {
+      if (approvalLevels.value.length > 0) return // ✅ 已有数据就不改动
+
       if (newValue === 'yes') {
-        // 选择"是"时，从第二级开始设置审批
         approvalLevels.value = [
-          { level: 2, approvers: '' }
+          { level: 2, approvers: '', approverIds: '' }
         ]
       } else {
-        // 选择"否"时，从第一级开始设置审批
         approvalLevels.value = [
-          { level: 1, approvers: '' }
+          { level: 1, approvers: '', approverIds: '' }
         ]
       }
     })
+
 
     // 重置添加教室表单
     const resetAddRoomForm = () => {
@@ -865,7 +1062,7 @@ export default {
       }
       // 重置审批级别
       approvalLevels.value = [
-        { level: 2, approvers: '' }
+        { level: 2, approvers: '', approverIds: '' }
       ]
       // 清除表单验证
       if (addRoomFormRef.value) {
@@ -888,77 +1085,57 @@ export default {
       try {
         await addRoomFormRef.value.validate()
 
-        if (isEditMode.value) {
-          // 编辑模式：更新现有房间数据
-          const roomIndex = roomData.value.findIndex(room => room.id === currentEditingRoom.value.id)
-          if (roomIndex !== -1) {
-            // 构造审批人数据
-            const approvalData = {
-              firstApprover: '',
-              secondApprover: '',
-              thirdApprover: ''
-            }
+        // 处理审批级别数据
+        const approvalLevelsData = approvalLevels.value.map(level => ({
+          level: level.level,
+          approvers: level.approvers || '',
+          approverIds: level.approverIds || '' // 使用存储的审批人ID
+        }))
 
-            approvalLevels.value.forEach(level => {
-              if (level.level === 1) approvalData.firstApprover = level.approvers
-              if (level.level === 2) approvalData.secondApprover = level.approvers
-              if (level.level === 3) approvalData.thirdApprover = level.approvers
-            })
-
-            // 更新房间数据
-            roomData.value[roomIndex] = {
-              ...roomData.value[roomIndex],
-              roomName: addRoomForm.value.classroomName,
-              roomNumber: addRoomForm.value.roomNumber,
-              location: addRoomForm.value.building,
-              needApproval: approvalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
-              ...approvalData
-            }
-
-            ElMessage.success('更新教室信息成功')
-          }
-        } else {
-          // 添加模式：创建新房间
-          // 构造审批人数据
-          const approvalData = {
-            firstApprover: '',
-            secondApprover: '',
-            thirdApprover: ''
-          }
-
-          approvalLevels.value.forEach(level => {
-            if (level.level === 1) approvalData.firstApprover = level.approvers
-            if (level.level === 2) approvalData.secondApprover = level.approvers
-            if (level.level === 3) approvalData.thirdApprover = level.approvers
-          })
-
-          // 构造新的房间数据
-          const newRoom = {
-            id: Date.now(), // 临时ID，实际应该由后端生成
-            roomName: addRoomForm.value.classroomName,
-            roomNumber: addRoomForm.value.roomNumber,
-            location: addRoomForm.value.building,
-            isExchange: 'no', // 默认值
-            needApproval: approvalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
-            ...approvalData
-          }
-
-          // 添加到房间列表
-          roomData.value.unshift(newRoom)
-          total.value += 1
-
-          ElMessage.success('添加教室成功')
+        // 构建提交的数据
+        const submitData = {
+          classroomName: addRoomForm.value.classroomName, // 教室名称对应roomName
+          roomNumber: addRoomForm.value.roomNumber, // 房间号对应roomNo
+          roomAreaName: getBuildingNameById(addRoomForm.value.building), // 根据ID获取名称
+          roomAreaId: addRoomForm.value.building, // 区域ID
+          remarks: addRoomForm.value.remarks,
+          roomVolume: 0,
+          roomArea: '',
+          allowBookerSelectApprover: addRoomForm.value.allowBookerSelectApprover,
+          approvalLevels: approvalLevelsData
         }
 
-        handleCloseDialog()
+        // 编辑模式下需要传入ID
+        if (isEditMode.value) {
+          submitData.id = currentEditingRoom.value.id
+        }
 
-        // TODO: 这里应该调用后端API保存数据
-        // if (isEditMode.value) {
-        //   await updateRoomAPI(roomData.value[roomIndex])
-        // } else {
-        //   await addRoomAPI(newRoom)
-        // }
+        const loading = ElLoading.service({
+          lock: true,
+          text: '提交中...',
+          background: 'rgba(0, 0, 0, 0.7)'
+        })
 
+        try {
+          if (isEditMode.value) {
+            // 编辑模式，调用更新接口
+            await updateClassroom(submitData)
+            ElMessage.success('更新教室信息成功')
+          } else {
+            // 添加模式，调用添加接口
+            await addClassroom(submitData)
+            ElMessage.success('添加教室成功')
+          }
+
+          handleCloseDialog()
+          // 重新加载数据
+          loadRoomData()
+        } catch (error) {
+          console.error(isEditMode.value ? '修改教室失败:' : '添加教室失败:', error)
+          ElMessage.error(isEditMode.value ? '修改教室失败' : '添加教室失败')
+        } finally {
+          loading.close()
+        }
       } catch (error) {
         console.error('表单验证失败:', error)
       }
@@ -972,7 +1149,7 @@ export default {
 
     // 批量审批级别管理
     const batchApprovalLevels = ref([
-      { level: 2, approvers: '' }
+      { level: 2, approvers: '', approverIds: '' }
     ])
 
     const batchSetPermissions = () => {
@@ -985,7 +1162,7 @@ export default {
         allowBookerSelectApprover: 'yes'
       }
       batchApprovalLevels.value = [
-        { level: 2, approvers: '' }
+        { level: 2, approvers: '', approverIds: '' }
       ]
       batchPermissionDialogVisible.value = true
     }
@@ -996,46 +1173,51 @@ export default {
     }
 
     // 提交批量配置
-    const handleSubmitBatchPermission = () => {
-      // 构造审批人数据
-      const approvalData = {
-        firstApprover: '',
-        secondApprover: '',
-        thirdApprover: ''
-      }
-
-      batchApprovalLevels.value.forEach(level => {
-        if (level.level === 1) approvalData.firstApprover = level.approvers
-        if (level.level === 2) approvalData.secondApprover = level.approvers
-        if (level.level === 3) approvalData.thirdApprover = level.approvers
+    const handleSubmitBatchPermission = async () => {
+      const loading = ElLoading.service({
+        lock: true,
+        text: '提交中...',
+        background: 'rgba(0, 0, 0, 0.7)'
       })
 
-      // 批量更新选中的房间
-      selectedRows.value.forEach(room => {
-        const roomIndex = roomData.value.findIndex(r => r.id === room.id)
-        if (roomIndex !== -1) {
-          roomData.value[roomIndex] = {
-            ...roomData.value[roomIndex],
-            needApproval: batchApprovalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
-            ...approvalData
-          }
+      try {
+        // 处理审批级别数据
+        const approvalLevelsData = batchApprovalLevels.value.map(level => ({
+          level: level.level,
+          approvers: level.approvers || '',
+          approverIds: level.approverIds || ''
+        }))
+
+        // 构建提交的数据
+        const submitData = {
+          roomIds: selectedRows.value.map(room => room.id),
+          allowBookerSelectApprover: batchPermissionForm.value.allowBookerSelectApprover,
+          approvalLevels: approvalLevelsData
         }
-      })
 
-      ElMessage.success(`已成功为 ${selectedRows.value.length} 个教室配置审批权限`)
-      batchPermissionDialogVisible.value = false
-      selectedRows.value = []
+        // 调用批量设置审批接口
+        await batchSetApproval(submitData)
+        ElMessage.success(`已成功为 ${selectedRows.value.length} 个教室配置审批权限`)
+        batchPermissionDialogVisible.value = false
+        selectedRows.value = []
+        // 重新加载数据
+        loadRoomData()
+      } catch (error) {
+        console.error('批量设置审批权限失败:', error)
+        ElMessage.error('批量设置审批权限失败')
+      } finally {
+        loading.close()
+      }
     }
 
     // 批量添加审批级别
     const addBatchApprovalLevel = () => {
-      if (batchApprovalLevels.value.length < 3) {
-        const maxLevel = Math.max(...batchApprovalLevels.value.map(item => item.level))
-        batchApprovalLevels.value.push({
-          level: maxLevel + 1,
-          approvers: ''
-        })
-      }
+      const maxLevel = Math.max(...batchApprovalLevels.value.map(item => item.level))
+      batchApprovalLevels.value.push({
+        level: maxLevel + 1,
+        approvers: '',
+        approverIds: ''
+      })
     }
 
     // 批量删除审批级别
@@ -1074,12 +1256,12 @@ export default {
        if (newValue === 'yes') {
          // 选择"是"时，从第二级开始设置审批
          batchApprovalLevels.value = [
-           { level: 2, approvers: '' }
+           { level: 2, approvers: '', approverIds: '' }
          ]
        } else {
          // 选择"否"时，从第一级开始设置审批
          batchApprovalLevels.value = [
-           { level: 1, approvers: '' }
+           { level: 1, approvers: '', approverIds: '' }
          ]
        }
      })
@@ -1116,6 +1298,7 @@ export default {
       }
     }
 
+
     // 处理楼栋架构树节点点击事件
     const handleBuildingNodeClick = (data) => {
       // 保存选中的区域信息
@@ -1124,13 +1307,43 @@ export default {
         name: data.label
       }
       ElMessage.success(`已选择区域：${data.label}`)
-      // 这里可以根据选中的区域过滤房间数据
-      // 例如：根据区域ID过滤roomData
+      // 根据选中的区域过滤房间数据
+      loadRoomData()
+    }
+
+    // 加载教室数据
+    const loadRoomData = async () => {
+      const loading = ElLoading.service({
+        lock: true,
+        text: '加载中...',
+        background: 'rgba(0, 0, 0, 0.7)'
+      })
+      try {
+        const params = {
+          pageNumber: currentPage.value,
+          pageSize: pageSize.value,
+          roomName: roomNameSearch.value || '',
+          approvalFilter: approvalFilter.value === 'all' ? '' : approvalFilter.value,
+          roomAreaId: selectedBuildingArea.value ? selectedBuildingArea.value.id : '',
+          roomNo: '',
+          roomCode: ''
+        }
+        const res = await searchClassrooms(params)
+        roomData.value = res.data.rows || []
+        total.value = res.data.total || 0
+      } catch (error) {
+        console.error('加载教室数据失败:', error)
+        ElMessage.error('加载教室数据失败')
+      } finally {
+        loading.close()
+      }
     }
 
     // 页面初始化
     onMounted(() => {
       loadBuildingTree()
+      // 加载教室数据
+      loadRoomData()
     })
 
     return {
@@ -1149,14 +1362,19 @@ export default {
       handleSelectionChange,
       handleSizeChange,
       handleCurrentChange,
+      searchRooms,
+      resetSearch,
       managePersonnel,
       exportData,
+      uploadRef,
+      handleFileUpload,
       importData,
       deleteSelected,
-      viewDetails,
+      syncRooms,
       batchSetPermissions,
       handleBuildingNodeClick,
       loadBuildingTree,
+      loadRoomData,
       // 添加教室相关
       addRoomDialogVisible,
       addRoomFormRef,
@@ -1167,6 +1385,7 @@ export default {
       showAddRoomDialog,
       handleCloseDialog,
       handleSubmitRoom,
+      getBuildingNameById,
       generateClassroomCode,
       // 审批级别管理
       approvalLevels,
@@ -1181,7 +1400,7 @@ export default {
       personnelPagination,
       personnelList,
       showPersonnelDialog,
-      searchPersonnel,
+      searchPersonnelData,
       resetPersonnelSearch,
       handlePersonnelSelectionChange,
       confirmPersonnelSelection,
@@ -1413,6 +1632,20 @@ export default {
   flex-shrink: 0;
 }
 
+.add-level-btn-inline {
+  margin-left: 8px;
+  background: linear-gradient(45deg, #67c23a, #85ce61);
+  border: none;
+  box-shadow: 0 2px 4px rgba(103, 194, 58, 0.3);
+  font-weight: bold;
+}
+
+.add-level-btn-inline:hover {
+  background: linear-gradient(45deg, #5daf34, #7bc652);
+  box-shadow: 0 4px 8px rgba(103, 194, 58, 0.4);
+  transform: translateY(-1px);
+}
+
 /* 人员选择弹出框样式 */
 .personnel-search {
   margin-bottom: 20px;
@@ -1577,14 +1810,32 @@ export default {
   text-align: center;
   margin-top: 20px;
   padding: 20px;
-  border: 2px dashed #ddd;
+  border: 2px dashed #67c23a;
   border-radius: 8px;
-  background-color: #fafafa;
+  background-color: #f5faf5;
+  transition: all 0.3s ease;
 }
 
 .add-level-btn:hover {
-  border-color: #409eff;
-  background-color: #f0f9ff;
+  border-color: #5daf34;
+  background-color: #eef8ee;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.2);
+}
+
+.add-level-btn-primary {
+  background: linear-gradient(45deg, #67c23a, #85ce61) !important;
+  border: none !important;
+  box-shadow: 0 3px 6px rgba(103, 194, 58, 0.3);
+  font-weight: bold;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.add-level-btn-primary:hover {
+  background: linear-gradient(45deg, #5daf34, #7bc652) !important;
+  box-shadow: 0 5px 10px rgba(103, 194, 58, 0.4);
+  transform: translateY(-2px);
 }
 
 .dialog-footer {
