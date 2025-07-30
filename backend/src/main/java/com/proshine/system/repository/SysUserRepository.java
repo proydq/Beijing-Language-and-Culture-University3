@@ -76,4 +76,13 @@ public interface SysUserRepository extends JpaRepository<SysUser, String>, JpaSp
     Optional<SysUser> findByPhoneAndCustomerIdAndDeletedFalse(String phone, String customerId);
 
     Optional<SysUser> findByIdAndDeletedFalse(String userId);
+
+    /**
+     * 根据ID和客户域ID查询用户
+     *
+     * @param id 用户ID
+     * @param customerId 客户域ID
+     * @return 用户信息
+     */
+    Optional<SysUser> findByIdAndCustomerIdAndDeletedFalse(String id, String customerId);
 }

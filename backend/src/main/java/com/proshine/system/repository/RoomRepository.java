@@ -200,4 +200,25 @@ public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecific
      */
     @Query("SELECT r FROM Room r WHERE r.id = :id AND r.cstmId = :cstmId AND (r.isDeleted IS NULL OR r.isDeleted = false)")
     Optional<Room> findActiveByIdAndCstmId(@Param("id") String id, @Param("cstmId") String cstmId);
+
+    /**
+     * 分页查询指定房间类型的未删除房间（用于违规设置）
+     * 
+     * @param cstmId 客户域ID
+     * @param roomTypeName 房间类型名称
+     * @param roomName 房间名称（可选）
+     * @param roomAreaId 房间区域ID（可选）
+     * @param pageable 分页参数
+     * @return 房间分页数据
+     */
+    @Query("SELECT r FROM Room r WHERE r.cstmId = :cstmId " +
+           "AND r.roomTypeName = :roomTypeName " +
+           "AND (r.isDeleted IS NULL OR r.isDeleted = false) " +
+           "AND (:roomName IS NULL OR :roomName = '' OR r.roomName LIKE %:roomName%) " +
+           "AND (:roomAreaId IS NULL OR :roomAreaId = '' OR r.roomAreaId = :roomAreaId)")
+    Page<Room> findActiveRoomsByTypeAndCondition(@Param("cstmId") String cstmId,
+                                               @Param("roomTypeName") String roomTypeName,
+                                               @Param("roomName") String roomName,
+                                               @Param("roomAreaId") String roomAreaId,
+                                               Pageable pageable);
 }

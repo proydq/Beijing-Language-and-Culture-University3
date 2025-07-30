@@ -12,7 +12,7 @@ export function searchDeletedClassrooms(params) {
 // 恢复教室（从回收站恢复）
 export function restoreClassroom(id) {
   return request({
-    url: `/scheme-management/recycle-bin/classrooms/${id}/restore`,
+    url: `/recycle-bin/classrooms/${id}/restore`,
     method: 'put'
   })
 }
@@ -20,7 +20,7 @@ export function restoreClassroom(id) {
 // 批量恢复教室
 export function batchRestoreClassrooms(ids) {
   return request({
-    url: '/scheme-management/recycle-bin/classrooms/batch-restore',
+    url: '/recycle-bin/classrooms/batch-restore',
     method: 'put',
     data: { ids }
   })
@@ -29,7 +29,7 @@ export function batchRestoreClassrooms(ids) {
 // 永久删除教室
 export function permanentDeleteClassroom(id) {
   return request({
-    url: `/scheme-management/recycle-bin/classrooms/${id}/permanent-delete`,
+    url: `/recycle-bin/classrooms/${id}`,
     method: 'delete'
   })
 }
@@ -37,7 +37,7 @@ export function permanentDeleteClassroom(id) {
 // 批量永久删除教室
 export function batchPermanentDeleteClassrooms(ids) {
   return request({
-    url: '/scheme-management/recycle-bin/classrooms/batch-permanent-delete',
+    url: '/recycle-bin/classrooms/batch-delete',
     method: 'delete',
     data: { ids }
   })
@@ -46,7 +46,7 @@ export function batchPermanentDeleteClassrooms(ids) {
 // 清空回收站
 export function clearRecycleBin() {
   return request({
-    url: '/scheme-management/recycle-bin/classrooms/clear',
+    url: '/recycle-bin/clear',
     method: 'delete'
   })
 }
@@ -54,7 +54,7 @@ export function clearRecycleBin() {
 // 获取回收站统计信息
 export function getRecycleBinStats() {
   return request({
-    url: '/scheme-management/recycle-bin/stats',
+    url: '/recycle-bin/stats',
     method: 'get'
   })
 }

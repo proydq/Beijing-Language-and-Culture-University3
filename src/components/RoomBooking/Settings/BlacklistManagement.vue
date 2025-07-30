@@ -69,6 +69,7 @@
         :data="paginatedBlacklistData" 
         style="width: 100%" 
         border
+        v-loading="loading"
         :header-cell-style="{ backgroundColor: '#fafafa', fontWeight: '600' }"
       >
         <el-table-column type="selection" width="55" />
@@ -109,9 +110,10 @@
 </template>
 
 <script>
-import { ref, reactive, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus, Upload, Search, Refresh } from '@element-plus/icons-vue'
+import { searchBlacklist, removeFromBlacklist as removeFromBlacklistAPI, batchRemoveFromBlacklist, addToBlacklist } from '@/api/blacklist'
 
 export default {
   name: 'BlacklistManagement',
@@ -124,7 +126,8 @@ export default {
   setup() {
     const currentPage = ref(1)
     const pageSize = ref(10)
-    const totalItems = ref(484)
+    const totalItems = ref(0)
+    const loading = ref(false)
 
     // 搜索表单
     const searchForm = reactive({
@@ -134,51 +137,49 @@ export default {
     })
 
     // 黑名单数据
-    const blacklistData = ref([
-      { id: 1, name: '李远达', employeeId: '1958990148', department: '教师' },
-      { id: 2, name: '杜亮生', employeeId: '1965990105', department: '教师' },
-      { id: 3, name: '王桂雅', employeeId: '1965990106', department: '教师' },
-      { id: 4, name: '王文清', employeeId: '1965990107', department: '教师' },
-      { id: 5, name: '吴涛', employeeId: '1967990010', department: '教师' },
-      { id: 6, name: '徐利君', employeeId: '1970990383', department: '教师' },
-      { id: 7, name: '朱美君', employeeId: '1970990387', department: '教师' },
-      { id: 8, name: '朱雪', employeeId: '1970990389', department: '教师' },
-      { id: 9, name: '张力萍', employeeId: '1970990391', department: '教师' },
-      { id: 10, name: '张志忠', employeeId: '1970990392', department: '教师' }
-    ])
+    const blacklistData = ref([])
 
-    // 过滤后的数据
+    // 过滤后的数据（后端已经处理搜索和分页，直接返回）
     const filteredBlacklistData = computed(() => {
-      let filtered = blacklistData.value
-
-      if (searchForm.name) {
-        filtered = filtered.filter(item => 
-          item.name.includes(searchForm.name)
-        )
-      }
-
-      if (searchForm.employeeId) {
-        filtered = filtered.filter(item => 
-          item.employeeId.includes(searchForm.employeeId)
-        )
-      }
-
-      if (searchForm.department) {
-        filtered = filtered.filter(item => 
-          item.department === searchForm.department
-        )
-      }
-
-      totalItems.value = filtered.length
-      return filtered
+      return blacklistData.value || []
     })
 
-    // 分页数据
+    // 分页数据（后端已经处理分页，直接返回）
     const paginatedBlacklistData = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value
-      const end = start + pageSize.value
-      return filteredBlacklistData.value.slice(start, end)
+      return blacklistData.value || []
     })
+
+    // 加载黑名单数据
+    const loadBlacklistData = async () => {
+      try {
+        loading.value = true
+        
+        const condition = {
+          pageNumber: currentPage.value,
+          pageSize: pageSize.value,
+          name: searchForm.name || null,
+          employeeId: searchForm.employeeId || null,
+          department: searchForm.department || null
+        }
+
+        const response = await searchBlacklist(condition)
+        
+        if (response && response.code === 200) {
+          blacklistData.value = response.data?.rows || []
+          totalItems.value = response.data?.total || 0
+        } else {
+          console.warn('获取黑名单数据响应异常:', response)
+          ElMessage.error((response && response.message) || '获取黑名单数据失败')
+        }
+      } catch (error) {
+        console.error('获取黑名单数据失败:', error)
+        ElMessage.error('获取黑名单数据失败')
+        blacklistData.value = []
+        totalItems.value = 0
+      } finally {
+        loading.value = false
+      }
+    }
 
     const addToBlacklist = () => {
       ElMessage.info('添加黑名单功能开发中...')
@@ -190,7 +191,7 @@ export default {
 
     const handleSearch = () => {
       currentPage.value = 1
-      ElMessage.success('搜索完成')
+      loadBlacklistData()
     }
 
     const handleReset = () => {
@@ -200,45 +201,65 @@ export default {
         department: ''
       })
       currentPage.value = 1
-      ElMessage.info('搜索条件已重置')
+      loadBlacklistData()
     }
 
-    const removeFromBlacklist = async (row) => {
+    const removeFromBlacklistAction = async (row) => {
       try {
         await ElMessageBox.confirm(`确认将 "${row.name}" 移出黑名单吗？`, '移除确认')
-        // 从数据中移除该项
-        const index = blacklistData.value.findIndex(item => item.id === row.id)
-        if (index > -1) {
-          blacklistData.value.splice(index, 1)
+        
+        const loadingInstance = ElLoading.service({ text: '移除中...' })
+        
+        const response = await removeFromBlacklistAPI(row.id)
+        
+        if (response && response.code === 200) {
+          ElMessage.success(`已将 ${row.name} 移出黑名单`)
+          // 刷新数据
+          await loadBlacklistData()
+        } else {
+          ElMessage.error((response && response.message) || '移除失败')
         }
-        ElMessage.success(`已将 ${row.name} 移出黑名单`)
-      } catch {
-        // 用户取消
+        
+        loadingInstance.close()
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('移除黑名单失败:', error)
+          ElMessage.error('移除失败')
+        }
       }
     }
 
     const handleSizeChange = (val) => {
       pageSize.value = val
       currentPage.value = 1
+      loadBlacklistData()
     }
 
     const handleCurrentChange = (val) => {
       currentPage.value = val
+      loadBlacklistData()
     }
+
+    // 页面初始化
+    onMounted(() => {
+      loadBlacklistData()
+    })
 
     return {
       currentPage,
       pageSize,
       totalItems,
+      loading,
       searchForm,
       blacklistData,
       filteredBlacklistData,
       paginatedBlacklistData,
+      loadBlacklistData,
       addToBlacklist,
       exportBlacklist,
       handleSearch,
       handleReset,
-      removeFromBlacklist,
+      removeFromBlacklist: removeFromBlacklistAction,
       handleSizeChange,
       handleCurrentChange
     }

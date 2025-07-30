@@ -362,17 +362,11 @@ public class SchemeManagementServiceImpl implements SchemeManagementService {
         
         String customerId = SecurityUtil.getCustomerId();
         
-        // 删除审批配置
-        List<ClassroomApprovalConfig> configs = approvalConfigRepository.findByRoomIdInAndCstmId(ids, customerId);
-        if (!configs.isEmpty()) {
-            List<String> configIds = configs.stream().map(ClassroomApprovalConfig::getId).collect(Collectors.toList());
-            approvalLevelRepository.deleteByConfigIdInAndCstmId(configIds, customerId);
-            approvalConfigRepository.deleteByRoomIdInAndCstmId(ids, customerId);
-        }
-        
-        // 逻辑删除Room
+        // 逻辑删除Room（不删除审批配置，以便恢复时能保留原有的审批设置）
         long now = System.currentTimeMillis();
         roomRepository.logicalDeleteByIdsAndCstmId(ids, customerId, now);
+        
+        log.info("批量逻辑删除教室成功，数量: {}", ids.size());
     }
 
     @Override

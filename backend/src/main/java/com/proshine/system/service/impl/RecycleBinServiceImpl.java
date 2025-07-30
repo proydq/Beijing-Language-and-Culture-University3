@@ -4,8 +4,13 @@ import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.ClassroomVo;
 import com.proshine.system.dto.SearchClassroomCondition;
 import com.proshine.system.entity.Room;
+import com.proshine.system.entity.ClassroomApprovalConfig;
+import com.proshine.system.entity.ClassroomApprovalLevel;
 import com.proshine.system.repository.RoomRepository;
+import com.proshine.system.repository.ClassroomApprovalConfigRepository;
+import com.proshine.system.repository.ClassroomApprovalLevelRepository;
 import com.proshine.system.service.RecycleBinService;
+import com.proshine.system.security.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -33,6 +38,12 @@ public class RecycleBinServiceImpl implements RecycleBinService {
 
     @Autowired
     private RoomRepository roomRepository;
+    
+    @Autowired
+    private ClassroomApprovalConfigRepository approvalConfigRepository;
+    
+    @Autowired
+    private ClassroomApprovalLevelRepository approvalLevelRepository;
 
     @Override
     public ResponsePageDataEntity<ClassroomVo> searchDeletedClassrooms(SearchClassroomCondition condition) {
@@ -56,10 +67,47 @@ public class RecycleBinServiceImpl implements RecycleBinService {
                 roomPage = roomRepository.findByIsDeletedTrue(pageable);
             }
 
-            // 转换为VO对象
-            List<ClassroomVo> classroomVos = roomPage.getContent().stream()
-                .map(this::convertToClassroomVo)
+            // 获取客户域ID
+            String customerId = SecurityUtil.getCustomerId();
+            
+            // 批量获取审批配置
+            List<String> roomIds = roomPage.getContent().stream()
+                .map(Room::getId)
                 .collect(Collectors.toList());
+            
+            List<ClassroomApprovalConfig> configs = approvalConfigRepository.findByRoomIdInAndCstmId(roomIds, customerId);
+            Map<String, ClassroomApprovalConfig> configMap = configs.stream()
+                .collect(Collectors.toMap(ClassroomApprovalConfig::getRoomId, config -> config));
+            
+            // 批量获取审批级别
+            List<String> configIds = configs.stream()
+                .map(ClassroomApprovalConfig::getId)
+                .collect(Collectors.toList());
+            
+            List<ClassroomApprovalLevel> allLevels = configIds.isEmpty() ? new ArrayList<>() : 
+                approvalLevelRepository.findByConfigIdInAndCstmIdOrderByLevelNumber(configIds, customerId);
+            Map<String, List<ClassroomApprovalLevel>> levelMap = allLevels.stream()
+                .collect(Collectors.groupingBy(ClassroomApprovalLevel::getConfigId));
+            
+            // 转换为VO对象并根据审批条件过滤
+            List<ClassroomVo> classroomVos = new ArrayList<>();
+            for (Room room : roomPage.getContent()) {
+                ClassroomApprovalConfig config = configMap.get(room.getId());
+                String configId = config != null ? config.getId() : null;
+                List<ClassroomApprovalLevel> levels = configId != null ? levelMap.get(configId) : null;
+                ClassroomVo vo = convertToClassroomVo(room, config, levels);
+                
+                // 根据审批筛选条件过滤
+                if (StringUtils.hasText(condition.getApprovalFilter()) && !"all".equals(condition.getApprovalFilter())) {
+                    boolean needApproval = "yes".equals(vo.getNeedApproval());
+                    boolean shouldInclude = "yes".equals(condition.getApprovalFilter()) ? needApproval : !needApproval;
+                    if (!shouldInclude) {
+                        continue;
+                    }
+                }
+                
+                classroomVos.add(vo);
+            }
 
             // 构建分页响应
             ResponsePageDataEntity<ClassroomVo> response = new ResponsePageDataEntity<>();
@@ -210,7 +258,7 @@ public class RecycleBinServiceImpl implements RecycleBinService {
     /**
      * 转换Room实体为ClassroomVo
      */
-    private ClassroomVo convertToClassroomVo(Room room) {
+    private ClassroomVo convertToClassroomVo(Room room, ClassroomApprovalConfig config, List<ClassroomApprovalLevel> levels) {
         ClassroomVo vo = new ClassroomVo();
         vo.setId(room.getId());
         vo.setRoomName(room.getRoomName());
@@ -222,9 +270,44 @@ public class RecycleBinServiceImpl implements RecycleBinService {
         vo.setRemark(room.getRemark());
         vo.setLastUpdateTime(room.getLastUpdateTime() != null ? room.getLastUpdateTime().toString() : null);
         
-        // 设置默认的审批相关字段
-        vo.setAllowBookerSelectApprover("no");
-        vo.setNeedApproval("no");
+        // 设置审批相关信息
+        if (config != null) {
+            vo.setAllowBookerSelectApprover(config.getAllowBookerSelectApprover() ? "yes" : "no");
+            vo.setNeedApproval(config.getNeedApproval() ? "yes" : "no");
+            
+            // 设置审批级别信息
+            if (levels != null && !levels.isEmpty()) {
+                // 为兼容性设置旧字段
+                for (ClassroomApprovalLevel level : levels) {
+                    switch (level.getLevelNumber()) {
+                        case 1:
+                            vo.setFirstApprover(level.getApproverNames());
+                            break;
+                        case 2:
+                            vo.setSecondApprover(level.getApproverNames());
+                            break;
+                        case 3:
+                            vo.setThirdApprover(level.getApproverNames());
+                            break;
+                    }
+                }
+                
+                // 设置详细的审批级别列表
+                List<ClassroomVo.ApprovalLevelDetail> approvalLevels = new ArrayList<>();
+                for (ClassroomApprovalLevel level : levels) {
+                    ClassroomVo.ApprovalLevelDetail detail = new ClassroomVo.ApprovalLevelDetail();
+                    detail.setLevel(level.getLevelNumber());
+                    detail.setApprovers(level.getApproverNames());
+                    detail.setApproverIds(level.getApproverIds());
+                    approvalLevels.add(detail);
+                }
+                vo.setApprovalLevels(approvalLevels);
+            }
+        } else {
+            // 设置默认值
+            vo.setAllowBookerSelectApprover("no");
+            vo.setNeedApproval("no");
+        }
         
         return vo;
     }
