@@ -50,7 +50,7 @@
           <el-button type="warning" @click="exportData">导出</el-button>
           <el-button type="success" @click="importData">导入</el-button>
           <el-button type="danger" @click="deleteSelected">删除</el-button>
-          <el-button type="primary" @click="viewDetails">添加教室</el-button>
+          <el-button type="primary" @click="showAddRoomDialog">添加教室</el-button>
           <el-button type="primary" @click="viewDetails">手动同步</el-button>
           <el-button type="info" @click="batchSetPermissions">批量配置审批权限</el-button>
         </div>
@@ -116,19 +116,213 @@
         />
       </div>
     </div>
+
+    <!-- 添加教室弹出框 -->
+    <el-dialog
+      v-model="addRoomDialogVisible"
+      title="基本信息"
+      width="600px"
+      :before-close="handleCloseDialog"
+    >
+      <el-form
+        ref="addRoomFormRef"
+        :model="addRoomForm"
+        :rules="addRoomRules"
+        label-width="120px"
+        class="add-room-form"
+      >
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <h4 class="section-title">基本信息</h4>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="教室名称:" prop="classroomName">
+                <el-input v-model="addRoomForm.classroomName" placeholder="请输入教室名称" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="房间号:" prop="roomNumber">
+                <el-input v-model="addRoomForm.roomNumber" placeholder="请输入房间号" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="教室编号:">
+                <el-input v-model="addRoomForm.classroomCode" placeholder="自动生成" disabled />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="所属楼:" prop="building">
+                 <el-tree-select
+                   v-model="addRoomForm.building"
+                   :data="buildingTreeData"
+                   :props="{ label: 'label', value: 'id', children: 'children' }"
+                   placeholder="请选择所属楼"
+                   style="width: 100%"
+                   check-strictly
+                   :render-after-expand="false"
+                 />
+               </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+             <el-col :span="24">
+               <el-form-item label="备注信息:">
+                 <el-input v-model="addRoomForm.remarks" placeholder="请输入备注信息" />
+               </el-form-item>
+             </el-col>
+           </el-row>
+        </div>
+
+        <!-- 设置审批信息 -->
+        <div class="form-section">
+          <h4 class="section-title">设置审批信息</h4>
+          <el-form-item label="是否需要审批:" prop="needApproval">
+            <el-radio-group v-model="addRoomForm.needApproval">
+              <el-radio label="yes">是</el-radio>
+              <el-radio label="no">否</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <div v-if="addRoomForm.needApproval === 'yes'" class="approval-settings">
+            <div class="approval-note">
+              <el-text type="info" size="small">注：第一级审批人由预约人在发起预约申请时自行选择。</el-text>
+            </div>
+            
+            <div v-for="(level, index) in approvalLevels" :key="index" class="approval-level">
+              <el-form-item :label="`第${level.level}级审批人:`">
+                <div class="approval-input-group">
+                  <el-input
+                    v-model="level.approvers"
+                    placeholder="点击选择审批人"
+                    readonly
+                    @click="showPersonnelDialog(index)"
+                    class="approver-input"
+                  >
+                    <template #suffix>
+                      <el-icon class="cursor-pointer"><User /></el-icon>
+                    </template>
+                  </el-input>
+                  <el-button 
+                    v-if="index === approvalLevels.length - 1 && index < 2" 
+                    type="primary" 
+                    size="small" 
+                    @click="addApprovalLevel"
+                    class="add-level-btn"
+                  >
+                    下一级
+                  </el-button>
+                  <el-button 
+                    v-if="index > 0" 
+                    type="danger" 
+                    size="small" 
+                    @click="removeApprovalLevel(index)"
+                    class="remove-level-btn"
+                  >
+                    删除
+                  </el-button>
+                </div>
+              </el-form-item>
+            </div>
+          </div>
+        </div>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseDialog">取消</el-button>
+          <el-button type="primary" @click="handleSubmitRoom">确认</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 人员选择弹出框 -->
+    <el-dialog
+      v-model="personnelDialogVisible"
+      title="选择审批人"
+      width="800px"
+      :before-close="handlePersonnelDialogClose"
+    >
+      <!-- 搜索区域 -->
+      <div class="personnel-search">
+        <el-form :inline="true" class="search-form">
+          <el-form-item label="姓名:">
+            <el-input
+              v-model="personnelSearchForm.name"
+              placeholder="请输入姓名"
+              clearable
+              style="width: 200px"
+            />
+          </el-form-item>
+          <el-form-item label="部门:">
+            <el-input
+              v-model="personnelSearchForm.department"
+              placeholder="请输入部门"
+              clearable
+              style="width: 200px"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="searchPersonnel">查询</el-button>
+            <el-button @click="resetPersonnelSearch">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 人员列表 -->
+      <div class="personnel-table">
+        <el-table
+          ref="personnelTableRef"
+          :data="personnelList"
+          @selection-change="handlePersonnelSelectionChange"
+          style="width: 100%"
+          border
+          max-height="400px"
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="name" label="姓名" width="120" />
+          <el-table-column prop="department" label="部门" width="150" />
+          <el-table-column prop="position" label="职位" width="120" />
+          <el-table-column prop="email" label="邮箱" min-width="180" />
+          <el-table-column prop="phone" label="电话" width="130" />
+        </el-table>
+      </div>
+
+      <!-- 分页 -->
+      <div class="personnel-pagination">
+        <el-pagination
+          v-model:current-page="personnelPagination.currentPage"
+          v-model:page-size="personnelPagination.pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="personnelPagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handlePersonnelPageSizeChange"
+          @current-change="handlePersonnelCurrentPageChange"
+        />
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handlePersonnelDialogClose">取消</el-button>
+          <el-button type="primary" @click="confirmPersonnelSelection">确认选择</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import { getAreaTree } from '@/api/area.js'
+import { Search, User } from '@element-plus/icons-vue'
+import { getAreaTree } from '@/api/area'
 
 export default {
   name: 'SchemeManagement',
   components: {
     Search,
+    User,
   },
   setup() {
     // 搜索和筛选
@@ -143,12 +337,78 @@ export default {
 
     // 选中的行
     const selectedRows = ref([])
-    
+
     // 楼栋结构树数据
     const buildingTreeData = ref([])
-    
+
     // 当前选中的楼栋区域信息
     const selectedBuildingArea = ref(null)
+
+    // 添加教室弹出框相关
+    const addRoomDialogVisible = ref(false)
+    const addRoomFormRef = ref(null)
+    const addRoomForm = ref({
+      classroomName: '',
+      roomNumber: '',
+      classroomCode: '',
+      building: '',
+      remarks: '',
+      needApproval: 'no'
+    })
+
+    // 审批级别管理
+    const approvalLevels = ref([
+      { level: 2, approvers: '' } // 默认从第二级开始，第一级由预约人选择
+    ])
+
+    // 人员选择弹出框相关
+    const personnelDialogVisible = ref(false)
+    const personnelTableRef = ref(null)
+    const currentApprovalLevelIndex = ref(0) // 当前正在设置的审批级别索引
+    const selectedPersonnel = ref([]) // 当前选中的人员
+    
+    // 人员搜索表单
+    const personnelSearchForm = ref({
+      name: '',
+      department: ''
+    })
+    
+    // 人员分页
+    const personnelPagination = ref({
+      currentPage: 1,
+      pageSize: 10,
+      total: 0
+    })
+    
+    // 人员列表数据（模拟数据，实际应该从后端获取）
+    const personnelList = ref([
+      { id: 1, name: '张三', department: '信息技术部', position: '部门经理', email: 'zhangsan@example.com', phone: '13800138001' },
+      { id: 2, name: '李四', department: '人力资源部', position: '主管', email: 'lisi@example.com', phone: '13800138002' },
+      { id: 3, name: '王五', department: '财务部', position: '会计', email: 'wangwu@example.com', phone: '13800138003' },
+      { id: 4, name: '赵六', department: '市场部', position: '经理', email: 'zhaoliu@example.com', phone: '13800138004' },
+      { id: 5, name: '孙七', department: '技术部', position: '工程师', email: 'sunqi@example.com', phone: '13800138005' },
+      { id: 6, name: '周八', department: '运营部', position: '专员', email: 'zhouba@example.com', phone: '13800138006' },
+      { id: 7, name: '吴九', department: '产品部', position: '产品经理', email: 'wujiu@example.com', phone: '13800138007' },
+      { id: 8, name: '郑十', department: '设计部', position: '设计师', email: 'zhengshi@example.com', phone: '13800138008' },
+      { id: 9, name: '刘备', department: '管理层', position: '总经理', email: 'liubei@example.com', phone: '13800138009' },
+      { id: 10, name: '关羽', department: '管理层', position: '副总经理', email: 'guanyu@example.com', phone: '13800138010' }
+    ])
+
+    // 表单验证规则
+    const addRoomRules = ref({
+      classroomName: [
+        { required: true, message: '请输入教室名称', trigger: 'blur' }
+      ],
+      roomNumber: [
+        { required: true, message: '请输入房间号', trigger: 'blur' }
+      ],
+      building: [
+        { required: true, message: '请选择所属楼', trigger: 'change' }
+      ],
+      needApproval: [
+        { required: true, message: '请选择是否需要审批', trigger: 'change' }
+      ]
+    })
 
     // 房间数据
     const roomData = ref([
@@ -273,6 +533,198 @@ export default {
       ElMessage.info('查看详情功能开发中')
     }
 
+    // 显示添加教室弹出框
+    const showAddRoomDialog = () => {
+      addRoomDialogVisible.value = true
+      // 重置表单
+      resetAddRoomForm()
+    }
+
+
+
+    // 自动生成教室编号
+    const generateClassroomCode = () => {
+      const { classroomName, building } = addRoomForm.value
+      if (classroomName && building) {
+        // 生成格式：楼栋-教室名称简码-时间戳
+        const nameCode = classroomName.substring(0, 2) // 取教室名称前两个字符
+        const timestamp = Date.now().toString().slice(-4) // 取时间戳后4位
+        addRoomForm.value.classroomCode = `${building}-${nameCode}${timestamp}`
+      }
+    }
+
+    // 添加审批级别
+    const addApprovalLevel = () => {
+      if (approvalLevels.value.length < 3) {
+        const maxLevel = Math.max(...approvalLevels.value.map(item => item.level))
+        approvalLevels.value.push({
+          level: maxLevel + 1,
+          approvers: ''
+        })
+      }
+    }
+
+    // 删除审批级别
+    const removeApprovalLevel = (index) => {
+      if (approvalLevels.value.length > 1) {
+        approvalLevels.value.splice(index, 1)
+      }
+    }
+
+    // 显示人员选择弹出框
+    const showPersonnelDialog = (levelIndex) => {
+      currentApprovalLevelIndex.value = levelIndex
+      // 解析当前已选择的人员
+      const currentApprovers = approvalLevels.value[levelIndex].approvers
+      if (currentApprovers) {
+        const approverNames = currentApprovers.split('、')
+        selectedPersonnel.value = personnelList.value.filter(person => 
+          approverNames.includes(person.name)
+        )
+        // 设置表格选中状态
+        setTimeout(() => {
+          if (personnelTableRef.value) {
+            selectedPersonnel.value.forEach(person => {
+              personnelTableRef.value.toggleRowSelection(person, true)
+            })
+          }
+        }, 100)
+      } else {
+        selectedPersonnel.value = []
+      }
+      personnelDialogVisible.value = true
+    }
+
+    // 搜索人员
+    const searchPersonnel = () => {
+      // 这里应该调用后端API进行搜索
+      // 目前使用模拟数据过滤
+      const { name, department } = personnelSearchForm.value
+      let filteredList = [...personnelList.value]
+      
+      if (name) {
+        filteredList = filteredList.filter(person => person.name.includes(name))
+      }
+      if (department) {
+        filteredList = filteredList.filter(person => person.department.includes(department))
+      }
+      
+      // 更新分页信息
+      personnelPagination.value.total = filteredList.length
+      console.log('搜索人员:', personnelSearchForm.value)
+    }
+
+    // 重置人员搜索
+    const resetPersonnelSearch = () => {
+      personnelSearchForm.value = {
+        name: '',
+        department: ''
+      }
+      searchPersonnel()
+    }
+
+    // 处理人员选择变化
+    const handlePersonnelSelectionChange = (selection) => {
+      selectedPersonnel.value = selection
+    }
+
+    // 确认选择人员
+    const confirmPersonnelSelection = () => {
+      const approverNames = selectedPersonnel.value.map(person => person.name).join('、')
+      approvalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+      personnelDialogVisible.value = false
+    }
+
+    // 关闭人员选择弹出框
+    const handlePersonnelDialogClose = () => {
+      personnelDialogVisible.value = false
+      selectedPersonnel.value = []
+    }
+
+    // 处理人员分页变化
+    const handlePersonnelCurrentPageChange = (page) => {
+      personnelPagination.value.currentPage = page
+      searchPersonnel()
+    }
+
+    // 处理人员分页大小变化
+    const handlePersonnelPageSizeChange = (size) => {
+      personnelPagination.value.pageSize = size
+      personnelPagination.value.currentPage = 1
+      searchPersonnel()
+    }
+
+    // 监听表单变化，自动生成教室编号
+    watch(
+      () => [addRoomForm.value.classroomName, addRoomForm.value.building],
+      () => {
+        generateClassroomCode()
+      },
+      { deep: true }
+    )
+
+    // 重置添加教室表单
+    const resetAddRoomForm = () => {
+      addRoomForm.value = {
+        classroomName: '',
+        roomNumber: '',
+        classroomCode: '',
+        building: '',
+        remarks: '',
+        needApproval: 'no'
+      }
+      // 重置审批级别
+      approvalLevels.value = [
+        { level: 2, approvers: '' }
+      ]
+      // 清除表单验证
+      if (addRoomFormRef.value) {
+        addRoomFormRef.value.clearValidate()
+      }
+    }
+
+    // 关闭弹出框
+    const handleCloseDialog = () => {
+      addRoomDialogVisible.value = false
+      resetAddRoomForm()
+    }
+
+    // 提交添加教室表单
+    const handleSubmitRoom = async () => {
+      if (!addRoomFormRef.value) return
+
+      try {
+        await addRoomFormRef.value.validate()
+
+        // 构造新的房间数据
+        const newRoom = {
+          id: Date.now(), // 临时ID，实际应该由后端生成
+          classroomName: addRoomForm.value.classroomName,
+          roomNumber: addRoomForm.value.roomNumber,
+          classroomCode: addRoomForm.value.classroomCode,
+          building: addRoomForm.value.building,
+          remarks: addRoomForm.value.remarks,
+          needApproval: addRoomForm.value.needApproval,
+          firstApprover: addRoomForm.value.firstApprover,
+          secondApprover: addRoomForm.value.secondApprover,
+          thirdApprover: addRoomForm.value.thirdApprover
+        }
+
+        // 添加到房间列表
+        roomData.value.unshift(newRoom)
+        total.value += 1
+
+        ElMessage.success('添加教室成功')
+        handleCloseDialog()
+
+        // TODO: 这里应该调用后端API保存数据
+        // await addRoomAPI(newRoom)
+
+      } catch (error) {
+        console.error('表单验证失败:', error)
+      }
+    }
+
     const batchSetPermissions = () => {
       if (selectedRows.value.length === 0) {
         ElMessage.warning('请先选择要设置权限的数据')
@@ -344,6 +796,35 @@ export default {
       batchSetPermissions,
       handleBuildingNodeClick,
       loadBuildingTree,
+      // 添加教室相关
+      addRoomDialogVisible,
+      addRoomFormRef,
+      addRoomForm,
+      addRoomRules,
+      showAddRoomDialog,
+      handleCloseDialog,
+      handleSubmitRoom,
+      generateClassroomCode,
+      // 审批级别管理
+      approvalLevels,
+      addApprovalLevel,
+      removeApprovalLevel,
+      // 人员选择相关
+      personnelDialogVisible,
+      personnelTableRef,
+      currentApprovalLevelIndex,
+      selectedPersonnel,
+      personnelSearchForm,
+      personnelPagination,
+      personnelList,
+      showPersonnelDialog,
+      searchPersonnel,
+      resetPersonnelSearch,
+      handlePersonnelSelectionChange,
+      confirmPersonnelSelection,
+      handlePersonnelDialogClose,
+      handlePersonnelCurrentPageChange,
+      handlePersonnelPageSizeChange
     }
   },
 }
