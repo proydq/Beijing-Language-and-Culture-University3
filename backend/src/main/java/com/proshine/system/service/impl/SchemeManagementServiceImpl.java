@@ -183,6 +183,9 @@ public class SchemeManagementServiceImpl implements SchemeManagementService {
             
             // 只查询教室类型
             predicates.add(criteriaBuilder.equal(root.get("roomTypeName"), CLASSROOM_TYPE_NAME));
+
+            // 未被逻辑删除
+            predicates.add(criteriaBuilder.equal(root.get("isDeleted"), false));
             
             // 教室名称模糊查询
             if (StringUtils.hasText(condition.getRoomName())) {
@@ -367,8 +370,9 @@ public class SchemeManagementServiceImpl implements SchemeManagementService {
             approvalConfigRepository.deleteByRoomIdInAndCstmId(ids, customerId);
         }
         
-        // 删除Room
-        roomRepository.deleteByIdsAndCstmId(ids, customerId);
+        // 逻辑删除Room
+        long now = System.currentTimeMillis();
+        roomRepository.logicalDeleteByIdsAndCstmId(ids, customerId, now);
     }
 
     @Override

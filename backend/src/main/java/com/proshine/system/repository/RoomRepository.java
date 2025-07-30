@@ -111,6 +111,18 @@ public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecific
     @Query("DELETE FROM Room r WHERE r.id IN :ids AND r.cstmId = :cstmId")
     void deleteByIdsAndCstmId(@Param("ids") List<String> ids, @Param("cstmId") String cstmId);
 
+    /**
+     * 逻辑删除指定客户域的房间
+     *
+     * @param ids    房间ID列表
+     * @param cstmId 客户域ID
+     * @param deleteTime 删除时间戳
+     */
+    @Modifying
+    @Transactional
+    @Query("UPDATE Room r SET r.isDeleted = true, r.deleteTime = :deleteTime WHERE r.id IN :ids AND r.cstmId = :cstmId")
+    void logicalDeleteByIdsAndCstmId(@Param("ids") List<String> ids, @Param("cstmId") String cstmId, @Param("deleteTime") Long deleteTime);
+
     // ========== 逻辑删除相关方法 ==========
 
     /**
