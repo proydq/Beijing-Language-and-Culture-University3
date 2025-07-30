@@ -120,7 +120,7 @@
     <!-- 添加教室弹出框 -->
     <el-dialog
       v-model="addRoomDialogVisible"
-      title="基本信息"
+      :title="isEditMode ? '编辑教室信息' : '基本信息'"
       width="600px"
       :before-close="handleCloseDialog"
     >
@@ -178,52 +178,64 @@
         <!-- 设置审批信息 -->
         <div class="form-section">
           <h4 class="section-title">设置审批信息</h4>
-          <el-form-item label="是否需要审批:" prop="needApproval">
-            <el-radio-group v-model="addRoomForm.needApproval">
-              <el-radio label="yes">是</el-radio>
-              <el-radio label="no">否</el-radio>
-            </el-radio-group>
-          </el-form-item>
+          <div class="approval-settings">
+            <!-- 是否需要预约自选人员审批 -->
+            <el-form-item label="是否需要预约自选人员审批:" style="margin-bottom: 20px;">
+              <el-radio-group v-model="addRoomForm.allowBookerSelectApprover">
+                <el-radio label="yes">是</el-radio>
+                <el-radio label="no">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
 
-          <div v-if="addRoomForm.needApproval === 'yes'" class="approval-settings">
             <div class="approval-note">
-              <el-text type="info" size="small">注：第一级审批人由预约人在发起预约申请时自行选择。</el-text>
-            </div>
-            
-            <div v-for="(level, index) in approvalLevels" :key="index" class="approval-level">
-              <el-form-item :label="`第${level.level}级审批人:`">
-                <div class="approval-input-group">
-                  <el-input
-                    v-model="level.approvers"
-                    placeholder="点击选择审批人"
-                    readonly
-                    @click="showPersonnelDialog(index)"
-                    class="approver-input"
-                  >
-                    <template #suffix>
-                      <el-icon class="cursor-pointer"><User /></el-icon>
-                    </template>
-                  </el-input>
-                  <el-button 
-                    v-if="index === approvalLevels.length - 1 && index < 2" 
-                    type="primary" 
-                    size="small" 
-                    @click="addApprovalLevel"
-                    class="add-level-btn"
-                  >
-                    下一级
-                  </el-button>
-                  <el-button 
-                    v-if="index > 0" 
-                    type="danger" 
-                    size="small" 
-                    @click="removeApprovalLevel(index)"
-                    class="remove-level-btn"
-                  >
-                    删除
-                  </el-button>
-                </div>
-              </el-form-item>
+                <el-text v-if="addRoomForm.allowBookerSelectApprover === 'yes'" type="success" size="small">
+                  注：第一级审批人由预约人在发起预约申请时自行选择。下方可设置第二级及以上审批人。
+                </el-text>
+                <el-text v-else-if="approvalLevels.some(level => level.approvers)" type="info" size="small">
+                  注：已设置审批人，预约申请将按照设置的审批层级进行审批。
+                </el-text>
+                <el-text v-else type="warning" size="small">
+                  注：未设置审批人，系统认为该教室无需审批。
+                </el-text>
+              </div>
+
+            <!-- 审批级别设置 -->
+            <div>
+              <div v-for="(level, index) in approvalLevels" :key="index" class="approval-level">
+                <el-form-item :label="`第${level.level}级审批人:`">
+                  <div class="approval-input-group">
+                    <el-input
+                      v-model="level.approvers"
+                      placeholder="点击选择审批人"
+                      readonly
+                      @click="showPersonnelDialog(index)"
+                      class="approver-input"
+                    >
+                      <template #suffix>
+                        <el-icon class="cursor-pointer"><User /></el-icon>
+                      </template>
+                    </el-input>
+                    <el-button
+                      v-if="index === approvalLevels.length - 1 && index < 2"
+                      type="primary"
+                      size="small"
+                      @click="addApprovalLevel"
+                      class="add-level-btn"
+                    >
+                      下一级
+                    </el-button>
+                    <el-button
+                      v-if="index > 0"
+                      type="danger"
+                      size="small"
+                      @click="removeApprovalLevel(index)"
+                      class="remove-level-btn"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                </el-form-item>
+              </div>
             </div>
           </div>
         </div>
@@ -232,7 +244,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handleCloseDialog">取消</el-button>
-          <el-button type="primary" @click="handleSubmitRoom">确认</el-button>
+          <el-button type="primary" @click="handleSubmitRoom">{{ isEditMode ? '更新' : '确认' }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -309,6 +321,110 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 批量配置审批权限弹出框 -->
+    <el-dialog
+      v-model="batchPermissionDialogVisible"
+      title="批量配置审批权限"
+      width="800px"
+      :before-close="handleCloseBatchPermissionDialog"
+    >
+      <div class="batch-permission-content">
+        <!-- 基础信息 -->
+        <div class="basic-info">
+          <h4>基础信息</h4>
+          <div class="selected-count">
+            已选择教室数量：<span class="count-number">{{ selectedRows.length }}</span> (间)
+          </div>
+          <div class="info-text">
+            批量设置审批人员，选择的教室审批人员为一致，如需要不同教室设置不同审批权限，请单独设置
+          </div>
+        </div>
+
+        <!-- 设置审批信息 -->
+        <div class="approval-settings">
+          <h4>设置审批信息</h4>
+          <div class="approval-tip">
+            Ps：本设置审批人员，系统默认设置"无审批"。
+          </div>
+
+          <div class="approval-option">
+            <label>是否需要预约自选人员审批：</label>
+            <el-radio-group v-model="batchPermissionForm.allowBookerSelectApprover">
+              <el-radio label="yes">是</el-radio>
+              <el-radio label="no">否</el-radio>
+            </el-radio-group>
+          </div>
+
+          <!-- 审批级别设置 -->
+          <div class="approval-levels">
+            <div
+              v-for="(level, index) in batchApprovalLevels"
+              :key="index"
+              class="approval-level-item"
+            >
+              <div class="level-header">
+                <span class="level-title">第{{ level.level === 1 ? '一' : level.level === 2 ? '二' : '三' }}级审批人：</span>
+                <div class="level-actions">
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="showBatchPersonnelDialog(index)"
+                  >
+                    选择审批人员
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="removeBatchApprovalLevel(index)"
+                    :disabled="batchApprovalLevels.length <= 1"
+                  >
+                    删除
+                  </el-button>
+                </div>
+              </div>
+
+              <div class="approvers-display">
+                <div class="approver-tags">
+                  <template v-if="level.approvers">
+                    <el-tag
+                      v-for="(approver, approverIndex) in level.approvers.split('、')"
+                      :key="approverIndex"
+                      class="approver-tag"
+                      closable
+                      @close="removeApproverFromBatchLevel(index, approverIndex)"
+                    >
+                      <el-avatar :size="20" class="approver-avatar">
+                        <el-icon><User /></el-icon>
+                      </el-avatar>
+                      {{ approver }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="no-approver">暂无审批人员</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 添加审批级别按钮 -->
+            <div class="add-level-btn" v-if="batchApprovalLevels.length < 3">
+              <el-button
+                type="primary"
+                @click="addBatchApprovalLevel"
+              >
+                添加审批级别
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseBatchPermissionDialog">取消</el-button>
+          <el-button type="primary" @click="handleSubmitBatchPermission">确认</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -347,18 +463,21 @@ export default {
     // 添加教室弹出框相关
     const addRoomDialogVisible = ref(false)
     const addRoomFormRef = ref(null)
+    const isEditMode = ref(false) // 是否为编辑模式
+    const currentEditingRoom = ref(null) // 当前编辑的房间数据
     const addRoomForm = ref({
       classroomName: '',
       roomNumber: '',
       classroomCode: '',
       building: '',
       remarks: '',
-      needApproval: 'no'
+
+      allowBookerSelectApprover: 'yes'
     })
 
     // 审批级别管理
     const approvalLevels = ref([
-      { level: 2, approvers: '' } // 默认从第二级开始，第一级由预约人选择
+      { level: 2, approvers: [] }
     ])
 
     // 人员选择弹出框相关
@@ -366,20 +485,20 @@ export default {
     const personnelTableRef = ref(null)
     const currentApprovalLevelIndex = ref(0) // 当前正在设置的审批级别索引
     const selectedPersonnel = ref([]) // 当前选中的人员
-    
+
     // 人员搜索表单
     const personnelSearchForm = ref({
       name: '',
       department: ''
     })
-    
+
     // 人员分页
     const personnelPagination = ref({
       currentPage: 1,
       pageSize: 10,
       total: 0
     })
-    
+
     // 人员列表数据（模拟数据，实际应该从后端获取）
     const personnelList = ref([
       { id: 1, name: '张三', department: '信息技术部', position: '部门经理', email: 'zhangsan@example.com', phone: '13800138001' },
@@ -405,9 +524,7 @@ export default {
       building: [
         { required: true, message: '请选择所属楼', trigger: 'change' }
       ],
-      needApproval: [
-        { required: true, message: '请选择是否需要审批', trigger: 'change' }
-      ]
+
     })
 
     // 房间数据
@@ -440,7 +557,7 @@ export default {
         roomNumber: '103',
         location: '科研楼',
         isExchange: 'no',
-        needApproval: 'no',
+
         firstApprover: '张三、李四、王五',
         secondApprover: '赵六、孙七、周八、吴九、郑十',
         thirdApprover: '刘备、关羽、张飞',
@@ -493,7 +610,48 @@ export default {
     }
 
     const managePersonnel = (row) => {
-      ElMessage.info(`管理人员: ${row.roomName} ${row.roomNumber}`)
+      // 设置为编辑模式
+      isEditMode.value = true
+      currentEditingRoom.value = row
+
+      // 预填充表单数据
+      addRoomForm.value = {
+        classroomName: row.roomName,
+        roomNumber: row.roomNumber,
+        classroomCode: row.roomNumber, // 使用房间号作为教室编号
+        building: row.location,
+        remarks: '',
+        allowBookerSelectApprover: 'yes' // 默认值，可根据实际需求调整
+      }
+
+      // 解析并设置审批级别数据
+      const approvalData = []
+      if (row.firstApprover) {
+        approvalData.push({ level: 1, approvers: row.firstApprover })
+      }
+      if (row.secondApprover) {
+        approvalData.push({ level: 2, approvers: row.secondApprover })
+      }
+      if (row.thirdApprover) {
+        approvalData.push({ level: 3, approvers: row.thirdApprover })
+      }
+
+      // 如果没有审批数据，设置默认的第二级审批
+      if (approvalData.length === 0) {
+        approvalLevels.value = [{ level: 2, approvers: '' }]
+      } else {
+        // 判断是否有第一级审批人，如果有则说明不需要预约自选人员审批
+        if (approvalData.some(item => item.level === 1)) {
+          addRoomForm.value.allowBookerSelectApprover = 'no'
+          approvalLevels.value = approvalData
+        } else {
+          addRoomForm.value.allowBookerSelectApprover = 'yes'
+          approvalLevels.value = approvalData.length > 0 ? approvalData : [{ level: 2, approvers: '' }]
+        }
+      }
+
+      // 显示弹出框
+      addRoomDialogVisible.value = true
     }
 
     const exportData = () => {
@@ -535,6 +693,8 @@ export default {
 
     // 显示添加教室弹出框
     const showAddRoomDialog = () => {
+      isEditMode.value = false
+      currentEditingRoom.value = null
       addRoomDialogVisible.value = true
       // 重置表单
       resetAddRoomForm()
@@ -578,7 +738,7 @@ export default {
       const currentApprovers = approvalLevels.value[levelIndex].approvers
       if (currentApprovers) {
         const approverNames = currentApprovers.split('、')
-        selectedPersonnel.value = personnelList.value.filter(person => 
+        selectedPersonnel.value = personnelList.value.filter(person =>
           approverNames.includes(person.name)
         )
         // 设置表格选中状态
@@ -601,14 +761,14 @@ export default {
       // 目前使用模拟数据过滤
       const { name, department } = personnelSearchForm.value
       let filteredList = [...personnelList.value]
-      
+
       if (name) {
         filteredList = filteredList.filter(person => person.name.includes(name))
       }
       if (department) {
         filteredList = filteredList.filter(person => person.department.includes(department))
       }
-      
+
       // 更新分页信息
       personnelPagination.value.total = filteredList.length
       console.log('搜索人员:', personnelSearchForm.value)
@@ -630,9 +790,24 @@ export default {
 
     // 确认选择人员
     const confirmPersonnelSelection = () => {
+      if (selectedPersonnel.value.length === 0) {
+        ElMessage.warning('请选择至少一个人员')
+        return
+      }
+
       const approverNames = selectedPersonnel.value.map(person => person.name).join('、')
-      approvalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+
+      // 检查是否是批量配置模式
+      if (batchPermissionDialogVisible.value) {
+        // 批量配置模式下更新批量审批级别
+        batchApprovalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+      } else {
+        // 普通模式下更新审批级别
+        approvalLevels.value[currentApprovalLevelIndex.value].approvers = approverNames
+      }
+
       personnelDialogVisible.value = false
+      selectedPersonnel.value = []
     }
 
     // 关闭人员选择弹出框
@@ -663,6 +838,21 @@ export default {
       { deep: true }
     )
 
+    // 监听是否需要预约自选人员审批的变化
+    watch(() => addRoomForm.value.allowBookerSelectApprover, (newValue) => {
+      if (newValue === 'yes') {
+        // 选择"是"时，从第二级开始设置审批
+        approvalLevels.value = [
+          { level: 2, approvers: '' }
+        ]
+      } else {
+        // 选择"否"时，从第一级开始设置审批
+        approvalLevels.value = [
+          { level: 1, approvers: '' }
+        ]
+      }
+    })
+
     // 重置添加教室表单
     const resetAddRoomForm = () => {
       addRoomForm.value = {
@@ -671,7 +861,7 @@ export default {
         classroomCode: '',
         building: '',
         remarks: '',
-        needApproval: 'no'
+        allowBookerSelectApprover: 'yes'
       }
       // 重置审批级别
       approvalLevels.value = [
@@ -686,6 +876,8 @@ export default {
     // 关闭弹出框
     const handleCloseDialog = () => {
       addRoomDialogVisible.value = false
+      isEditMode.value = false
+      currentEditingRoom.value = null
       resetAddRoomForm()
     }
 
@@ -696,42 +888,209 @@ export default {
       try {
         await addRoomFormRef.value.validate()
 
-        // 构造新的房间数据
-        const newRoom = {
-          id: Date.now(), // 临时ID，实际应该由后端生成
-          classroomName: addRoomForm.value.classroomName,
-          roomNumber: addRoomForm.value.roomNumber,
-          classroomCode: addRoomForm.value.classroomCode,
-          building: addRoomForm.value.building,
-          remarks: addRoomForm.value.remarks,
-          needApproval: addRoomForm.value.needApproval,
-          firstApprover: addRoomForm.value.firstApprover,
-          secondApprover: addRoomForm.value.secondApprover,
-          thirdApprover: addRoomForm.value.thirdApprover
+        if (isEditMode.value) {
+          // 编辑模式：更新现有房间数据
+          const roomIndex = roomData.value.findIndex(room => room.id === currentEditingRoom.value.id)
+          if (roomIndex !== -1) {
+            // 构造审批人数据
+            const approvalData = {
+              firstApprover: '',
+              secondApprover: '',
+              thirdApprover: ''
+            }
+
+            approvalLevels.value.forEach(level => {
+              if (level.level === 1) approvalData.firstApprover = level.approvers
+              if (level.level === 2) approvalData.secondApprover = level.approvers
+              if (level.level === 3) approvalData.thirdApprover = level.approvers
+            })
+
+            // 更新房间数据
+            roomData.value[roomIndex] = {
+              ...roomData.value[roomIndex],
+              roomName: addRoomForm.value.classroomName,
+              roomNumber: addRoomForm.value.roomNumber,
+              location: addRoomForm.value.building,
+              needApproval: approvalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
+              ...approvalData
+            }
+
+            ElMessage.success('更新教室信息成功')
+          }
+        } else {
+          // 添加模式：创建新房间
+          // 构造审批人数据
+          const approvalData = {
+            firstApprover: '',
+            secondApprover: '',
+            thirdApprover: ''
+          }
+
+          approvalLevels.value.forEach(level => {
+            if (level.level === 1) approvalData.firstApprover = level.approvers
+            if (level.level === 2) approvalData.secondApprover = level.approvers
+            if (level.level === 3) approvalData.thirdApprover = level.approvers
+          })
+
+          // 构造新的房间数据
+          const newRoom = {
+            id: Date.now(), // 临时ID，实际应该由后端生成
+            roomName: addRoomForm.value.classroomName,
+            roomNumber: addRoomForm.value.roomNumber,
+            location: addRoomForm.value.building,
+            isExchange: 'no', // 默认值
+            needApproval: approvalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
+            ...approvalData
+          }
+
+          // 添加到房间列表
+          roomData.value.unshift(newRoom)
+          total.value += 1
+
+          ElMessage.success('添加教室成功')
         }
 
-        // 添加到房间列表
-        roomData.value.unshift(newRoom)
-        total.value += 1
-
-        ElMessage.success('添加教室成功')
         handleCloseDialog()
 
         // TODO: 这里应该调用后端API保存数据
-        // await addRoomAPI(newRoom)
+        // if (isEditMode.value) {
+        //   await updateRoomAPI(roomData.value[roomIndex])
+        // } else {
+        //   await addRoomAPI(newRoom)
+        // }
 
       } catch (error) {
         console.error('表单验证失败:', error)
       }
     }
 
+    // 批量配置审批权限弹出框相关
+    const batchPermissionDialogVisible = ref(false)
+    const batchPermissionForm = ref({
+      allowBookerSelectApprover: 'yes'
+    })
+
+    // 批量审批级别管理
+    const batchApprovalLevels = ref([
+      { level: 2, approvers: '' }
+    ])
+
     const batchSetPermissions = () => {
       if (selectedRows.value.length === 0) {
         ElMessage.warning('请先选择要设置权限的数据')
         return
       }
-      ElMessage.info('批量设置权限功能开发中')
+      // 重置批量配置表单
+      batchPermissionForm.value = {
+        allowBookerSelectApprover: 'yes'
+      }
+      batchApprovalLevels.value = [
+        { level: 2, approvers: '' }
+      ]
+      batchPermissionDialogVisible.value = true
     }
+
+    // 关闭批量配置弹出框
+    const handleCloseBatchPermissionDialog = () => {
+      batchPermissionDialogVisible.value = false
+    }
+
+    // 提交批量配置
+    const handleSubmitBatchPermission = () => {
+      // 构造审批人数据
+      const approvalData = {
+        firstApprover: '',
+        secondApprover: '',
+        thirdApprover: ''
+      }
+
+      batchApprovalLevels.value.forEach(level => {
+        if (level.level === 1) approvalData.firstApprover = level.approvers
+        if (level.level === 2) approvalData.secondApprover = level.approvers
+        if (level.level === 3) approvalData.thirdApprover = level.approvers
+      })
+
+      // 批量更新选中的房间
+      selectedRows.value.forEach(room => {
+        const roomIndex = roomData.value.findIndex(r => r.id === room.id)
+        if (roomIndex !== -1) {
+          roomData.value[roomIndex] = {
+            ...roomData.value[roomIndex],
+            needApproval: batchApprovalLevels.value.some(level => level.approvers) ? 'yes' : 'no',
+            ...approvalData
+          }
+        }
+      })
+
+      ElMessage.success(`已成功为 ${selectedRows.value.length} 个教室配置审批权限`)
+      batchPermissionDialogVisible.value = false
+      selectedRows.value = []
+    }
+
+    // 批量添加审批级别
+    const addBatchApprovalLevel = () => {
+      if (batchApprovalLevels.value.length < 3) {
+        const maxLevel = Math.max(...batchApprovalLevels.value.map(item => item.level))
+        batchApprovalLevels.value.push({
+          level: maxLevel + 1,
+          approvers: ''
+        })
+      }
+    }
+
+    // 批量删除审批级别
+    const removeBatchApprovalLevel = (index) => {
+      if (batchApprovalLevels.value.length > 1) {
+        batchApprovalLevels.value.splice(index, 1)
+      }
+    }
+
+    // 批量显示人员选择弹出框
+    const showBatchPersonnelDialog = (levelIndex) => {
+      currentApprovalLevelIndex.value = levelIndex
+      // 解析当前已选择的人员
+      const currentApprovers = batchApprovalLevels.value[levelIndex].approvers
+      if (currentApprovers) {
+        const approverNames = currentApprovers.split('、')
+        selectedPersonnel.value = personnelList.value.filter(person =>
+          approverNames.includes(person.name)
+        )
+        // 设置表格选中状态
+        setTimeout(() => {
+          if (personnelTableRef.value) {
+            selectedPersonnel.value.forEach(person => {
+              personnelTableRef.value.toggleRowSelection(person, true)
+            })
+          }
+        }, 100)
+      } else {
+        selectedPersonnel.value = []
+      }
+      personnelDialogVisible.value = true
+    }
+
+    // 监听批量配置中是否需要预约自选人员审批的变化
+     watch(() => batchPermissionForm.value.allowBookerSelectApprover, (newValue) => {
+       if (newValue === 'yes') {
+         // 选择"是"时，从第二级开始设置审批
+         batchApprovalLevels.value = [
+           { level: 2, approvers: '' }
+         ]
+       } else {
+         // 选择"否"时，从第一级开始设置审批
+         batchApprovalLevels.value = [
+           { level: 1, approvers: '' }
+         ]
+       }
+     })
+
+     // 从批量审批级别中删除指定审批人
+     const removeApproverFromBatchLevel = (levelIndex, approverIndex) => {
+       const level = batchApprovalLevels.value[levelIndex]
+       const approvers = level.approvers.split('、')
+       approvers.splice(approverIndex, 1)
+       level.approvers = approvers.join('、')
+     }
 
     // 加载楼栋架构数据
     const loadBuildingTree = async () => {
@@ -775,6 +1134,7 @@ export default {
     })
 
     return {
+      // 基础数据
       sidebarSearch,
       roomNameSearch,
       approvalFilter,
@@ -785,6 +1145,7 @@ export default {
       roomData,
       buildingTreeData,
       selectedBuildingArea,
+      // 基础方法
       handleSelectionChange,
       handleSizeChange,
       handleCurrentChange,
@@ -801,6 +1162,8 @@ export default {
       addRoomFormRef,
       addRoomForm,
       addRoomRules,
+      isEditMode,
+      currentEditingRoom,
       showAddRoomDialog,
       handleCloseDialog,
       handleSubmitRoom,
@@ -824,9 +1187,19 @@ export default {
       confirmPersonnelSelection,
       handlePersonnelDialogClose,
       handlePersonnelCurrentPageChange,
-      handlePersonnelPageSizeChange
+      handlePersonnelPageSizeChange,
+      // 批量配置相关
+      batchPermissionDialogVisible,
+      batchPermissionForm,
+      batchApprovalLevels,
+      handleCloseBatchPermissionDialog,
+      handleSubmitBatchPermission,
+      addBatchApprovalLevel,
+      removeBatchApprovalLevel,
+      showBatchPersonnelDialog,
+      removeApproverFromBatchLevel
     }
-  },
+  }
 }
 </script>
 
@@ -981,5 +1354,244 @@ export default {
 
 :deep(.el-select) {
   width: 100%;
+}
+
+/* 添加教室弹出框样式 */
+.add-room-form {
+  padding: 20px 0;
+}
+
+.form-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e4e7ed;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.approval-settings {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.approval-note {
+  margin: 15px 0;
+  padding: 12px;
+  background-color: #f0f9ff;
+  border-left: 4px solid #409eff;
+  border-radius: 4px;
+}
+
+.approval-level {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+}
+
+.approval-input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.approver-input {
+  flex: 1;
+  cursor: pointer;
+}
+
+.add-level-btn,
+.remove-level-btn {
+  flex-shrink: 0;
+}
+
+/* 人员选择弹出框样式 */
+.personnel-search {
+  margin-bottom: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.search-form {
+  margin: 0;
+}
+
+.personnel-table {
+  margin-bottom: 20px;
+}
+
+.personnel-pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* 批量配置审批权限弹出框样式 */
+.batch-permission-content {
+  padding: 20px 0;
+}
+
+.basic-info {
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.basic-info h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.selected-count {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.count-number {
+  color: #e74c3c;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.info-text {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.approval-settings {
+  padding: 0 20px;
+}
+
+.approval-settings h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.approval-tip {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  color: #856404;
+  font-size: 13px;
+}
+
+.approval-option {
+  margin-bottom: 25px;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.approval-option label {
+  display: inline-block;
+  margin-right: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
+.approval-levels {
+  margin-top: 20px;
+}
+
+.approval-level-item {
+  margin-bottom: 25px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.level-title {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.level-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.level-actions .el-button {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.approvers-display {
+  min-height: 40px;
+}
+
+.approver-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.approver-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #e3f2fd;
+  border: 1px solid #2196f3;
+  border-radius: 20px;
+  color: #1976d2;
+}
+
+.approver-avatar {
+  background-color: #2196f3;
+  color: white;
+}
+
+.no-approver {
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.add-level-btn {
+  text-align: center;
+  margin-top: 20px;
+  padding: 20px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.add-level-btn:hover {
+  border-color: #409eff;
+  background-color: #f0f9ff;
+}
+
+.dialog-footer {
+  text-align: right;
+}
+
+.dialog-footer .el-button {
+  margin-left: 10px;
 }
 </style>
