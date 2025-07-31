@@ -335,6 +335,25 @@ public class BookingPersonnelPermissionServiceImpl implements BookingPersonnelPe
     }
 
     @Override
+    public BookingPersonnelPermission getUserPermission(String userId, String roomId) {
+        try {
+            String customerId = SecurityUtil.getCustomerId();
+            List<BookingPersonnelPermission> list = permissionRepository.findByUserId(userId, customerId);
+            for (BookingPersonnelPermission permission : list) {
+                List<BookingPersonnelPermissionRoom> rooms = permissionRoomRepository.findByPermissionIdAndDeletedFalse(permission.getId());
+                boolean matched = rooms.stream().anyMatch(r -> r.getRoomId().equals(roomId));
+                if (matched) {
+                    return permission;
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("获取用户预约权限失败：", e);
+            return null;
+        }
+    }
+
+    @Override
     public List<RoomVo> getBookableRoomsByUserId(String userId) {
         try {
             String customerId = SecurityUtil.getCustomerId();
