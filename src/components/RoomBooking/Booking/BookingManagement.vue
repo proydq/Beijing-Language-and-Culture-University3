@@ -11,39 +11,32 @@
 
       <!-- 中间楼宇分类（仅在房间预约时显示） -->
       <div v-if="activeMenuItem === '房间预约'" class="middle-sidebar">
-        <div class="category-header">
-          <h4>楼宇分类</h4>
+        <div class="sidebar-header">
+          <h3>楼栋架构</h3>
         </div>
-        <div class="category-menu">
-          <div 
-            :class="['category-item', { active: activeCategory === '全部' }]"
-            @click="setActiveCategory('全部')"
+        <div class="sidebar-content">
+          <el-input
+            v-model="sidebarSearch"
+            placeholder="搜索楼栋"
+            :prefix-icon="Search"
+            clearable
+            class="search-input"
+          />
+          <el-tree
+            :data="treeData"
+            :props="treeProps"
+            node-key="id"
+            :default-expanded-keys="['all']"
+            :highlight-current="true"
+            @node-click="handleNodeClick"
+            class="structure-tree"
           >
-            全部
-          </div>
-          <div 
-            v-for="building in buildings" 
-            :key="building"
-            :class="['category-item', { active: activeCategory === building }]"
-            @click="setActiveCategory(building)"
-          >
-            {{ building }}
-          </div>
-        </div>
-        
-        <!-- 楼层筛选 -->
-        <div v-if="activeCategory !== '全部'" class="floor-filter">
-          <h5>楼层</h5>
-          <div class="floor-list">
-            <div 
-              v-for="floor in floors" 
-              :key="floor"
-              :class="['floor-item', { active: activeFloor === floor }]"
-              @click="setActiveFloor(floor)"
-            >
-              {{ floor }}
-            </div>
-          </div>
+            <template #default="{ node, data }">
+              <span class="tree-node">
+                <span>{{ data.label }}</span>
+              </span>
+            </template>
+          </el-tree>
         </div>
       </div>
 
@@ -76,8 +69,10 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
-import { Document } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+import { Document, Search } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { getAreaTree } from '@/api/area'
 import Sidebar from '../Layout/Sidebar.vue'
 import MyBookings from './MyBookings.vue'
 import AllBookings from './AllBookings.vue'
@@ -87,6 +82,7 @@ export default {
   name: 'BookingManagement',
   components: {
     Document,
+    Search,
     Sidebar,
     MyBookings,
     AllBookings,
@@ -115,6 +111,14 @@ export default {
     const activeMenuItem = ref('我的预约')
     const activeCategory = ref('全部')
     const activeFloor = ref('')
+    const sidebarSearch = ref('')
+    const treeData = ref([])
+    const selectedBuildingArea = ref(null)
+    
+    const treeProps = {
+      children: 'children',
+      label: 'label'
+    }
 
     const setActiveMenuItem = (item) => {
       activeMenuItem.value = item
@@ -130,6 +134,48 @@ export default {
 
     const setActiveFloor = (floor) => {
       activeFloor.value = floor
+    }
+    
+    // 加载楼栋架构数据
+    const loadBuildingTree = async () => {
+      try {
+        const response = await getAreaTree()
+        if (response.code === 200) {
+          // 将后端返回的区域树数据转换为前端需要的格式
+          const formatTreeData = (nodes) => {
+            return nodes.map(node => ({
+              label: node.areaName,
+              id: node.id,
+              type: node.type,
+              children: node.children && node.children.length > 0 ? formatTreeData(node.children) : undefined
+            }))
+          }
+          treeData.value = formatTreeData(response.data || [])
+        } else {
+          ElMessage.error(response.message || '获取楼栋架构失败')
+        }
+      } catch (error) {
+        console.error('获取楼栋架构失败:', error)
+        ElMessage.error('获取楼栋架构失败')
+      }
+    }
+    
+    // 处理树节点点击
+    const handleNodeClick = (data) => {
+      // 保存选中的区域信息
+      selectedBuildingArea.value = {
+        id: data.id,
+        name: data.label
+      }
+      // 更新activeCategory和activeFloor
+      if (data.type === 'building') {
+        activeCategory.value = data.label
+        activeFloor.value = ''
+      } else if (data.type === 'floor') {
+        // 如果点击的是楼层，需要设置楼栋和楼层
+        // 这里需要根据实际的树结构来获取父节点信息
+        activeFloor.value = data.label
+      }
     }
 
     // 过滤房间
@@ -158,6 +204,11 @@ export default {
     const handleBookRoom = (room) => {
       emit('book-room', room)
     }
+    
+    // 页面初始化
+    onMounted(() => {
+      loadBuildingTree()
+    })
 
     return {
       menuItems,
@@ -166,13 +217,20 @@ export default {
       activeMenuItem,
       activeCategory,
       activeFloor,
+      sidebarSearch,
+      treeData,
+      treeProps,
+      selectedBuildingArea,
       setActiveMenuItem,
       setActiveCategory,
       setActiveFloor,
+      loadBuildingTree,
+      handleNodeClick,
       filteredRooms,
       handleEdit,
       handleApprove,
-      handleBookRoom
+      handleBookRoom,
+      Search
     }
   }
 }
@@ -192,78 +250,57 @@ export default {
 
 /* 中间楼宇分类 */
 .middle-sidebar {
-  width: 180px;
+  width: 200px;
   background: white;
-  border-right: 1px solid #e8e8e8;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-right: 20px;
+}
+
+.sidebar-header {
   padding: 15px;
-  overflow-y: auto;
+  border-bottom: 1px solid #e8e8e8;
 }
 
-.category-header h4 {
-  margin: 0 0 15px 0;
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.sidebar-content {
+  padding: 15px;
+}
+
+.search-input {
+  margin-bottom: 10px;
+}
+
+.structure-tree {
   font-size: 14px;
-  color: #333;
-  font-weight: 600;
 }
 
-.category-item {
-  padding: 8px 12px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s;
-  color: #666;
-  font-size: 13px;
-  margin-bottom: 2px;
+.structure-tree :deep(.el-tree-node__content) {
+  height: 36px;
+  padding: 0 15px;
 }
 
-.category-item:hover {
-  background: #f5f5f5;
-  color: #333;
+.structure-tree :deep(.el-tree-node__content:hover) {
+  background-color: #f5f7fa;
 }
 
-.category-item.active {
-  background: #4A90E2;
-  color: white;
+.structure-tree :deep(.is-current > .el-tree-node__content) {
+  background-color: #ecf5ff;
+  color: #409eff;
 }
 
-.floor-filter {
-  margin-top: 20px;
-}
-
-.floor-filter h5 {
-  margin: 0 0 10px 0;
-  font-size: 13px;
-  color: #333;
-  font-weight: 600;
-}
-
-.floor-list {
+.tree-node {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.floor-item {
-  padding: 4px 8px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.3s;
-  color: #666;
-  font-size: 12px;
-  border: 1px solid #e8e8e8;
-  text-align: center;
-  min-width: 35px;
-}
-
-.floor-item:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-.floor-item.active {
-  background: #4A90E2;
-  color: white;
-  border-color: #4A90E2;
+  align-items: center;
+  width: 100%;
+  font-size: 14px;
 }
 
 /* 主内容区域 */
