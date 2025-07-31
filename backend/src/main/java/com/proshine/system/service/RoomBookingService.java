@@ -1,8 +1,7 @@
 package com.proshine.system.service;
 
-import com.proshine.system.dto.BookingStatsDto;
-import com.proshine.system.dto.BookingDistributionDto;
-import com.proshine.system.dto.BookingTrendDto;
+import com.proshine.system.dto.*;
+import com.proshine.common.response.ResponsePageDataEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,4 +48,36 @@ public interface RoomBookingService {
      * @return 趋势数据
      */
     List<BookingTrendDto> getBookingTrend(LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 获取我的预约列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<BookingListResponse> getMyBookings(MyBookingsRequest request);
+
+    /**
+     * 获取全部借用列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<BookingListResponse> getAllBookings(AllBookingsRequest request);
+
+    /**
+     * 获取可预约房间列表
+     * 
+     * @param request 查询请求参数
+     * @return 房间列表
+     */
+    List<AvailableRoomResponse> getAvailableRooms(AvailableRoomsRequest request);
+
+    /**
+     * 创建房间预约
+     * 
+     * @param request 预约请求参数
+     * @return 创建结果
+     */
+    CreateBookingResponse createBooking(CreateBookingRequest request);
 }

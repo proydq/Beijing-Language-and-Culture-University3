@@ -73,6 +73,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Document, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAreaTree } from '@/api/area'
+import { getMyBookings, getAllBookings, getAvailableRooms, createBooking } from '@/api/roomBookingManagement'
 import Sidebar from '../Layout/Sidebar.vue'
 import MyBookings from './MyBookings.vue'
 import AllBookings from './AllBookings.vue'
@@ -89,18 +90,7 @@ export default {
     RoomReservation
   },
   props: {
-    bookingData: {
-      type: Array,
-      default: () => []
-    },
-    allBookingData: {
-      type: Array,
-      default: () => []
-    },
-    rooms: {
-      type: Array,
-      default: () => []
-    }
+    // Remove props since we'll fetch data via API
   },
   emits: ['edit', 'approve', 'book-room'],
   setup(props, { emit }) {
@@ -115,16 +105,24 @@ export default {
     const treeData = ref([])
     const selectedBuildingArea = ref(null)
     
+    // Data storage
+    const bookingData = ref([])
+    const allBookingData = ref([])
+    const rooms = ref([])
+    const loading = ref(false)
+    
     const treeProps = {
       children: 'children',
       label: 'label'
     }
 
-    const setActiveMenuItem = (item) => {
+    const setActiveMenuItem = async (item) => {
       activeMenuItem.value = item
       // 切换菜单时重置分类和楼层
       activeCategory.value = '全部'
       activeFloor.value = ''
+      // 根据菜单项加载对应数据
+      await loadDataForMenuItem(item)
     }
 
     const setActiveCategory = (category) => {
@@ -136,6 +134,83 @@ export default {
       activeFloor.value = floor
     }
     
+    // 根据菜单项加载数据
+    const loadDataForMenuItem = async (menuItem) => {
+      loading.value = true
+      try {
+        switch (menuItem) {
+          case '我的预约':
+            await loadMyBookings()
+            break
+          case '全部借用':
+            await loadAllBookings()
+            break
+          case '房间预约':
+            await loadAvailableRooms()
+            break
+        }
+      } catch (error) {
+        console.error('加载数据失败:', error)
+        ElMessage.error('加载数据失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 加载我的预约
+    const loadMyBookings = async () => {
+      try {
+        const response = await getMyBookings({
+          pageNumber: 1,
+          pageSize: 50
+        })
+        if (response.code === 200) {
+          bookingData.value = response.data.rows || []
+        } else {
+          ElMessage.error('获取我的预约列表失败')
+        }
+      } catch (error) {
+        console.error('获取我的预约失败:', error)
+        ElMessage.error('获取我的预约失败')
+      }
+    }
+
+    // 加载全部借用
+    const loadAllBookings = async () => {
+      try {
+        const response = await getAllBookings({
+          pageNumber: 1,
+          pageSize: 50
+        })
+        if (response.code === 200) {
+          allBookingData.value = response.data.rows || []
+        } else {
+          ElMessage.error('获取全部借用列表失败')
+        }
+      } catch (error) {
+        console.error('获取全部借用失败:', error)
+        ElMessage.error('获取全部借用失败')
+      }
+    }
+
+    // 加载可预约房间
+    const loadAvailableRooms = async () => {
+      try {
+        const response = await getAvailableRooms({
+          roomAreaId: selectedBuildingArea.value?.id,
+          available: true
+        })
+        if (response.code === 200) {
+          rooms.value = response.data || []
+        } else {
+          ElMessage.error('获取可预约房间失败')
+        }
+      } catch (error) {
+        console.error('获取可预约房间失败:', error)
+        ElMessage.error('获取可预约房间失败')
+      }
+    }
+
     // 加载楼栋架构数据
     const loadBuildingTree = async () => {
       try {
@@ -180,7 +255,7 @@ export default {
 
     // 过滤房间
     const filteredRooms = computed(() => {
-      let filtered = props.rooms
+      let filtered = rooms.value
 
       if (activeCategory.value !== '全部') {
         filtered = filtered.filter(room => room.building === activeCategory.value)
@@ -201,13 +276,103 @@ export default {
       emit('approve', row)
     }
 
-    const handleBookRoom = (room) => {
-      emit('book-room', room)
+    const handleBookRoom = async (bookingData) => {
+      try {
+        loading.value = true
+        
+        // 转换前端数据格式为后端需要的格式
+        const createBookingRequest = {
+          // 房间信息
+          roomId: bookingData.room?.id || '',
+          roomName: bookingData.room?.name || '',
+          
+          // 申请人信息
+          applicant: bookingData.applicant || '',
+          applicantId: '', // 后端会从SecurityUtil.getCurrentUserId()获取
+          applicantType: 'TEACHER', // 默认为教师，可根据实际情况调整
+          applicantPhone: '', // 如果需要可以添加到表单中
+          applicantDepartment: '', // 如果需要可以添加到表单中
+          
+          // 预约信息
+          bookingName: bookingData.bookingName || '',
+          borrowTime: bookingData.borrowTime || '',
+          
+          // 时间信息 - 从borrowTime解析或使用默认值
+          bookingStartTime: parseBookingStartTime(bookingData.borrowTime),
+          bookingEndTime: parseBookingEndTime(bookingData.borrowTime),
+          
+          // 描述信息
+          description: bookingData.description || '',
+          reason: bookingData.remark || bookingData.description || '', // 申请理由使用备注详情
+          
+          // 人员信息
+          participants: bookingData.participants || [],
+          remark: bookingData.remark || '',
+          approvers: bookingData.approvers || [],
+          
+          // 详细人员信息
+          participantDetails: bookingData.participantDetails || [],
+          approverDetails: bookingData.approverDetails || [],
+          
+          // 紧急程度
+          urgency: 'NORMAL'
+        }
+        
+        const response = await createBooking(createBookingRequest)
+        if (response.code === 200) {
+          ElMessage.success('预约申请提交成功')
+          // 刷新当前数据
+          await loadDataForMenuItem(activeMenuItem.value)
+        } else {
+          ElMessage.error(response.message || '预约申请提交失败')
+        }
+      } catch (error) {
+        console.error('提交预约失败:', error)
+        ElMessage.error('预约申请提交失败')
+      } finally {
+        loading.value = false
+      }
+    }
+    
+    // 解析借用时间获取开始时间
+    const parseBookingStartTime = (borrowTime) => {
+      if (!borrowTime) return null
+      
+      try {
+        // 从borrowTime格式 "2025-03-03 08:00:00-08:45:00; 2025-03-03 08:55:00-09:40:00" 解析
+        const firstTimeSlot = borrowTime.split(';')[0].trim()
+        const [datePart, timePart] = firstTimeSlot.split(' ')
+        const startTime = timePart.split('-')[0]
+        // 转换为ISO 8601格式：yyyy-MM-ddTHH:mm:ss
+        return `${datePart}T${startTime}`
+      } catch (error) {
+        console.warn('解析开始时间失败:', error)
+        return null
+      }
+    }
+    
+    // 解析借用时间获取结束时间
+    const parseBookingEndTime = (borrowTime) => {
+      if (!borrowTime) return null
+      
+      try {
+        // 从borrowTime格式解析最后一个时间段的结束时间
+        const timeSlots = borrowTime.split(';').map(slot => slot.trim())
+        const lastTimeSlot = timeSlots[timeSlots.length - 1]
+        const [datePart, timePart] = lastTimeSlot.split(' ')
+        const endTime = timePart.split('-')[1]
+        // 转换为ISO 8601格式：yyyy-MM-ddTHH:mm:ss
+        return `${datePart}T${endTime}`
+      } catch (error) {
+        console.warn('解析结束时间失败:', error)
+        return null
+      }
     }
     
     // 页面初始化
-    onMounted(() => {
-      loadBuildingTree()
+    onMounted(async () => {
+      await loadBuildingTree()
+      await loadDataForMenuItem(activeMenuItem.value)
     })
 
     return {
@@ -221,10 +386,15 @@ export default {
       treeData,
       treeProps,
       selectedBuildingArea,
+      bookingData,
+      allBookingData,
+      rooms,
+      loading,
       setActiveMenuItem,
       setActiveCategory,
       setActiveFloor,
       loadBuildingTree,
+      loadDataForMenuItem,
       handleNodeClick,
       filteredRooms,
       handleEdit,

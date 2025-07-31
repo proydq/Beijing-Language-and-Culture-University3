@@ -1,9 +1,8 @@
 package com.proshine.system.controller;
 
 import com.proshine.common.response.ResponseEntity;
-import com.proshine.system.dto.BookingStatsDto;
-import com.proshine.system.dto.BookingDistributionDto;
-import com.proshine.system.dto.BookingTrendDto;
+import com.proshine.common.response.ResponsePageDataEntity;
+import com.proshine.system.dto.*;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,6 +121,82 @@ public class RoomBookingController {
             return ResponseEntity.success(result);
         } catch (Exception e) {
             log.error("获取借用趋势数据失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取我的预约列表
+     * 支持筛选和分页查询
+     * 
+     * @param request 查询请求参数
+     * @return 分页预约列表
+     */
+    @PostMapping("/my-bookings")
+    public ResponseEntity<ResponsePageDataEntity<BookingListResponse>> getMyBookings(@RequestBody MyBookingsRequest request) {
+        try {
+            log.info("==========/api/room-booking/my-bookings [POST]=============request:{}", request);
+            ResponsePageDataEntity<BookingListResponse> result = roomBookingService.getMyBookings(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取我的预约列表失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取全部借用列表
+     * 管理员权限，支持筛选和分页查询
+     * 
+     * @param request 查询请求参数
+     * @return 分页预约列表
+     */
+    @PostMapping("/all-bookings")
+    public ResponseEntity<ResponsePageDataEntity<BookingListResponse>> getAllBookings(@RequestBody AllBookingsRequest request) {
+        try {
+            log.info("==========/api/room-booking/all-bookings [POST]=============request:{}", request);
+            ResponsePageDataEntity<BookingListResponse> result = roomBookingService.getAllBookings(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取全部借用列表失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取可预约房间列表
+     * 根据区域和条件获取可预约的房间
+     * 
+     * @param request 查询请求参数
+     * @return 房间列表
+     */
+    @PostMapping("/rooms/available")
+    public ResponseEntity<List<AvailableRoomResponse>> getAvailableRooms(@RequestBody AvailableRoomsRequest request) {
+        try {
+            log.info("==========/api/room-booking/rooms/available [POST]=============request:{}", request);
+            List<AvailableRoomResponse> result = roomBookingService.getAvailableRooms(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取可预约房间列表失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 创建房间预约
+     * 提交房间预约申请
+     * 
+     * @param request 预约请求参数
+     * @return 创建结果
+     */
+    @PostMapping("/create")
+    public ResponseEntity<CreateBookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
+        try {
+            log.info("==========/api/room-booking/create [POST]=============request:{}", request);
+            CreateBookingResponse result = roomBookingService.createBooking(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("创建房间预约失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
     }

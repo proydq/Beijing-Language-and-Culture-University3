@@ -105,6 +105,7 @@
   </el-dialog>
   <TimeSelectorDialog
     v-model:visible="timeDialogVisible"
+    :room-id="room?.id"
     @selectTime="handleTimeSelected"
   />
   
@@ -198,11 +199,38 @@ const rules = {
   ]
 }
 
-const formatSelectedTimes = (times) =>
-  times.map(t => `${t.date} 第${t.period + 1}节`).join(', ')
-
-function handleTimeSelected(times) {
-  formData.borrowTime = formatSelectedTimes(times)
+function handleTimeSelected(timeData) {
+  // timeData 现在包含 { selections: [...], description: "..." } 结构
+  if (timeData.description) {
+    formData.borrowTime = timeData.description
+  } else if (timeData.selections) {
+    // 兼容旧格式，如果没有description就使用selections生成
+    formData.borrowTime = timeData.selections
+      .map(t => {
+        if (t.startTime && t.endTime) {
+          // 检查时间格式，如果已经包含秒数就不添加，否则添加 :00
+          const startTimeParts = t.startTime.split(':')
+          const endTimeParts = t.endTime.split(':')
+          
+          const startTime = startTimeParts.length === 3 
+            ? t.startTime 
+            : `${t.startTime}:00`
+          const endTime = endTimeParts.length === 3 
+            ? t.endTime 
+            : `${t.endTime}:00`
+          
+          return `${t.date} ${startTime}-${endTime}`
+        } else {
+          return `${t.date} 第${t.courseSort}节`
+        }
+      })
+      .join('; ')
+  } else {
+    // 兼容更旧的格式
+    formData.borrowTime = timeData
+      .map(t => `${t.date} 第${t.period + 1}节`)
+      .join(', ')
+  }
 }
 
 // 显示参与人选择器
