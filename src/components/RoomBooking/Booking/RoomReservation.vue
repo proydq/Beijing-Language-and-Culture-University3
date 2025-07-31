@@ -38,14 +38,6 @@
             <span class="label">容纳人数：</span>
             <span class="value">{{ room.capacity }}</span>
           </div>
-          <div class="info-item">
-            <span class="label">楼宇：</span>
-            <span class="value">{{ room.building }}</span>
-          </div>
-          <div class="info-item">
-            <span class="label">楼层：</span>
-            <span class="value">{{ room.floor }}</span>
-          </div>
         </div>
 
         <div class="room-actions">
