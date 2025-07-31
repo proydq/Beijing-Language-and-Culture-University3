@@ -5,8 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
+import com.proshine.system.entity.BookingApproval;
 import com.proshine.system.entity.Room;
 import com.proshine.system.entity.RoomBooking;
+import com.proshine.system.repository.BookingApprovalRepository;
 import com.proshine.system.repository.RoomBookingRepository;
 import com.proshine.system.repository.RoomRepository;
 import com.proshine.system.repository.SysUserRepository;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
@@ -53,6 +56,9 @@ public class RoomBookingServiceImpl implements RoomBookingService {
 
     @Autowired
     private SysUserRepository userRepository;
+
+    @Autowired
+    private BookingApprovalRepository bookingApprovalRepository;
 
     @Override
     public BookingStatsDto getBookingStats(LocalDateTime startTime, LocalDateTime endTime) {
@@ -514,5 +520,404 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             case "已取消": return "CANCELLED";
             default: return chineseStatus;
         }
+    }
+
+    @Override
+    public ResponsePageDataEntity<ApprovalListResponse> getPendingApprovals(ApprovalListRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(
+            request.getPageNumber() - 1, 
+            request.getPageSize(), 
+            Sort.by(Sort.Direction.DESC, "createTime")
+        );
+        
+        // 构建查询条件 - 只查询待审批状态
+        Specification<RoomBooking> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // 客户域ID过滤
+            predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
+            
+            // 只查询待审批状态
+            predicates.add(criteriaBuilder.equal(root.get("approvalStatus"), RoomBooking.ApprovalStatus.PENDING));
+            
+            // 预约名称模糊搜索
+            if (StringUtils.hasText(request.getReservationName())) {
+                predicates.add(criteriaBuilder.like(root.get("bookingName"), "%" + request.getReservationName() + "%"));
+            }
+            
+            // 申请人姓名模糊搜索
+            if (StringUtils.hasText(request.getApplicantName())) {
+                predicates.add(criteriaBuilder.like(root.get("applicantName"), "%" + request.getApplicantName() + "%"));
+            }
+            
+            // 日期范围过滤
+            if (StringUtils.hasText(request.getStartDate())) {
+                try {
+                    LocalDateTime startDateTime = LocalDate.parse(request.getStartDate()).atTime(0, 0, 0);
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), startDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid start date format: {}", request.getStartDate());
+                }
+            }
+            
+            if (StringUtils.hasText(request.getEndDate())) {
+                try {
+                    LocalDateTime endDateTime = LocalDate.parse(request.getEndDate()).atTime(23, 59, 59);
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createTime"), endDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid end date format: {}", request.getEndDate());
+                }
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        // 执行分页查询
+        Page<RoomBooking> page = roomBookingRepository.findAll(spec, pageable);
+        
+        // 转换为响应DTO
+        List<ApprovalListResponse> responseList = page.getContent().stream()
+            .map(this::convertToApprovalListResponse)
+            .collect(Collectors.toList());
+        
+        ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+        result.setRows(responseList);
+        result.setTotal(page.getTotalElements());
+        return result;
+    }
+
+    @Override
+    public ResponsePageDataEntity<ApprovalListResponse> getAllApprovals(ApprovalListRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(
+            request.getPageNumber() - 1, 
+            request.getPageSize(), 
+            Sort.by(Sort.Direction.DESC, "createTime")
+        );
+        
+        // 构建查询条件
+        Specification<RoomBooking> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // 客户域ID过滤
+            predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
+            
+            // 审批状态过滤
+            if (StringUtils.hasText(request.getApprovalStatus())) {
+                String status = convertStatusToChinese(request.getApprovalStatus());
+                predicates.add(criteriaBuilder.equal(root.get("approvalStatus"), RoomBooking.ApprovalStatus.valueOf(status)));
+            }
+            
+            // 预约名称模糊搜索
+            if (StringUtils.hasText(request.getReservationName())) {
+                predicates.add(criteriaBuilder.like(root.get("bookingName"), "%" + request.getReservationName() + "%"));
+            }
+            
+            // 申请人姓名模糊搜索
+            if (StringUtils.hasText(request.getApplicantName())) {
+                predicates.add(criteriaBuilder.like(root.get("applicantName"), "%" + request.getApplicantName() + "%"));
+            }
+            
+            // 日期范围过滤
+            if (StringUtils.hasText(request.getStartDate())) {
+                try {
+                    LocalDateTime startDateTime = LocalDate.parse(request.getStartDate()).atTime(0, 0, 0);
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), startDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid start date format: {}", request.getStartDate());
+                }
+            }
+            
+            if (StringUtils.hasText(request.getEndDate())) {
+                try {
+                    LocalDateTime endDateTime = LocalDate.parse(request.getEndDate()).atTime(23, 59, 59);
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createTime"), endDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid end date format: {}", request.getEndDate());
+                }
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        // 执行分页查询
+        Page<RoomBooking> page = roomBookingRepository.findAll(spec, pageable);
+        
+        // 转换为响应DTO
+        List<ApprovalListResponse> responseList = page.getContent().stream()
+            .map(this::convertToApprovalListResponse)
+            .collect(Collectors.toList());
+        
+        ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+        result.setRows(responseList);
+        result.setTotal(page.getTotalElements());
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public ApprovalResponse approveBooking(String bookingId, ApprovalRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        String userId = SecurityUtil.getCurrentUserId();
+        String userName = SecurityUtil.getCurrentUsername();
+        
+        // 查找预约记录
+        RoomBooking booking = roomBookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("预约记录不存在"));
+        
+        // 验证客户域
+        if (!customerId.equals(booking.getCstmId())) {
+            throw new RuntimeException("无权限操作此预约");
+        }
+        
+        // 验证状态
+        if (booking.getApprovalStatus() != RoomBooking.ApprovalStatus.PENDING) {
+            throw new RuntimeException("预约已审批，无法重复操作");
+        }
+        
+        // 更新预约状态
+        LocalDateTime now = LocalDateTime.now();
+        if ("APPROVED".equals(request.getAction())) {
+            booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+        } else if ("REJECTED".equals(request.getAction())) {
+            booking.setApprovalStatus(RoomBooking.ApprovalStatus.REJECTED);
+        } else {
+            throw new RuntimeException("无效的审批动作");
+        }
+        
+        booking.setApprovalTime(now);
+        booking.setApproverId(userId);
+        booking.setApproverName(userName);
+        booking.setApprovalComment(request.getComment());
+        booking.setLastUpdateTime(now);
+        
+        // 保存预约记录
+        roomBookingRepository.save(booking);
+        
+        // 创建审批记录
+        BookingApproval approval = new BookingApproval();
+        approval.setCstmId(customerId);
+        approval.setBookingId(bookingId);
+        approval.setApproverId(userId);
+        approval.setApproverName(userName);
+        approval.setApproverType("管理员");
+        approval.setApprovalAction("APPROVED".equals(request.getAction()) ? 
+            BookingApproval.ApprovalAction.APPROVE : BookingApproval.ApprovalAction.REJECT);
+        approval.setApprovalComment(request.getComment());
+        approval.setApprovalTime(now);
+        approval.setApprovalLevel(1);
+        approval.setIsFinalApproval(true);
+        approval.setCreateTime(now);
+        
+        bookingApprovalRepository.save(approval);
+        
+        // 构建响应
+        ApprovalResponse response = new ApprovalResponse();
+        response.setBookingId(bookingId);
+        response.setApprovalStatus(booking.getApprovalStatus().getDisplayName());
+        response.setApprovalTime(now);
+        response.setApproverName(userName);
+        response.setApprovalComment(request.getComment());
+        
+        return response;
+    }
+
+    @Override
+    public List<ApprovalHistoryResponse> getApprovalHistory(String bookingId) {
+        String customerId = SecurityUtil.getCustomerId();
+        
+        // 验证预约存在且属于当前客户域
+        RoomBooking booking = roomBookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("预约记录不存在"));
+        
+        if (!customerId.equals(booking.getCstmId())) {
+            throw new RuntimeException("无权限查看此预约");
+        }
+        
+        // 查询审批历史
+        List<BookingApproval> approvals = bookingApprovalRepository
+            .findByBookingIdAndCstmIdOrderByApprovalTimeAsc(bookingId, customerId);
+        
+        // 转换为响应DTO
+        return approvals.stream().map(approval -> {
+            ApprovalHistoryResponse response = new ApprovalHistoryResponse();
+            response.setId(approval.getId());
+            response.setApproverName(approval.getApproverName());
+            response.setApproverType(approval.getApproverType());
+            response.setApprovalAction(approval.getApprovalAction().getDisplayName());
+            response.setApprovalComment(approval.getApprovalComment());
+            response.setApprovalTime(approval.getApprovalTime());
+            response.setApprovalLevel(approval.getApprovalLevel());
+            response.setIsFinalApproval(approval.getIsFinalApproval());
+            
+            // 设置前端显示字段
+            response.setLevelName(approval.getApprovalLevel() == 1 ? "一级审批" : "自动审批");
+            response.setApprovers(new String[]{approval.getApproverName()});
+            response.setConfirmedApprover(approval.getApproverName());
+            
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public BatchApprovalResponse batchApprove(BatchApprovalRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        String userId = SecurityUtil.getCurrentUserId();
+        String userName = SecurityUtil.getCurrentUsername();
+        
+        List<BatchApprovalResponse.BatchApprovalDetail> details = new ArrayList<>();
+        int successCount = 0;
+        int failureCount = 0;
+        
+        for (String bookingId : request.getBookingIds()) {
+            try {
+                // 创建单个审批请求
+                ApprovalRequest approvalRequest = new ApprovalRequest();
+                approvalRequest.setAction(request.getAction());
+                approvalRequest.setComment(request.getComment());
+                
+                // 调用单个审批方法
+                approveBooking(bookingId, approvalRequest);
+                
+                // 记录成功
+                BatchApprovalResponse.BatchApprovalDetail detail = new BatchApprovalResponse.BatchApprovalDetail();
+                detail.setBookingId(bookingId);
+                detail.setStatus("success");
+                detail.setMessage("审批成功");
+                details.add(detail);
+                successCount++;
+                
+            } catch (Exception e) {
+                // 记录失败
+                BatchApprovalResponse.BatchApprovalDetail detail = new BatchApprovalResponse.BatchApprovalDetail();
+                detail.setBookingId(bookingId);
+                detail.setStatus("failure");
+                detail.setMessage(e.getMessage());
+                details.add(detail);
+                failureCount++;
+                
+                log.error("批量审批失败，预约ID: {}, 错误: {}", bookingId, e.getMessage(), e);
+            }
+        }
+        
+        // 构建响应
+        BatchApprovalResponse response = new BatchApprovalResponse();
+        response.setSuccessCount(successCount);
+        response.setFailureCount(failureCount);
+        response.setDetails(details);
+        
+        return response;
+    }
+
+    @Override
+    public BookingDetailResponse getBookingDetail(String bookingId) {
+        String customerId = SecurityUtil.getCustomerId();
+        
+        // 查找预约记录
+        RoomBooking booking = roomBookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("预约记录不存在"));
+        
+        // 验证客户域
+        if (!customerId.equals(booking.getCstmId())) {
+            throw new RuntimeException("无权限查看此预约");
+        }
+        
+        // 转换为响应DTO
+        return convertToBookingDetailResponse(booking);
+    }
+
+    /**
+     * 转换预约实体为审批列表响应DTO
+     */
+    private ApprovalListResponse convertToApprovalListResponse(RoomBooking booking) {
+        ApprovalListResponse response = new ApprovalListResponse();
+        response.setId(booking.getId());
+        response.setBookingName(booking.getBookingName());
+        response.setApplicantName(booking.getApplicantName());
+        response.setApplicantType(booking.getApplicantType());
+        response.setRoomName(booking.getRoomName());
+        response.setBookingPeriod(booking.getBookingPeriod());
+        response.setBookingStartTime(booking.getBookingStartTime());
+        response.setBookingEndTime(booking.getBookingEndTime());
+        response.setDescription(booking.getDescription());
+        response.setReason(booking.getReason());
+        response.setApprovalStatus(booking.getApprovalStatus().name());
+        response.setUrgency(booking.getUrgency() != null ? booking.getUrgency().name() : "NORMAL");
+        response.setCreateTime(booking.getCreateTime());
+        
+        // 解析参与人和审批人信息
+        response.setParticipants(extractPersonNames(booking.getExtend1()));
+        response.setApprovers(extractPersonNames(booking.getExtend2()));
+        
+        // 设置前端显示字段
+        response.setApplyTime(booking.getCreateTime());
+        response.setBookingTime(booking.getBookingPeriod());
+        response.setApplicant(booking.getApplicantName());
+        response.setStatus(booking.getApprovalStatus().name());
+        response.setName(booking.getBookingName());
+        response.setCycle(booking.getBookingPeriod());
+        
+        return response;
+    }
+
+    /**
+     * 转换预约实体为预约详情响应DTO
+     */
+    private BookingDetailResponse convertToBookingDetailResponse(RoomBooking booking) {
+        BookingDetailResponse response = new BookingDetailResponse();
+        response.setId(booking.getId());
+        response.setBookingName(booking.getBookingName());
+        response.setApplicantName(booking.getApplicantName());
+        response.setApplicantType(booking.getApplicantType());
+        response.setApplicantPhone(booking.getApplicantPhone());
+        response.setApplicantDepartment(booking.getApplicantDepartment());
+        response.setRoomId(booking.getRoomId());
+        response.setRoomName(booking.getRoomName());
+        response.setBookingStartTime(booking.getBookingStartTime());
+        response.setBookingEndTime(booking.getBookingEndTime());
+        response.setBookingPeriod(booking.getBookingPeriod());
+        response.setDescription(booking.getDescription());
+        response.setReason(booking.getReason());
+        response.setApprovalStatus(booking.getApprovalStatus().getDisplayName());
+        response.setUsageStatus(booking.getUsageStatus().getDisplayName());
+        response.setUrgency(booking.getUrgency() != null ? booking.getUrgency().getDisplayName() : "普通");
+        response.setCreateTime(booking.getCreateTime());
+        
+        // 解析参与人和审批人详情
+        try {
+            if (StringUtils.hasText(booking.getExtend1())) {
+                ObjectMapper mapper = new ObjectMapper();
+                List<BookingDetailResponse.PersonDetails> participantDetails = mapper.readValue(
+                    booking.getExtend1(), 
+                    new TypeReference<List<BookingDetailResponse.PersonDetails>>() {}
+                );
+                response.setParticipantDetails(participantDetails);
+                response.setParticipants(participantDetails.stream()
+                    .map(BookingDetailResponse.PersonDetails::getName)
+                    .collect(Collectors.toList()));
+            }
+            
+            if (StringUtils.hasText(booking.getExtend2())) {
+                ObjectMapper mapper = new ObjectMapper();
+                List<BookingDetailResponse.PersonDetails> approverDetails = mapper.readValue(
+                    booking.getExtend2(), 
+                    new TypeReference<List<BookingDetailResponse.PersonDetails>>() {}
+                );
+                response.setApproverDetails(approverDetails);
+                response.setApprovers(approverDetails.stream()
+                    .map(BookingDetailResponse.PersonDetails::getName)
+                    .collect(Collectors.toList()));
+            }
+        } catch (Exception e) {
+            log.warn("解析人员详情失败", e);
+        }
+        
+        return response;
     }
 }

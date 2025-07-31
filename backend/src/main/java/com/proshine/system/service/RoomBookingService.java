@@ -80,4 +80,53 @@ public interface RoomBookingService {
      * @return 创建结果
      */
     CreateBookingResponse createBooking(CreateBookingRequest request);
+
+    /**
+     * 获取待审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<ApprovalListResponse> getPendingApprovals(ApprovalListRequest request);
+
+    /**
+     * 获取全部审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<ApprovalListResponse> getAllApprovals(ApprovalListRequest request);
+
+    /**
+     * 审批预约
+     * 
+     * @param bookingId 预约ID
+     * @param request 审批请求参数
+     * @return 审批结果
+     */
+    ApprovalResponse approveBooking(String bookingId, ApprovalRequest request);
+
+    /**
+     * 获取审批历史
+     * 
+     * @param bookingId 预约ID
+     * @return 审批历史列表
+     */
+    List<ApprovalHistoryResponse> getApprovalHistory(String bookingId);
+
+    /**
+     * 批量审批
+     * 
+     * @param request 批量审批请求参数
+     * @return 批量审批结果
+     */
+    BatchApprovalResponse batchApprove(BatchApprovalRequest request);
+
+    /**
+     * 获取预约详情
+     * 
+     * @param bookingId 预约ID
+     * @return 预约详情
+     */
+    BookingDetailResponse getBookingDetail(String bookingId);
 }

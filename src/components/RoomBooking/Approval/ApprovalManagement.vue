@@ -76,6 +76,15 @@ import Sidebar from '../Layout/Sidebar.vue'
 import ApprovalTable from './ApprovalTable.vue'
 import ApprovalDialog from './ApprovalDialog.vue'
 import ReservationDetailDialog from '../Booking/ReservationDetailDialog.vue'
+import { 
+  getPendingApprovals, 
+  getAllApprovals, 
+  approveBooking,
+  getBookingDetail,
+  getApprovalHistory,
+  APPROVAL_STATUS_MAP,
+  APPROVAL_ACTIONS
+} from '@/api/approvalManagement'
 
 export default {
   name: 'ApprovalManagement',
@@ -117,6 +126,9 @@ export default {
       pageSize: 10,
       total: 0,
     })
+
+    // 审批数据
+    const approvalData = ref([])
 
     // 对话框相关
     const dialogVisible = ref(false)
@@ -164,72 +176,44 @@ export default {
 
     // 过滤审批数据
     const filteredApprovalData = computed(() => {
-      let data = props.approvalData.length > 0 ? props.approvalData : mockApprovalData.value
-
-      // 按审批类型过滤
-      if (activeApprovalType.value !== 'all') {
-        const statusMap = {
-          pending: 'PENDING',
-          approved: 'APPROVED',
-          rejected: 'REJECTED',
-        }
-        data = data.filter((item) => item.status === statusMap[activeApprovalType.value])
-      }
-
-      // 按搜索条件过滤
-      if (searchForm.name) {
-        data = data.filter((item) => item.bookingName.includes(searchForm.name))
-      }
-
-      if (searchForm.applicant) {
-        data = data.filter((item) => item.applicant.includes(searchForm.applicant))
-      }
-
-      if (searchForm.dateRange && searchForm.dateRange.length === 2) {
-        data = data.filter((item) => {
-          const applyDate = item.applyTime.split(' ')[0]
-          return applyDate >= searchForm.dateRange[0] && applyDate <= searchForm.dateRange[1]
-        })
-      }
-
-      pagination.total = data.length
-
-      // 分页
-      const start = (pagination.currentPage - 1) * pagination.pageSize
-      const end = start + pagination.pageSize
-      return data.slice(start, end).map((item) => ({
+      return approvalData.value.map((item) => ({
         ...item,
         name: item.bookingName,
-        cycle: item.bookingTime,
-        description: item.reason,
-        applicantName: item.applicant,
+        cycle: item.bookingPeriod || item.bookingTime,
+        description: item.reason || item.description,
+        applicantName: item.applicantName,
+        status: item.approvalStatus
       }))
     })
 
-    const setActiveApprovalType = (type) => {
+    const setActiveApprovalType = async (type) => {
       activeApprovalType.value = typeof type === 'object' ? type.key : type
       pagination.currentPage = 1
+      await loadApprovalData()
     }
 
-    const handleSearch = () => {
+    const handleSearch = async () => {
       pagination.currentPage = 1
-      console.log('搜索审批:', searchForm)
+      await loadApprovalData()
     }
 
-    const handleReset = () => {
+    const handleReset = async () => {
       Object.keys(searchForm).forEach((key) => {
         searchForm[key] = key === 'dateRange' ? [] : ''
       })
       pagination.currentPage = 1
+      await loadApprovalData()
     }
 
-    const handleSizeChange = (val) => {
+    const handleSizeChange = async (val) => {
       pagination.pageSize = val
       pagination.currentPage = 1
+      await loadApprovalData()
     }
 
-    const handleCurrentChange = (val) => {
+    const handleCurrentChange = async (val) => {
       pagination.currentPage = val
+      await loadApprovalData()
     }
 
     // 审批相关操作
@@ -238,22 +222,77 @@ export default {
       dialogVisible.value = true
     }
 
-    const handleApprovalConfirm = (result) => {
-      loading.value = true
-
-      setTimeout(() => {
-        const index = mockApprovalData.value.findIndex(
-          (item) => item.id === currentApproval.value.id,
-        )
-        if (index !== -1) {
-          mockApprovalData.value[index].status = result.status
+    // 加载审批数据
+    const loadApprovalData = async () => {
+      try {
+        loading.value = true
+        
+        // 构建请求参数
+        const params = {
+          pageNumber: pagination.currentPage,
+          pageSize: pagination.pageSize,
+          reservationName: searchForm.name || undefined,
+          applicantName: searchForm.applicant || undefined,
+          startDate: searchForm.dateRange.length > 0 ? searchForm.dateRange[0] : undefined,
+          endDate: searchForm.dateRange.length > 1 ? searchForm.dateRange[1] : undefined
         }
-        ElMessage.success('操作成功')
-        emit('approve', { ...currentApproval.value, ...result })
+        
+        let response
+        if (activeApprovalType.value === 'pending') {
+          // 获取待审批列表
+          response = await getPendingApprovals(params)
+        } else {
+          // 获取全部审批列表
+          const statusMap = {
+            all: undefined,
+            pending: 'PENDING',
+            approved: 'APPROVED',
+            rejected: 'REJECTED'
+          }
+          params.approvalStatus = statusMap[activeApprovalType.value]
+          response = await getAllApprovals(params)
+        }
+        
+        if (response.code === 200) {
+          approvalData.value = response.data.rows || []
+          pagination.total = response.data.total || 0
+        } else {
+          ElMessage.error(response.message || '获取审批数据失败')
+        }
+      } catch (error) {
+        console.error('获取审批数据失败:', error)
+        ElMessage.error('获取审批数据失败')
+      } finally {
+        loading.value = false
+      }
+    }
 
+    const handleApprovalConfirm = async (result) => {
+      try {
+        loading.value = true
+        
+        const approvalRequest = {
+          action: result.result, // APPROVED 或 REJECTED
+          comment: result.comment
+        }
+        
+        const response = await approveBooking(currentApproval.value.id, approvalRequest)
+        
+        if (response.code === 200) {
+          ElMessage.success('审批操作成功')
+          // 重新加载数据
+          await loadApprovalData()
+          emit('approve', { ...currentApproval.value, ...result })
+        } else {
+          ElMessage.error(response.message || '审批操作失败')
+        }
+      } catch (error) {
+        console.error('审批操作失败:', error)
+        ElMessage.error('审批操作失败')
+      } finally {
         loading.value = false
         dialogVisible.value = false
-      }, 1000)
+      }
     }
 
     const handleApprovalCancel = () => {
@@ -373,9 +412,10 @@ export default {
       detailDialogVisible.value = true
     }
 
-    onMounted(() => {
+    onMounted(async () => {
       // 初始化加载数据
       console.log('审批管理模块初始化')
+      await loadApprovalData()
     })
 
     return {
@@ -398,6 +438,7 @@ export default {
       detailDialogVisible,
       reservationDetail,
       openDetail,
+      loadApprovalData
     }
   },
 }
