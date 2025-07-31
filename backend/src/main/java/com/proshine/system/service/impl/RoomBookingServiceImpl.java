@@ -8,12 +8,17 @@ import com.proshine.system.dto.*;
 import com.proshine.system.entity.BookingApproval;
 import com.proshine.system.entity.Room;
 import com.proshine.system.entity.RoomBooking;
+import com.proshine.system.entity.ApprovalConfig;
+import com.proshine.system.entity.BookingPersonnelPermission;
+import com.proshine.system.entity.ContinuousBookingSetting;
 import com.proshine.system.repository.BookingApprovalRepository;
 import com.proshine.system.repository.RoomBookingRepository;
 import com.proshine.system.repository.RoomRepository;
 import com.proshine.system.repository.SysUserRepository;
 import com.proshine.system.security.SecurityUtil;
 import com.proshine.system.service.BookingPersonnelPermissionService;
+import com.proshine.system.service.ContinuousBookingSettingService;
+import com.proshine.system.service.ApprovalConfigService;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +55,12 @@ public class RoomBookingServiceImpl implements RoomBookingService {
 
     @Autowired
     private BookingPersonnelPermissionService permissionService;
+
+    @Autowired
+    private ContinuousBookingSettingService continuousBookingSettingService;
+
+    @Autowired
+    private ApprovalConfigService approvalConfigService;
 
     @Autowired
     private RoomRepository roomRepository;
@@ -351,64 +362,15 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
         String customerId = SecurityUtil.getCustomerId();
         String userId = SecurityUtil.getCurrentUserId();
-        
-        // 创建预约实体
-        RoomBooking booking = new RoomBooking();
-        booking.setCstmId(customerId);
-        booking.setBookingName(request.getBookingName());
-        booking.setRoomId(request.getRoomId());
-        booking.setRoomName(request.getRoomName());
-        booking.setApplicantId(userId);
-        booking.setApplicantName(request.getApplicant());
-        booking.setApplicantType(request.getApplicantType());
-        booking.setApplicantPhone(request.getApplicantPhone());
-        booking.setApplicantDepartment(request.getApplicantDepartment());
-        booking.setBookingStartTime(request.getBookingStartTime());
-        booking.setBookingEndTime(request.getBookingEndTime());
-        booking.setBookingPeriod(request.getBorrowTime());
-        booking.setDescription(request.getDescription());
-        booking.setReason(request.getReason());
-        booking.setApprovalStatus(RoomBooking.ApprovalStatus.PENDING);
-        booking.setUsageStatus(RoomBooking.UsageStatus.NOT_STARTED);
-        
-        // 设置紧急程度
-        if (StringUtils.hasText(request.getUrgency())) {
-            booking.setUrgency(RoomBooking.Urgency.valueOf(request.getUrgency()));
-        }
-        
-        // 处理参与人详情（存储到extend1）
-        if (request.getParticipantDetails() != null && !request.getParticipantDetails().isEmpty()) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                String participantsJson = mapper.writeValueAsString(request.getParticipantDetails());
-                booking.setExtend1(participantsJson);
-            } catch (Exception e) {
-                log.warn("Failed to serialize participant details", e);
-            }
-        }
-        
-        // 处理审批人详情（存储到extend2）
-        if (request.getApproverDetails() != null && !request.getApproverDetails().isEmpty()) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                String approversJson = mapper.writeValueAsString(request.getApproverDetails());
-                booking.setExtend2(approversJson);
-            } catch (Exception e) {
-                log.warn("Failed to serialize approver details", e);
-            }
-        }
-        
-        // 保存预约
-        RoomBooking savedBooking = roomBookingRepository.save(booking);
-        
-        // 构建响应
-        CreateBookingResponse response = new CreateBookingResponse();
-        response.setBookingId(savedBooking.getId());
-        response.setBookingName(savedBooking.getBookingName());
-        response.setApprovalStatus(savedBooking.getApprovalStatus().getDisplayName());
-        response.setCreateTime(savedBooking.getCreateTime());
-        
-        return response;
+
+        validateBookingRules(userId, request);
+
+        RoomBooking booking = buildBookingEntity(request, customerId, userId);
+
+        processApprovalFlow(booking);
+
+        roomBookingRepository.save(booking);
+        return buildCreateResponse(booking);
     }
 
     /**
@@ -516,10 +478,123 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         switch (chineseStatus) {
             case "未开始": return "NOT_STARTED";
             case "进行中": return "IN_PROGRESS";
-            case "已结束": return "COMPLETED";  
+            case "已结束": return "COMPLETED";
             case "已取消": return "CANCELLED";
             default: return chineseStatus;
         }
+    }
+
+    private void validateBookingRules(String userId, CreateBookingRequest request) {
+        if (!permissionService.hasBookingPermission(userId, request.getRoomId())) {
+            throw new RuntimeException("无预约权限");
+        }
+
+        BookingPersonnelPermission permission = permissionService.getUserPermission(userId, request.getRoomId());
+        if (!validateAdvanceBookingDays(permission, request.getBookingStartTime())) {
+            throw new RuntimeException("超出允许预约天数");
+        }
+
+        ContinuousBookingSetting setting = continuousBookingSettingService.getByRoomId(request.getRoomId());
+        if (!validateContinuousBookingDays(setting, request)) {
+            throw new RuntimeException("超出连续预约限制");
+        }
+
+        if (hasTimeConflict(request.getRoomId(), request.getBookingStartTime(), request.getBookingEndTime())) {
+            throw new RuntimeException("该时间段房间已被预约");
+        }
+    }
+
+    private boolean validateAdvanceBookingDays(BookingPersonnelPermission permission, LocalDateTime startTime) {
+        int days = permission != null && permission.getAdvanceBookingDays() != null ? permission.getAdvanceBookingDays() : 7;
+        return !startTime.toLocalDate().isAfter(LocalDate.now().plusDays(days));
+    }
+
+    private boolean validateContinuousBookingDays(ContinuousBookingSetting setting, CreateBookingRequest request) {
+        if (setting == null || Boolean.TRUE.equals(setting.getIsUnlimited())) {
+            return true;
+        }
+        if (!Boolean.TRUE.equals(setting.getCanContinuous())) {
+            return false;
+        }
+        long days = java.time.temporal.ChronoUnit.DAYS.between(request.getBookingStartTime().toLocalDate(), request.getBookingEndTime().toLocalDate()) + 1;
+        return days <= setting.getContinuousDays();
+    }
+
+    private boolean hasTimeConflict(String roomId, LocalDateTime start, LocalDateTime end) {
+        String cstmId = SecurityUtil.getCustomerId();
+        return !roomBookingRepository.findConflictingBookings(roomId, start, end, cstmId, null).isEmpty();
+    }
+
+    private void processApprovalFlow(RoomBooking booking) {
+        List<ApprovalConfig> approvalConfigs = approvalConfigService.getByRoomId(booking.getRoomId());
+        if (approvalConfigs.isEmpty()) {
+            booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+            booking.setApprovalTime(LocalDateTime.now());
+        } else {
+            booking.setApprovalStatus(RoomBooking.ApprovalStatus.PENDING);
+            roomBookingRepository.save(booking);
+            int maxLevel = approvalConfigs.stream().mapToInt(ApprovalConfig::getApprovalLevel).max().orElse(1);
+            for (ApprovalConfig cfg : approvalConfigs) {
+                BookingApproval approval = new BookingApproval();
+                approval.setCstmId(SecurityUtil.getCustomerId());
+                approval.setBookingId(booking.getId());
+                approval.setApproverId(cfg.getApproverId());
+                approval.setApproverName(cfg.getApproverName());
+                approval.setApproverType(cfg.getApproverType());
+                approval.setApprovalLevel(cfg.getApprovalLevel());
+                approval.setIsFinalApproval(cfg.getApprovalLevel().equals(maxLevel));
+                bookingApprovalRepository.save(approval);
+            }
+        }
+    }
+
+    private RoomBooking buildBookingEntity(CreateBookingRequest request, String customerId, String userId) {
+        RoomBooking booking = new RoomBooking();
+        booking.setCstmId(customerId);
+        booking.setBookingName(request.getBookingName());
+        booking.setRoomId(request.getRoomId());
+        booking.setRoomName(request.getRoomName());
+        booking.setApplicantId(userId);
+        booking.setApplicantName(request.getApplicant());
+        booking.setApplicantType(request.getApplicantType());
+        booking.setApplicantPhone(request.getApplicantPhone());
+        booking.setApplicantDepartment(request.getApplicantDepartment());
+        booking.setBookingStartTime(request.getBookingStartTime());
+        booking.setBookingEndTime(request.getBookingEndTime());
+        booking.setBookingPeriod(request.getBorrowTime());
+        booking.setDescription(request.getDescription());
+        booking.setReason(request.getReason());
+        booking.setApprovalStatus(RoomBooking.ApprovalStatus.PENDING);
+        booking.setUsageStatus(RoomBooking.UsageStatus.NOT_STARTED);
+        if (StringUtils.hasText(request.getUrgency())) {
+            booking.setUrgency(RoomBooking.Urgency.valueOf(request.getUrgency()));
+        }
+        if (request.getParticipantDetails() != null && !request.getParticipantDetails().isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                booking.setExtend1(mapper.writeValueAsString(request.getParticipantDetails()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize participant details", e);
+            }
+        }
+        if (request.getApproverDetails() != null && !request.getApproverDetails().isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                booking.setExtend2(mapper.writeValueAsString(request.getApproverDetails()));
+            } catch (Exception e) {
+                log.warn("Failed to serialize approver details", e);
+            }
+        }
+        return booking;
+    }
+
+    private CreateBookingResponse buildCreateResponse(RoomBooking booking) {
+        CreateBookingResponse response = new CreateBookingResponse();
+        response.setBookingId(booking.getId());
+        response.setBookingName(booking.getBookingName());
+        response.setApprovalStatus(booking.getApprovalStatus().getDisplayName());
+        response.setCreateTime(booking.getCreateTime());
+        return response;
     }
 
     @Override

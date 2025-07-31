@@ -78,6 +78,8 @@ public interface BookingPersonnelPermissionService {
      */
     boolean hasBookingPermission(String userId, String roomId);
 
+    BookingPersonnelPermission getUserPermission(String userId, String roomId);
+
     /**
      * 根据用户ID获取可预约的房间列表
      * 

@@ -40,6 +40,9 @@ public class BookingPersonnelPermission {
     @Column(name = "customer_id", columnDefinition = "VARCHAR(36) COMMENT '客户域ID'")
     private String customerId;
 
+    @Column(name = "advance_booking_days", columnDefinition = "INT DEFAULT 7 COMMENT '允许提前预约天数'")
+    private Integer advanceBookingDays = 7;
+
     @Column(name = "create_time", columnDefinition = "DATETIME COMMENT '创建时间'")
     private LocalDateTime createTime;
 
