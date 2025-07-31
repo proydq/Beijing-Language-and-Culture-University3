@@ -1,4 +1,5 @@
 com\proshine\system\repository\BookingTimeRuleRepository.class
+com\proshine\system\entity\SchoolCalendar2.class
 com\proshine\system\dto\ViolationSettingBatchUpdateRequest.class
 com\proshine\system\user\controller\UserController.class
 com\proshine\system\entity\SysFile.class
@@ -31,12 +32,14 @@ com\proshine\system\service\impl\BookingTimeRuleServiceImpl.class
 com\proshine\system\dto\SearchClassroomCondition.class
 com\proshine\system\entity\ClassroomApprovalConfig.class
 com\proshine\system\user\service\UserService.class
+com\proshine\system\service\RoomScheduleService.class
 com\proshine\system\dto\BookingTrendDto.class
 com\proshine\system\service\PositionService.class
 com\proshine\system\dto\RoleDto.class
 com\proshine\system\user\dto\UserSaveRequest.class
 com\proshine\system\dto\BookingTimeValidationDto.class
 com\proshine\system\controller\PositionController.class
+com\proshine\system\repository\SchoolCalendar2Repository.class
 com\proshine\system\controller\FileUploadController.class
 com\proshine\system\repository\AreaRepository.class
 com\proshine\system\dto\RoomVo.class
@@ -62,6 +65,7 @@ com\proshine\system\service\impl\BlacklistServiceImpl.class
 com\proshine\system\config\SecurityConfig.class
 com\proshine\system\controller\RoleManagementController.class
 com\proshine\system\dto\SearchPersonnelCondition.class
+com\proshine\system\entity\CoursePlanning.class
 com\proshine\system\SystemApplication.class
 com\proshine\system\repository\SysOrganizationRepository.class
 com\proshine\system\dto\BookingPersonnelPermissionDto$AuthorizedUserDto.class
@@ -74,6 +78,7 @@ com\proshine\system\controller\BookingTimeRuleController.class
 com\proshine\system\repository\ClassroomApprovalLevelRepository.class
 com\proshine\system\service\impl\RoomBookingServiceImpl.class
 com\proshine\system\service\ViolationSettingService.class
+com\proshine\system\dto\RoomWeeklyScheduleVO.class
 com\proshine\system\user\dto\SearchUserCondition.class
 com\proshine\system\dto\ClassroomAddVo$ApprovalLevelVo.class
 com\proshine\system\service\BlacklistService.class
@@ -97,6 +102,7 @@ com\proshine\system\entity\Area.class
 com\proshine\system\service\impl\ContinuousBookingSettingServiceImpl.class
 com\proshine\system\dto\BookingStatsDto.class
 com\proshine\system\dto\SearchUserCondition.class
+com\proshine\system\dto\SchoolWeekVO.class
 com\proshine\system\dto\SearchAvailableRoomCondition.class
 com\proshine\system\entity\UserBlacklist$BlacklistType.class
 com\proshine\system\dto\ContinuousBookingSettingDto.class
@@ -106,6 +112,7 @@ com\proshine\system\security\JwtUtil.class
 com\proshine\system\service\impl\PositionServiceImpl.class
 com\proshine\system\dto\RoomSaveVo.class
 com\proshine\system\service\impl\UserBookingLimitServiceImpl.class
+com\proshine\system\entity\SchoolCalendar.class
 com\proshine\system\service\UserBookingLimitService.class
 com\proshine\system\dto\BookingPersonnelPermissionSaveRequest.class
 com\proshine\system\dto\SearchContinuousBookingSettingCondition.class
@@ -127,6 +134,7 @@ com\proshine\system\repository\BookingTimeRuleUserRepository.class
 com\proshine\system\entity\BookingRecord$OperationStatus.class
 com\proshine\system\entity\RoomBooking$UsageStatus.class
 com\proshine\system\exception\RoomException$RoomValidationException.class
+com\proshine\system\repository\CoursePlanningRepository.class
 com\proshine\system\security\JwtAuthenticationFilter.class
 com\proshine\system\dto\TitleVo.class
 com\proshine\system\service\RoomBookingService.class
@@ -142,10 +150,12 @@ com\proshine\system\dto\AreaVo.class
 com\proshine\system\dto\FileUploadResponse.class
 com\proshine\system\controller\BookingTimeValidationController.class
 com\proshine\system\entity\SysUser.class
+com\proshine\system\entity\TbAttendanceAdministrativeCourseTimeConfig.class
 com\proshine\system\dto\ContinuousBookingSettingWithRoomDto$1.class
 com\proshine\system\repository\RoomBookingRepository.class
 com\proshine\system\controller\SysUserController.class
 com\proshine\system\dto\BatchUpdateContinuousBookingRequest.class
+com\proshine\system\dto\RoomWeeklyScheduleRequest.class
 com\proshine\system\service\TitleService.class
 com\proshine\system\dto\BookingTimeRuleDto.class
 com\proshine\system\entity\ViolationSetting.class
@@ -166,6 +176,7 @@ com\proshine\system\service\impl\RoomServiceImpl.class
 com\proshine\system\controller\ContinuousBookingSettingController.class
 com\proshine\system\dto\SearchRoomCondition.class
 com\proshine\system\entity\BookingTimeRule.class
+com\proshine\system\service\impl\RoomScheduleServiceImpl.class
 com\proshine\system\dto\LoginRequest.class
 com\proshine\system\repository\SysPermissionRepository.class
 com\proshine\system\dto\SearchAreaCondition.class
@@ -173,6 +184,7 @@ com\proshine\system\dto\SearchBookingTimeRuleCondition.class
 com\proshine\system\service\impl\RoleManagementServiceImpl.class
 com\proshine\system\service\impl\AreaServiceImpl.class
 com\proshine\system\service\RoomService.class
+com\proshine\system\repository\TbAttendanceAdministrativeCourseTimeConfigRepository.class
 com\proshine\system\repository\UserBookingLimitRepository.class
 com\proshine\system\entity\ContinuousBookingSetting$ContinuousType.class
 com\proshine\system\controller\BookingPersonnelPermissionController.class
@@ -180,6 +192,7 @@ com\proshine\system\controller\RoomController.class
 com\proshine\system\controller\UserBookingLimitController.class
 com\proshine\system\dto\RoleVo.class
 com\proshine\system\entity\SysUserRole.class
+com\proshine\system\controller\RoomScheduleController.class
 com\proshine\system\repository\ClassroomApprovalConfigRepository.class
 com\proshine\system\repository\BookingPersonnelPermissionRoomRepository.class
 com\proshine\system\controller\ViolationSettingController.class

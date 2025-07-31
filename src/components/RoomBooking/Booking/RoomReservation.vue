@@ -52,7 +52,7 @@
           <el-button
             :type="room.available ? 'primary' : 'info'"
             :disabled="!room.available"
-            @click="$emit('book-room', room)"
+            @click="handleBookRoom(room)"
             style="width: 100%;"
           >
             {{ room.available ? '立即预约' : '暂不可用' }}
@@ -65,17 +65,27 @@
     <div v-if="filteredRooms.length === 0" class="no-data">
       <el-empty description="暂无符合条件的房间" />
     </div>
+
+    <!-- 预约弹窗 -->
+    <BookRoomDialog
+      v-model="bookDialogVisible"
+      :room="selectedRoom"
+      @confirm="handleBookingConfirm"
+      @cancel="handleBookingCancel"
+    />
   </div>
 </template>
 
 <script>
 import { ref, computed } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import BookRoomDialog from './BookRoomDialog.vue'
 
 export default {
   name: 'RoomReservation',
   components: {
-    Search
+    Search,
+    BookRoomDialog
   },
   props: {
     rooms: {
@@ -94,6 +104,8 @@ export default {
   emits: ['book-room'],
   setup(props, { emit }) {
     const searchKeyword = ref('')
+    const bookDialogVisible = ref(false)
+    const selectedRoom = ref(null)
 
     // 过滤房间
     const filteredRooms = computed(() => {
@@ -119,9 +131,32 @@ export default {
       return filtered
     })
 
+    // 处理房间预约
+    const handleBookRoom = (room) => {
+      selectedRoom.value = room
+      bookDialogVisible.value = true
+    }
+
+    // 处理预约确认
+    const handleBookingConfirm = (bookingData) => {
+      emit('book-room', bookingData)
+      bookDialogVisible.value = false
+    }
+
+    // 处理预约取消
+    const handleBookingCancel = () => {
+      bookDialogVisible.value = false
+      selectedRoom.value = null
+    }
+
     return {
       searchKeyword,
-      filteredRooms
+      filteredRooms,
+      bookDialogVisible,
+      selectedRoom,
+      handleBookRoom,
+      handleBookingConfirm,
+      handleBookingCancel
     }
   }
 }
