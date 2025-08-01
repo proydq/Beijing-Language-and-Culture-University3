@@ -90,6 +90,6 @@ public class BookingApproval {
     @PrePersist
     protected void onCreate() {
         createTime = LocalDateTime.now();
-        approvalTime = LocalDateTime.now();
+        // approvalTime应该在实际审批时设置，创建时保持为null表示待审批状态
     }
 }

@@ -2,8 +2,8 @@ package com.proshine.system.service;
 
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
+import com.proshine.system.entity.BookingPersonnelPermission;
 import com.proshine.system.user.dto.UserVO;
-
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 

@@ -384,6 +384,7 @@
                     type="primary"
                     size="small"
                     @click="showBatchPersonnelDialog(index)"
+                    :disabled="level.disabled"
                   >
                     选择审批人员
                   </el-button>
@@ -391,7 +392,7 @@
                     type="danger"
                     size="small"
                     @click="removeBatchApprovalLevel(index)"
-                    :disabled="batchApprovalLevels.length <= 1"
+                    :disabled="batchApprovalLevels.length <= 1 || level.disabled"
                   >
                     删除
                   </el-button>
@@ -400,21 +401,26 @@
 
               <div class="approvers-display">
                 <div class="approver-tags">
-                  <template v-if="level.approvers">
-                    <el-tag
-                      v-for="(approver, approverIndex) in level.approvers.split('、')"
-                      :key="approverIndex"
-                      class="approver-tag"
-                      closable
-                      @close="removeApproverFromBatchLevel(index, approverIndex)"
-                    >
-                      <el-avatar :size="20" class="approver-avatar">
-                        <el-icon><User /></el-icon>
-                      </el-avatar>
-                      {{ approver }}
-                    </el-tag>
+                  <template v-if="level.disabled">
+                     <span class="system-default-tip">第一审批人为预约人自行选择，无需设置</span>
+                   </template>
+                  <template v-else>
+                    <template v-if="level.approvers">
+                      <el-tag
+                        v-for="(approver, approverIndex) in level.approvers.split('、')"
+                        :key="approverIndex"
+                        class="approver-tag"
+                        closable
+                        @close="removeApproverFromBatchLevel(index, approverIndex)"
+                      >
+                        <el-avatar :size="20" class="approver-avatar">
+                          <el-icon><User /></el-icon>
+                        </el-avatar>
+                        {{ approver }}
+                      </el-tag>
+                    </template>
+                    <span v-else class="no-approver">暂无审批人员</span>
                   </template>
-                  <span v-else class="no-approver">暂无审批人员</span>
                 </div>
               </div>
             </div>
@@ -1149,6 +1155,7 @@ export default {
 
     // 批量审批级别管理
     const batchApprovalLevels = ref([
+      { level: 1, approvers: '', approverIds: '', disabled: true }, // 第一级审批，不可设置审批人
       { level: 2, approvers: '', approverIds: '' }
     ])
 
@@ -1162,6 +1169,7 @@ export default {
         allowBookerSelectApprover: 'yes'
       }
       batchApprovalLevels.value = [
+        { level: 1, approvers: '', approverIds: '', disabled: true }, // 第一级审批，不可设置审批人
         { level: 2, approvers: '', approverIds: '' }
       ]
       batchPermissionDialogVisible.value = true
@@ -1213,8 +1221,9 @@ export default {
     // 批量添加审批级别
     const addBatchApprovalLevel = () => {
       const maxLevel = Math.max(...batchApprovalLevels.value.map(item => item.level))
+      const newLevel = maxLevel + 1
       batchApprovalLevels.value.push({
-        level: maxLevel + 1,
+        level: newLevel,
         approvers: '',
         approverIds: ''
       })
@@ -1222,8 +1231,14 @@ export default {
 
     // 批量删除审批级别
     const removeBatchApprovalLevel = (index) => {
-      if (batchApprovalLevels.value.length > 1) {
+      // 不能删除被禁用的第一级审批，且至少保留两个级别（第一级和第二级）
+      if (batchApprovalLevels.value.length > 2 && !batchApprovalLevels.value[index].disabled) {
         batchApprovalLevels.value.splice(index, 1)
+        // 删除后重新排序级别编号
+        batchApprovalLevels.value.forEach((level, idx) => {
+          // 重新分配级别编号：第一个元素是1级，第二个是2级，依此类推
+          level.level = idx + 1
+        })
       }
     }
 
@@ -1253,17 +1268,11 @@ export default {
 
     // 监听批量配置中是否需要预约自选人员审批的变化
      watch(() => batchPermissionForm.value.allowBookerSelectApprover, (newValue) => {
-       if (newValue === 'yes') {
-         // 选择"是"时，从第二级开始设置审批
-         batchApprovalLevels.value = [
-           { level: 2, approvers: '', approverIds: '' }
-         ]
-       } else {
-         // 选择"否"时，从第一级开始设置审批
-         batchApprovalLevels.value = [
-           { level: 1, approvers: '', approverIds: '' }
-         ]
-       }
+       // 无论选择什么，都保持第一级审批但不可设置审批人，从第二级开始可以设置
+       batchApprovalLevels.value = [
+         { level: 1, approvers: '', approverIds: '', disabled: true }, // 第一级审批，不可设置审批人
+         { level: 2, approvers: '', approverIds: '' }
+       ]
      })
 
      // 从批量审批级别中删除指定审批人
@@ -1804,6 +1813,17 @@ export default {
   color: #999;
   font-style: italic;
   font-size: 13px;
+}
+
+.system-default-tip {
+  color: #67c23a;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 12px;
+  background-color: #f0f9ff;
+  border: 1px solid #67c23a;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .add-level-btn {

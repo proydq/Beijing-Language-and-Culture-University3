@@ -42,21 +42,21 @@
 
       <!-- 右侧主内容区域 -->
       <div class="main-content">
-        <MyBookings 
+        <MyBookings
           v-if="activeMenuItem === '我的预约'"
           :booking-data="bookingData"
           @edit="handleEdit"
           @approve="handleApprove"
         />
-        
-        <AllBookings 
+
+        <AllBookings
           v-else-if="activeMenuItem === '全部借用'"
           :booking-data="allBookingData"
           @edit="handleEdit"
           @approve="handleApprove"
         />
-        
-        <RoomReservation 
+
+        <RoomReservation
           v-else-if="activeMenuItem === '房间预约'"
           :rooms="filteredRooms"
           :active-category="activeCategory"
@@ -97,20 +97,20 @@ export default {
     const menuItems = ['我的预约', '全部借用', '房间预约']
     const buildings = ['达力楼', '明德楼', '博学楼']
     const floors = ['1F', '2F', '3F', '4F', '5F', '6F', 'B1', 'B2']
-    
+
     const activeMenuItem = ref('我的预约')
     const activeCategory = ref('全部')
     const activeFloor = ref('')
     const sidebarSearch = ref('')
     const treeData = ref([])
     const selectedBuildingArea = ref(null)
-    
+
     // Data storage
     const bookingData = ref([])
     const allBookingData = ref([])
     const rooms = ref([])
     const loading = ref(false)
-    
+
     const treeProps = {
       children: 'children',
       label: 'label'
@@ -133,7 +133,7 @@ export default {
     const setActiveFloor = (floor) => {
       activeFloor.value = floor
     }
-    
+
     // 根据菜单项加载数据
     const loadDataForMenuItem = async (menuItem) => {
       loading.value = true
@@ -197,8 +197,7 @@ export default {
     const loadAvailableRooms = async () => {
       try {
         const response = await getAvailableRooms({
-          roomAreaId: selectedBuildingArea.value?.id,
-          available: true
+          roomAreaId: selectedBuildingArea.value?.id
         })
         if (response.code === 200) {
           rooms.value = response.data || []
@@ -234,7 +233,7 @@ export default {
         ElMessage.error('获取楼栋架构失败')
       }
     }
-    
+
     // 处理树节点点击
     const handleNodeClick = (data) => {
       // 保存选中的区域信息
@@ -279,45 +278,45 @@ export default {
     const handleBookRoom = async (bookingData) => {
       try {
         loading.value = true
-        
+
         // 转换前端数据格式为后端需要的格式
         const createBookingRequest = {
           // 房间信息
           roomId: bookingData.room?.id || '',
           roomName: bookingData.room?.name || '',
-          
+
           // 申请人信息
           applicant: bookingData.applicant || '',
           applicantId: '', // 后端会从SecurityUtil.getCurrentUserId()获取
           applicantType: 'TEACHER', // 默认为教师，可根据实际情况调整
           applicantPhone: '', // 如果需要可以添加到表单中
           applicantDepartment: '', // 如果需要可以添加到表单中
-          
+
           // 预约信息
           bookingName: bookingData.bookingName || '',
           borrowTime: bookingData.borrowTime || '',
-          
+
           // 时间信息 - 从borrowTime解析或使用默认值
           bookingStartTime: parseBookingStartTime(bookingData.borrowTime),
           bookingEndTime: parseBookingEndTime(bookingData.borrowTime),
-          
+
           // 描述信息
           description: bookingData.description || '',
           reason: bookingData.remark || bookingData.description || '', // 申请理由使用备注详情
-          
+
           // 人员信息
           participants: bookingData.participants || [],
           remark: bookingData.remark || '',
           approvers: bookingData.approvers || [],
-          
+
           // 详细人员信息
           participantDetails: bookingData.participantDetails || [],
           approverDetails: bookingData.approverDetails || [],
-          
+
           // 紧急程度
           urgency: 'NORMAL'
         }
-        
+
         const response = await createBooking(createBookingRequest)
         if (response.code === 200) {
           ElMessage.success('预约申请提交成功')
@@ -333,11 +332,11 @@ export default {
         loading.value = false
       }
     }
-    
+
     // 解析借用时间获取开始时间
     const parseBookingStartTime = (borrowTime) => {
       if (!borrowTime) return null
-      
+
       try {
         // 从borrowTime格式 "2025-03-03 08:00:00-08:45:00; 2025-03-03 08:55:00-09:40:00" 解析
         const firstTimeSlot = borrowTime.split(';')[0].trim()
@@ -350,11 +349,11 @@ export default {
         return null
       }
     }
-    
+
     // 解析借用时间获取结束时间
     const parseBookingEndTime = (borrowTime) => {
       if (!borrowTime) return null
-      
+
       try {
         // 从borrowTime格式解析最后一个时间段的结束时间
         const timeSlots = borrowTime.split(';').map(slot => slot.trim())
@@ -368,7 +367,7 @@ export default {
         return null
       }
     }
-    
+
     // 页面初始化
     onMounted(async () => {
       await loadBuildingTree()

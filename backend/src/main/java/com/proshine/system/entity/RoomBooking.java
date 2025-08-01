@@ -81,17 +81,8 @@ public class RoomBooking {
     @Column(name = "urgency", columnDefinition = "VARCHAR(20) COMMENT '紧急程度'")
     private Urgency urgency = Urgency.NORMAL;
 
-    @Column(name = "approval_time", columnDefinition = "DATETIME COMMENT '审批时间'")
-    private LocalDateTime approvalTime;
-
-    @Column(name = "approver_id", columnDefinition = "VARCHAR(36) COMMENT '审批人ID'")
-    private String approverId;
-
-    @Column(name = "approver_name", columnDefinition = "VARCHAR(50) COMMENT '审批人姓名'")
-    private String approverName;
-
-    @Column(name = "approval_comment", columnDefinition = "TEXT COMMENT '审批意见'")
-    private String approvalComment;
+    // 审批相关信息已移至BookingApproval表，支持多级审批
+    // 移除冗余字段：approval_time, approver_id, approver_name, approval_comment
 
     @Column(name = "reject_reason", columnDefinition = "TEXT COMMENT '拒绝原因'")
     private String rejectReason;
@@ -114,10 +105,10 @@ public class RoomBooking {
     @Column(name = "last_update_time", columnDefinition = "DATETIME COMMENT '最后更新时间'")
     private LocalDateTime lastUpdateTime;
 
-    @Column(name = "extend1", columnDefinition = "VARCHAR(255) COMMENT '扩展字段1'")
+    @Column(name = "extend1", columnDefinition = "TEXT COMMENT '扩展字段1（参与人详情JSON）'")
     private String extend1;
 
-    @Column(name = "extend2", columnDefinition = "VARCHAR(255) COMMENT '扩展字段2'")
+    @Column(name = "extend2", columnDefinition = "TEXT COMMENT '扩展字段2（审批人详情JSON）'")
     private String extend2;
 
     /**
