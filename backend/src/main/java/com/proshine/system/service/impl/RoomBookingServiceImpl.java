@@ -582,7 +582,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                     String[] approverIdsArray = Optional.ofNullable(level.getApproverIds())
                         .orElse("").split(",");
                     String[] approverNamesArray = Optional.ofNullable(level.getApproverNames())
-                        .orElse("").split(",");
+                        .orElse("").split("、");
 
                     // 为每个预设审批人创建审批记录
                     for (int i = 0; i < approverIdsArray.length; i++) {
@@ -610,7 +610,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                     String[] approverIdsArray = Optional.ofNullable(level.getApproverIds())
                         .orElse("").split(",");
                     String[] approverNamesArray = Optional.ofNullable(level.getApproverNames())
-                        .orElse("").split(",");
+                        .orElse("").split("、");
 
                     // 为每个预设审批人创建审批记录
                     for (int i = 0; i < approverIdsArray.length; i++) {
@@ -677,6 +677,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                 log.warn("Failed to serialize approver details", e);
             }
         }
+        // 备注信息已经通过reason字段保存，无需额外处理
         return booking;
     }
 
@@ -967,16 +968,26 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             response.setId(approval.getId());
             response.setApproverName(approval.getApproverName());
             response.setApproverType(approval.getApproverType());
-            response.setApprovalAction(approval.getApprovalAction().getDisplayName());
+            
+            // 处理审批动作，如果为null则表示待审批
+            String approvalAction = approval.getApprovalAction() != null 
+                ? approval.getApprovalAction().getDisplayName() 
+                : "待审批";
+            response.setApprovalAction(approvalAction);
+            
             response.setApprovalComment(approval.getApprovalComment());
             response.setApprovalTime(approval.getApprovalTime());
             response.setApprovalLevel(approval.getApprovalLevel());
             response.setIsFinalApproval(approval.getIsFinalApproval());
             
             // 设置前端显示字段
-            response.setLevelName(approval.getApprovalLevel() == 1 ? "一级审批" : "自动审批");
+            String levelName = "第" + getChineseNumber(approval.getApprovalLevel()) + "级审批";
+            response.setLevelName(levelName);
             response.setApprovers(new String[]{approval.getApproverName()});
-            response.setConfirmedApprover(approval.getApproverName());
+            
+            // 如果已审批则显示审批人，否则为空
+            String confirmedApprover = approval.getApprovalAction() != null ? approval.getApproverName() : "";
+            response.setConfirmedApprover(confirmedApprover);
             
             return response;
         }).collect(Collectors.toList());
@@ -1219,7 +1230,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         response.setUsageStatus(booking.getUsageStatus().getDisplayName());
         response.setUrgency(booking.getUrgency() != null ? booking.getUrgency().getDisplayName() : "普通");
         response.setCreateTime(booking.getCreateTime());
-        response.setRemark(booking.getCancelReason());
+        response.setRemark(booking.getReason()); // 修复：使用申请理由作为备注详情显示
         
         // 获取审批步骤信息
         List<BookingDetailResponse.ApprovalStep> approvalSteps = getApprovalSteps(booking.getId());
@@ -1264,24 +1275,80 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         List<BookingApproval> approvals = bookingApprovalRepository
             .findByBookingIdOrderByApprovalLevel(bookingId);
         
-        return approvals.stream().map(approval -> {
+        // 按审批级别分组
+        Map<Integer, List<BookingApproval>> approvalsByLevel = approvals.stream()
+            .collect(Collectors.groupingBy(BookingApproval::getApprovalLevel));
+        
+        List<BookingDetailResponse.ApprovalStep> steps = new ArrayList<>();
+        
+        for (Map.Entry<Integer, List<BookingApproval>> entry : approvalsByLevel.entrySet()) {
+            Integer level = entry.getKey();
+            List<BookingApproval> levelApprovals = entry.getValue();
+            
             BookingDetailResponse.ApprovalStep step = new BookingDetailResponse.ApprovalStep();
-            step.setLevelName("第" + getChineseNumber(approval.getApprovalLevel()) + "级审批");
+            step.setLevelName("第" + getChineseNumber(level) + "级审批");
             
-            // 设置审批人列表（目前只有一个审批人）
-            List<String> approvers = new ArrayList<>();
-            if (StringUtils.hasText(approval.getApproverName())) {
-                approvers.add(approval.getApproverName());
+            // 获取该级别的所有审批人姓名（从配置中获取）
+            List<String> allApprovers = getAllApproversForLevel(bookingId, level);
+            step.setApprovers(allApprovers);
+            
+            // 查找已审批的审批人
+            BookingApproval approvedApproval = levelApprovals.stream()
+                .filter(approval -> approval.getApprovalAction() != null)
+                .findFirst()
+                .orElse(null);
+            
+            if (approvedApproval != null) {
+                step.setConfirmedApprover(approvedApproval.getApproverName());
+                step.setApprovalTime(approvedApproval.getApprovalTime());
+                step.setComment(approvedApproval.getApprovalComment());
+                step.setStatus(approvedApproval.getApprovalAction().name());
+            } else {
+                step.setConfirmedApprover(""); // 未审批则为空
+                step.setApprovalTime(null);
+                step.setComment("");
+                step.setStatus("PENDING");
             }
-            step.setApprovers(approvers);
             
-            step.setConfirmedApprover(approval.getApproverName());
-            step.setApprovalTime(approval.getApprovalTime());
-            step.setComment(approval.getApprovalComment());
-            step.setStatus(approval.getApprovalAction() != null ? approval.getApprovalAction().name() : "PENDING");
-            
-            return step;
-        }).collect(Collectors.toList());
+            steps.add(step);
+        }
+        
+        // 按级别排序
+        steps.sort((s1, s2) -> {
+            Integer level1 = extractLevelFromName(s1.getLevelName());
+            Integer level2 = extractLevelFromName(s2.getLevelName());
+            return level1.compareTo(level2);
+        });
+        
+        return steps;
+    }
+    
+    /**
+     * 获取指定级别的所有审批人姓名
+     */
+    private List<String> getAllApproversForLevel(String bookingId, Integer level) {
+        // 从BookingApproval实体中查找该级别的所有审批人姓名
+        List<BookingApproval> approvals = bookingApprovalRepository
+            .findByBookingIdAndApprovalLevel(bookingId, level);
+        
+        // 提取所有审批人姓名并去重
+        return approvals.stream()
+            .map(BookingApproval::getApproverName)
+            .filter(name -> StringUtils.hasText(name) && !"未知".equals(name))
+            .distinct()
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * 从级别名称中提取级别数字
+     */
+    private Integer extractLevelFromName(String levelName) {
+        if (levelName.contains("一")) return 1;
+        if (levelName.contains("二")) return 2;
+        if (levelName.contains("三")) return 3;
+        if (levelName.contains("四")) return 4;
+        if (levelName.contains("五")) return 5;
+        return 1; // 默认返回1
     }
 
     /**

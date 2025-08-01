@@ -147,127 +147,7 @@ const searchForm = reactive({
   endDate: '',
 })
 
-// mock 预约基础信息数据
-const bookingBaseInfo = {
-  1: {
-    reservationName: '【活动1】的教室借用',
-    applicant: '王鹏',
-    reservationPeriod: '2025.08.24 星期四 第三节次',
-    description: '班级活动使用，需使用投影设备',
-    participants: '张三, 李四',
-    remark: '需要提前布置',
-    approvalStatus: '审批中',
-  },
-  2: {
-    reservationName: '【学生会】定期会议',
-    applicant: '李明',
-    reservationPeriod: '2025.08.25 星期五 第五节次',
-    description: '学生组织定期内部会议',
-    participants: '刘强, 陈伟',
-    remark: '无',
-    approvalStatus: '已通过',
-  },
-  3: {
-    reservationName: '【外聘讲座】演讲厅借用',
-    applicant: '赵敏',
-    reservationPeriod: '2025.08.20 星期一 第九节次',
-    description: '外聘教授举办讲座，要求提前布场',
-    participants: '张三, 李四, 王五',
-    remark: '讲座需准备扩音设备',
-    approvalStatus: '已通过',
-  },
-  4: {
-    reservationName: '【活动八定名】的教室借用',
-    applicant: '王鹏',
-    reservationPeriod: '2025.04.24 第四节次',
-    description: '实验班借用智慧教室用于演示活动',
-    participants: '李四, 王五',
-    remark: '活动已取消',
-    approvalStatus: '已拒绝',
-  },
-}
-
-// mock 审核详情数据
-const auditDetailData = {
-  1: [
-    {
-      levelName: '自动审批',
-      approvers: ['系统'],
-      confirmedApprover: '系统',
-      approvalTime: '2025-07-21 10:12:33',
-      comment: '系统自动通过',
-    },
-    {
-      levelName: '一级审批',
-      approvers: ['王五', '李四'],
-      confirmedApprover: '王五',
-      approvalTime: '2025-07-21 11:20:00',
-      comment: '同意：排课正常，无异议',
-    },
-    {
-      levelName: '二级审批',
-      approvers: ['刘晓旭'],
-      confirmedApprover: '',
-      approvalTime: null,
-      comment: '',
-    },
-  ],
-  2: [
-    {
-      levelName: '自动审批',
-      approvers: ['系统'],
-      confirmedApprover: '系统',
-      approvalTime: '2025-08-21 09:00',
-      comment: '系统自动通过',
-    },
-    {
-      levelName: '一级审批',
-      approvers: ['赵主管', '钱经理'],
-      confirmedApprover: '钱经理',
-      approvalTime: '2025-08-22 12:00',
-      comment: '同意：排课正常，无异议',
-    },
-    {
-      levelName: '二级审批',
-      approvers: ['孙校长'],
-      confirmedApprover: '孙校长',
-      approvalTime: '2025-08-23 15:00',
-      comment: '同意：排课正常，无异议',
-    },
-  ],
-  3: [
-    {
-      levelName: '自动审批',
-      approvers: ['系统'],
-      confirmedApprover: '系统',
-      approvalTime: '2025-08-15 08:00',
-      comment: '系统自动通过',
-    },
-    {
-      levelName: '一级审批',
-      approvers: ['赵主管'],
-      confirmedApprover: '赵主管',
-      approvalTime: '2025-08-16 09:30',
-      comment: '同意：排课正常，无异议',
-    },
-  ],
-  4: [
-    {
-      levelName: '自动审批',
-      approvers: ['系统'],
-      confirmedApprover: '系统',
-      approvalTime: '2025-04-20 09:00',
-      comment: '系统自动通过',
-    },
-    {
-      levelName: '一级审批',
-      approvers: ['赵主管'],
-      confirmedApprover: '赵主管',
-      approvalTime: '2025-04-21 11:00',
-      comment: '拒绝：活动已取消',
-    },
-  ],
-}
+// 不再需要模拟数据，已使用真实后端接口
 
 const auditDialogVisible = ref(false)
 // 当前弹窗展示的预约记录
@@ -484,19 +364,54 @@ async function handleCancelReservation() {
   }
 }
 
-function handleViewAuditDetail(row) {
-  const base = bookingBaseInfo[row.id] || {}
-  currentRecord.value = {
-    reservationTitle: base.reservationName || row.reservationName,
-    userName: base.applicant || row.applicantName,
-    borrowPeriodText: base.reservationPeriod || row.reservationPeriod,
-    borrowDesc: base.description || row.description,
-    participants: base.participants ? base.participants.split(', ') : [],
-    remark: base.remark || '',
-    approvalStatus: base.approvalStatus || row.approvalStatus,
-    approvalSteps: auditDetailData[row.id] || [],
+async function handleViewAuditDetail(row) {
+  try {
+    // 调用查看详情接口，获取完整的预约信息包括审批步骤
+    const response = await getBookingDetail(row.id)
+    if (response.code === 200) {
+      const data = response.data
+      
+      // 转换审批步骤数据格式以适配弹出框组件
+      const approvalSteps = (data.approvalSteps || []).map(step => ({
+        levelName: step.levelName,
+        approvers: step.approvers || [],
+        confirmedApprover: step.confirmedApprover || '',
+        approvalTime: step.approvalTime ? 
+          new Date(step.approvalTime).toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }) : '',
+        comment: step.comment || ''
+      }))
+
+      // 提取参与人姓名
+      const participants = data.participantDetails 
+        ? data.participantDetails.map(p => p.name) 
+        : (data.participants || [])
+
+      currentRecord.value = {
+        reservationTitle: data.bookingName,
+        userName: data.applicantName,
+        borrowPeriodText: data.bookingPeriod,
+        borrowDesc: data.description,
+        participants: participants,
+        remark: data.remark || data.reason || '', // 备注或申请理由
+        approvalStatus: data.approvalStatus,
+        approvalSteps: approvalSteps
+      }
+      auditDialogVisible.value = true
+    } else {
+      ElMessage.error('获取预约详情失败：' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('获取预约详情失败：', error)
+    ElMessage.error('获取预约详情失败，请稍后重试')
   }
-  auditDialogVisible.value = true
 }
 
 function handleDateChange(val) {

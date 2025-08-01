@@ -119,6 +119,8 @@ export const cancelBooking = (id, cancelData) => {
   return request.post(`/api/room-booking/cancel/${id}`, cancelData)
 }
 
+// 审批历史信息已包含在getBookingDetail接口的approvalSteps字段中，无需单独接口
+
 /**
  * 检查房间可用性
  * @param {Object} checkData 检查数据

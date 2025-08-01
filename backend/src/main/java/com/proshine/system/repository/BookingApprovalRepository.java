@@ -44,6 +44,15 @@ public interface BookingApprovalRepository extends JpaRepository<BookingApproval
     List<BookingApproval> findByBookingIdAndCstmIdOrderByApprovalTimeAsc(String bookingId, String cstmId);
     
     /**
+     * 根据预约ID和审批级别查询审批记录
+     * 
+     * @param bookingId 预约ID
+     * @param approvalLevel 审批级别
+     * @return 审批记录列表
+     */
+    List<BookingApproval> findByBookingIdAndApprovalLevel(String bookingId, Integer approvalLevel);
+    
+    /**
      * 根据审批人ID查询待审批记录数量
      * 
      * @param approverId 审批人ID
