@@ -47,6 +47,7 @@
           :booking-data="bookingData"
           @edit="handleEdit"
           @approve="handleApprove"
+          @cancel="handleCancel"
         />
 
         <AllBookings
@@ -317,6 +318,11 @@ export default {
       emit('approve', row)
     }
 
+    const handleCancel = async (row) => {
+      // 取消预约后重新加载数据
+      await loadDataForMenuItem(activeMenuItem.value)
+    }
+
     const handleBookRoom = async (bookingData) => {
       try {
         loading.value = true
@@ -440,6 +446,7 @@ export default {
       filteredRooms,
       handleEdit,
       handleApprove,
+      handleCancel,
       handleBookRoom,
       Search
     }

@@ -200,4 +200,43 @@ public class RoomBookingController {
             return ResponseEntity.fail(e.getMessage());
         }
     }
+
+    /**
+     * 获取预约详情
+     * 根据预约ID获取详细信息
+     * 
+     * @param id 预约ID
+     * @return 预约详情
+     */
+    @GetMapping("/detail/{id}")
+    public ResponseEntity<BookingDetailResponse> getBookingDetail(@PathVariable String id) {
+        try {
+            log.info("==========/api/room-booking/detail/{} [GET]=============id:{}", id, id);
+            BookingDetailResponse result = roomBookingService.getBookingDetail(id);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取预约详情失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 取消预约
+     * 申请人取消自己的预约
+     * 
+     * @param id 预约ID
+     * @param request 取消预约请求参数
+     * @return 取消结果
+     */
+    @PostMapping("/cancel/{id}")
+    public ResponseEntity<String> cancelBooking(@PathVariable String id, @RequestBody CancelBookingRequest request) {
+        try {
+            log.info("==========/api/room-booking/cancel/{} [POST]=============id:{}, request:{}", id, id, request);
+            String result = roomBookingService.cancelBooking(id, request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("取消预约失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
 }

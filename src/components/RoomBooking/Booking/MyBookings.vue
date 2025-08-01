@@ -124,6 +124,8 @@
 <script setup>
 import { reactive, computed, watch, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getBookingDetail, cancelBooking } from '@/api/roomBookingManagement'
 import AuditDetailDialog from './AuditDetailDialog.vue'
 import ReservationDetailDialog from './ReservationDetailDialog.vue'
 
@@ -310,6 +312,7 @@ const pagination = reactive({
 
 const mappedData = computed(() =>
   props.bookingData.map((item) => ({
+    id: item.id, // 添加ID字段映射
     reservationName: item.reservationName || item.bookingName,
     reservationPeriod: item.reservationPeriod || item.bookingTime,
     description: item.description,
@@ -394,26 +397,91 @@ function handleCurrentChange(val) {
   pagination.currentPage = val
 }
 
-function handleView(row) {
-  reservationDetail.value = {
-    userName: row.applicantName,
-    reservationTitle: row.reservationName,
-    borrowTime: row.reservationPeriod,
-    borrowDesc: row.description,
-    participants: (bookingBaseInfo[row.id]?.participants || '张三, 李四, 王五').split(', '),
-    remark: bookingBaseInfo[row.id]?.remark || '',
-    approvalSteps: auditDetailData[row.id] || [],
+async function handleView(row) {
+  try {
+    const response = await getBookingDetail(row.id)
+    if (response.code === 200) {
+      reservationDetail.value = {
+        id: response.data.id,
+        userName: response.data.applicantName,
+        reservationTitle: response.data.bookingName,
+        borrowTime: response.data.bookingPeriod,
+        borrowDesc: response.data.description,
+        participants: response.data.participants || [],
+        remark: response.data.remark || '',
+        approvalSteps: response.data.approvalSteps || [],
+      }
+      detailDialogVisible.value = true
+    } else {
+      ElMessage.error('获取预约详情失败：' + response.message)
+    }
+  } catch (error) {
+    console.error('获取预约详情失败：', error)
+    ElMessage.error('获取预约详情失败')
   }
-  detailDialogVisible.value = true
 }
 
-function handleCancel(row) {
-  emit('cancel', row)
+async function handleCancel(row) {
+  try {
+    const reason = await ElMessageBox.prompt('请输入取消原因：', '取消预约', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '取消',
+      inputValidator: (value) => {
+        if (!value || value.trim() === '') {
+          return '取消原因不能为空'
+        }
+        return true
+      }
+    })
+    
+    const response = await cancelBooking(row.id, {
+      reason: reason.value
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success('预约已成功取消')
+      emit('cancel', row) // 通知父组件刷新列表
+    } else {
+      ElMessage.error('取消预约失败：' + response.message)
+    }
+  } catch (error) {
+    if (error !== 'cancel') { // 用户没有点击取消按钮
+      console.error('取消预约失败：', error)
+      ElMessage.error('取消预约失败')
+    }
+  }
 }
 
-function handleCancelReservation() {
-  emit('cancel', reservationDetail.value)
-  detailDialogVisible.value = false
+async function handleCancelReservation() {
+  try {
+    const reason = await ElMessageBox.prompt('请输入取消原因：', '取消预约', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '取消',
+      inputValidator: (value) => {
+        if (!value || value.trim() === '') {
+          return '取消原因不能为空'
+        }
+        return true
+      }
+    })
+    
+    const response = await cancelBooking(reservationDetail.value.id, {
+      reason: reason.value
+    })
+    
+    if (response.code === 200) {
+      ElMessage.success('预约已成功取消')
+      emit('cancel', reservationDetail.value) // 通知父组件刷新列表
+      detailDialogVisible.value = false
+    } else {
+      ElMessage.error('取消预约失败：' + response.message)
+    }
+  } catch (error) {
+    if (error !== 'cancel') { // 用户没有点击取消按钮
+      console.error('取消预约失败：', error)
+      ElMessage.error('取消预约失败')
+    }
+  }
 }
 
 function handleViewAuditDetail(row) {

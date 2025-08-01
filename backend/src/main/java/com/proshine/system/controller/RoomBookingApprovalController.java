@@ -84,12 +84,12 @@ public class RoomBookingApprovalController {
     }
 
     /**
-     * 获取预约详情
+     * 获取预约详情（审批视图）
      * 
      * @param bookingId 预约ID
      * @return 预约详情
      */
-    @GetMapping("/detail/{bookingId}")
+    @GetMapping("/approval/detail/{bookingId}")
     public ResponseEntity<BookingDetailResponse> getBookingDetail(@PathVariable String bookingId) {
         try {
             log.info("获取预约详情，预约ID: {}", bookingId);

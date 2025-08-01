@@ -119,6 +119,16 @@ public class BookingDetailResponse {
     private List<PersonDetails> approverDetails;
     
     /**
+     * 审批步骤列表
+     */
+    private List<ApprovalStep> approvalSteps;
+    
+    /**
+     * 备注信息
+     */
+    private String remark;
+    
+    /**
      * 人员详细信息内部类
      */
     @Data
@@ -129,5 +139,18 @@ public class BookingDetailResponse {
         private String position;
         private String phone;
         private String email;
+    }
+    
+    /**
+     * 审批步骤内部类
+     */
+    @Data
+    public static class ApprovalStep {
+        private String levelName;
+        private List<String> approvers;
+        private String confirmedApprover;
+        private LocalDateTime approvalTime;
+        private String comment;
+        private String status;
     }
 }

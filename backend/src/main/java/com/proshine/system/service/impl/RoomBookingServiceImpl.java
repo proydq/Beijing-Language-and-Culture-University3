@@ -1042,6 +1042,53 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         return convertToBookingDetailResponse(booking);
     }
 
+    @Override
+    @Transactional
+    public String cancelBooking(String bookingId, CancelBookingRequest request) {
+        String currentUserId = SecurityUtil.getCurrentUserId();
+        String customerId = SecurityUtil.getCustomerId();
+        
+        // 查找预约记录
+        RoomBooking booking = roomBookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("预约记录不存在"));
+        
+        // 验证客户域
+        if (!customerId.equals(booking.getCstmId())) {
+            throw new RuntimeException("无权限取消此预约");
+        }
+        
+        // 验证申请人权限（只有申请人本人可以取消）
+        if (!currentUserId.equals(booking.getApplicantId())) {
+            throw new RuntimeException("只有申请人本人可以取消预约");
+        }
+        
+        // 验证预约状态（只有审核中或已通过且未开始的预约可以取消）
+        if (booking.getApprovalStatus() == RoomBooking.ApprovalStatus.REJECTED ||
+            booking.getApprovalStatus() == RoomBooking.ApprovalStatus.CANCELLED) {
+            throw new RuntimeException("该预约已被拒绝或已取消，无法再次取消");
+        }
+        
+        // 验证使用状态（已开始或已结束的预约不能取消）
+        if (booking.getUsageStatus() == RoomBooking.UsageStatus.IN_PROGRESS ||
+            booking.getUsageStatus() == RoomBooking.UsageStatus.COMPLETED) {
+            throw new RuntimeException("预约已开始或已结束，无法取消");
+        }
+        
+        // 更新预约状态为已取消
+        booking.setApprovalStatus(RoomBooking.ApprovalStatus.CANCELLED);
+        booking.setUsageStatus(RoomBooking.UsageStatus.CANCELLED);
+        booking.setLastUpdateTime(LocalDateTime.now());
+        booking.setCancelTime(LocalDateTime.now());
+        booking.setCancelReason(request.getReason());
+        
+        // 保存更新
+        roomBookingRepository.save(booking);
+        
+        log.info("用户 {} 取消了预约 {}，原因：{}", currentUserId, bookingId, request.getReason());
+        
+        return "预约已成功取消";
+    }
+
     /**
      * 转换预约实体为审批列表响应DTO
      */
@@ -1164,6 +1211,11 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         response.setUsageStatus(booking.getUsageStatus().getDisplayName());
         response.setUrgency(booking.getUrgency() != null ? booking.getUrgency().getDisplayName() : "普通");
         response.setCreateTime(booking.getCreateTime());
+        response.setRemark(booking.getCancelReason());
+        
+        // 获取审批步骤信息
+        List<BookingDetailResponse.ApprovalStep> approvalSteps = getApprovalSteps(booking.getId());
+        response.setApprovalSteps(approvalSteps);
         
         // 解析参与人和审批人详情
         try {
@@ -1195,5 +1247,51 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         }
         
         return response;
+    }
+
+    /**
+     * 获取审批步骤信息
+     */
+    private List<BookingDetailResponse.ApprovalStep> getApprovalSteps(String bookingId) {
+        List<BookingApproval> approvals = bookingApprovalRepository
+            .findByBookingIdOrderByApprovalLevel(bookingId);
+        
+        return approvals.stream().map(approval -> {
+            BookingDetailResponse.ApprovalStep step = new BookingDetailResponse.ApprovalStep();
+            step.setLevelName("第" + getChineseNumber(approval.getApprovalLevel()) + "级审批");
+            
+            // 设置审批人列表（目前只有一个审批人）
+            List<String> approvers = new ArrayList<>();
+            if (StringUtils.hasText(approval.getApproverName())) {
+                approvers.add(approval.getApproverName());
+            }
+            step.setApprovers(approvers);
+            
+            step.setConfirmedApprover(approval.getApproverName());
+            step.setApprovalTime(approval.getApprovalTime());
+            step.setComment(approval.getApprovalComment());
+            step.setStatus(approval.getApprovalAction() != null ? approval.getApprovalAction().name() : "PENDING");
+            
+            return step;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 将数字转换为中文数字
+     */
+    private String getChineseNumber(Integer number) {
+        if (number == null) return "一";
+        String[] chineseNumbers = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"};
+        if (number <= 10) {
+            return chineseNumbers[number];
+        } else if (number < 20) {
+            return "十" + (number == 10 ? "" : chineseNumbers[number - 10]);
+        } else if (number < 100) {
+            int tens = number / 10;
+            int ones = number % 10;
+            return chineseNumbers[tens] + "十" + (ones == 0 ? "" : chineseNumbers[ones]);
+        } else {
+            return number.toString();
+        }
     }
 }

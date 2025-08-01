@@ -183,6 +183,7 @@ com\proshine\system\dto\BatchUpdateContinuousBookingRequest.class
 com\proshine\system\dto\RoomWeeklyScheduleRequest.class
 com\proshine\system\service\TitleService.class
 com\proshine\system\dto\ApprovalListRequest.class
+com\proshine\system\dto\CancelBookingRequest.class
 com\proshine\system\dto\BookingTimeRuleDto.class
 com\proshine\system\entity\ViolationSetting.class
 com\proshine\system\exception\RoomException$RoomImportException.class
@@ -231,6 +232,7 @@ com\proshine\system\repository\RoomRepository.class
 com\proshine\system\repository\ViolationSettingRepository.class
 com\proshine\system\controller\RoomBookingController.class
 com\proshine\system\service\SysUserService.class
+com\proshine\system\dto\BookingDetailResponse$ApprovalStep.class
 com\proshine\system\dto\SearchPositionDTO.class
 com\proshine\system\service\BookingTimeRuleService.class
 com\proshine\system\service\BookingTimeValidationService.class

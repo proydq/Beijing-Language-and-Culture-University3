@@ -129,4 +129,13 @@ public interface RoomBookingService {
      * @return 预约详情
      */
     BookingDetailResponse getBookingDetail(String bookingId);
+
+    /**
+     * 取消预约
+     * 
+     * @param bookingId 预约ID
+     * @param request 取消预约请求参数
+     * @return 操作结果消息
+     */
+    String cancelBooking(String bookingId, CancelBookingRequest request);
 }
