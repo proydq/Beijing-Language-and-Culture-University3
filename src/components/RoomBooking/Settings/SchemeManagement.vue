@@ -378,7 +378,7 @@
               class="approval-level-item"
             >
               <div class="level-header">
-                <span class="level-title">第{{ level.level === 1 ? '一' : level.level === 2 ? '二' : '三' }}级审批人：</span>
+                <span class="level-title">第{{ numberToChinese(level.level) }}级审批人：</span>
                 <div class="level-actions">
                   <el-button
                     type="primary"
@@ -952,8 +952,14 @@ export default {
           // 设置表格选中状态
           setTimeout(() => {
             if (personnelTableRef.value) {
+              // 先清除所有选中状态
+              personnelTableRef.value.clearSelection()
+              
+              // 然后根据已选择的人员设置选中状态
               selectedPersonnel.value.forEach(person => {
-                const matchedPerson = personnelList.value.find(p => p.id === person.id)
+                const matchedPerson = personnelList.value.find(p => 
+                  p.id === person.id || p.name === person.name
+                )
                 if (matchedPerson) {
                   personnelTableRef.value.toggleRowSelection(matchedPerson, true)
                 }
@@ -1019,6 +1025,10 @@ export default {
 
     // 关闭人员选择弹出框
     const handlePersonnelDialogClose = () => {
+      // 清除表格选中状态
+      if (personnelTableRef.value) {
+        personnelTableRef.value.clearSelection()
+      }
       personnelDialogVisible.value = false
       selectedPersonnel.value = []
     }
@@ -1222,10 +1232,12 @@ export default {
     const addBatchApprovalLevel = () => {
       const maxLevel = Math.max(...batchApprovalLevels.value.map(item => item.level))
       const newLevel = maxLevel + 1
+      
       batchApprovalLevels.value.push({
         level: newLevel,
         approvers: '',
-        approverIds: ''
+        approverIds: '',
+        disabled: false // 新增的级别都是可编辑的
       })
     }
 
@@ -1245,34 +1257,41 @@ export default {
     // 批量显示人员选择弹出框
     const showBatchPersonnelDialog = (levelIndex) => {
       currentApprovalLevelIndex.value = levelIndex
+      
+      // 重置搜索条件
+      personnelSearchForm.value = {
+        name: '',
+        department: ''
+      }
+      personnelPagination.value.currentPage = 1
+      
+      // 先清空选择
+      selectedPersonnel.value = []
+      
       // 解析当前已选择的人员
       const currentApprovers = batchApprovalLevels.value[levelIndex].approvers
       if (currentApprovers) {
         const approverNames = currentApprovers.split('、')
-        selectedPersonnel.value = personnelList.value.filter(person =>
-          approverNames.includes(person.name)
-        )
-        // 设置表格选中状态
-        setTimeout(() => {
-          if (personnelTableRef.value) {
-            selectedPersonnel.value.forEach(person => {
-              personnelTableRef.value.toggleRowSelection(person, true)
-            })
-          }
-        }, 100)
-      } else {
-        selectedPersonnel.value = []
+        // 保存已选择的人员名称，等待数据加载后再设置选中状态
+        selectedPersonnel.value = approverNames.map(name => ({ name }))
       }
+      
+      // 加载人员数据
+      searchPersonnelData()
+      
       personnelDialogVisible.value = true
     }
 
     // 监听批量配置中是否需要预约自选人员审批的变化
      watch(() => batchPermissionForm.value.allowBookerSelectApprover, (newValue) => {
-       // 无论选择什么，都保持第一级审批但不可设置审批人，从第二级开始可以设置
-       batchApprovalLevels.value = [
-         { level: 1, approvers: '', approverIds: '', disabled: true }, // 第一级审批，不可设置审批人
-         { level: 2, approvers: '', approverIds: '' }
-       ]
+       // 只在初始化或切换时重置，如果已经有多个级别则保留
+       if (batchApprovalLevels.value.length <= 2) {
+         // 无论选择什么，都保持第一级审批但不可设置审批人，从第二级开始可以设置
+         batchApprovalLevels.value = [
+           { level: 1, approvers: '', approverIds: '', disabled: true }, // 第一级审批，不可设置审批人
+           { level: 2, approvers: '', approverIds: '' }
+         ]
+       }
      })
 
      // 从批量审批级别中删除指定审批人
@@ -1282,6 +1301,23 @@ export default {
        approvers.splice(approverIndex, 1)
        level.approvers = approvers.join('、')
      }
+
+    // 数字转中文
+    const numberToChinese = (num) => {
+      const chineseNumbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+      if (num <= 10) {
+        return chineseNumbers[num]
+      } else if (num < 20) {
+        return '十' + (num === 10 ? '' : chineseNumbers[num - 10])
+      } else if (num < 100) {
+        const tens = Math.floor(num / 10)
+        const ones = num % 10
+        return chineseNumbers[tens] + '十' + (ones === 0 ? '' : chineseNumbers[ones])
+      } else {
+        // 对于更大的数字，直接返回数字
+        return num.toString()
+      }
+    }
 
     // 加载楼栋架构数据
     const loadBuildingTree = async () => {
@@ -1425,7 +1461,8 @@ export default {
       addBatchApprovalLevel,
       removeBatchApprovalLevel,
       showBatchPersonnelDialog,
-      removeApproverFromBatchLevel
+      removeApproverFromBatchLevel,
+      numberToChinese
     }
   }
 }
