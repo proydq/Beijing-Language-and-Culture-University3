@@ -579,21 +579,25 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             for (ClassroomApprovalLevel level : approvalLevels) {
                 if (level.getLevelNumber() > 1) {
                     // 使用预设的审批人
-                    String[] approverIds = level.getApproverIds().split(",");
-                    String[] approverNames = level.getApproverNames().split(",");
-                    
+                    String[] approverIdsArray = Optional.ofNullable(level.getApproverIds())
+                        .orElse("").split(",");
+                    String[] approverNamesArray = Optional.ofNullable(level.getApproverNames())
+                        .orElse("").split(",");
+
                     // 为每个预设审批人创建审批记录
-                    for (int i = 0; i < approverIds.length; i++) {
+                    for (int i = 0; i < approverIdsArray.length; i++) {
                         BookingApproval nextApproval = new BookingApproval();
                         nextApproval.setCstmId(customerId);
                         nextApproval.setBookingId(booking.getId());
                         nextApproval.setApprovalLevel(level.getLevelNumber());
                         nextApproval.setIsFinalApproval(level.getLevelNumber().equals(maxLevel));
-                        
-                        nextApproval.setApproverId(approverIds[i].trim());
-                        nextApproval.setApproverName(i < approverNames.length ? approverNames[i].trim() : "未知");
+
+                        nextApproval.setApproverId(approverIdsArray[i].trim());
+                        nextApproval.setApproverName(i < approverNamesArray.length
+                            ? approverNamesArray[i].trim()
+                            : "未知");
                         nextApproval.setApproverType("预设审批人");
-                        
+
                         bookingApprovalRepository.save(nextApproval);
                     }
                 }
@@ -603,21 +607,25 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             for (ClassroomApprovalLevel level : approvalLevels) {
                 if (level.getLevelNumber() >= 2) {
                     // 使用预设的审批人
-                    String[] approverIds = level.getApproverIds().split(",");
-                    String[] approverNames = level.getApproverNames().split(",");
-                    
+                    String[] approverIdsArray = Optional.ofNullable(level.getApproverIds())
+                        .orElse("").split(",");
+                    String[] approverNamesArray = Optional.ofNullable(level.getApproverNames())
+                        .orElse("").split(",");
+
                     // 为每个预设审批人创建审批记录
-                    for (int i = 0; i < approverIds.length; i++) {
+                    for (int i = 0; i < approverIdsArray.length; i++) {
                         BookingApproval approval = new BookingApproval();
                         approval.setCstmId(customerId);
                         approval.setBookingId(booking.getId());
                         approval.setApprovalLevel(level.getLevelNumber());
                         approval.setIsFinalApproval(level.getLevelNumber().equals(maxLevel));
-                        
-                        approval.setApproverId(approverIds[i].trim());
-                        approval.setApproverName(i < approverNames.length ? approverNames[i].trim() : "未知");
+
+                        approval.setApproverId(approverIdsArray[i].trim());
+                        approval.setApproverName(i < approverNamesArray.length
+                            ? approverNamesArray[i].trim()
+                            : "未知");
                         approval.setApproverType("预设审批人");
-                        
+
                         bookingApprovalRepository.save(approval);
                     }
                 }
