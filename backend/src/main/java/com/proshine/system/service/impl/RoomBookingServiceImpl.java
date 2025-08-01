@@ -762,7 +762,6 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     @Override
     public ResponsePageDataEntity<ApprovalListResponse> getAllApprovals(ApprovalListRequest request) {
         String customerId = SecurityUtil.getCustomerId();
-        String currentUserId = SecurityUtil.getCurrentUserId();
         
         // 构建分页参数
         Pageable pageable = PageRequest.of(
@@ -771,47 +770,12 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             Sort.by(Sort.Direction.DESC, "createTime")
         );
         
-        // 先查询当前用户审批过的记录（审批时间不为空表示已审批）
-        Specification<BookingApproval> approvalSpec = (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            
-            // 客户域ID过滤
-            predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
-            
-            // 当前用户ID过滤
-            predicates.add(criteriaBuilder.equal(root.get("approverId"), currentUserId));
-            
-            // 审批时间不为空（表示已审批）
-            predicates.add(criteriaBuilder.isNotNull(root.get("approvalTime")));
-            
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-        
-        // 查询当前用户审批过的所有审批记录
-        List<BookingApproval> userApprovals = bookingApprovalRepository.findAll(approvalSpec);
-        
-        // 提取预约ID列表
-        Set<String> bookingIds = userApprovals.stream()
-            .map(BookingApproval::getBookingId)
-            .collect(Collectors.toSet());
-        
-        if (bookingIds.isEmpty()) {
-            // 如果当前用户没有审批过任何记录，返回空结果
-            ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
-            result.setRows(new ArrayList<>());
-            result.setTotal(0L);
-            return result;
-        }
-        
-        // 根据预约ID查询对应的RoomBooking记录
+        // 修复：查询所有的预约记录，而不是只查询当前用户审批过的记录
         Specification<RoomBooking> bookingSpec = (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             
             // 客户域ID过滤
             predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
-            
-            // 预约ID在用户审批过的列表中
-            predicates.add(root.get("id").in(bookingIds));
             
             // 审批状态过滤
             if (StringUtils.hasText(request.getApprovalStatus())) {
@@ -1351,8 +1315,186 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         return 1; // 默认返回1
     }
 
+    @Override
+    public ResponsePageDataEntity<ApprovalListResponse> getApprovedApprovals(ApprovalListRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        String currentUserId = SecurityUtil.getCurrentUserId();
+        
+        // 查询当前用户已通过的审批记录
+        List<BookingApproval> approvedApprovals = bookingApprovalRepository
+            .findByApproverIdAndCstmIdAndApprovalActionOrderByApprovalTimeDesc(
+                currentUserId, customerId, BookingApproval.ApprovalAction.APPROVE);
+        
+        // 获取所有相关的预约ID
+        List<String> bookingIds = approvedApprovals.stream()
+            .map(BookingApproval::getBookingId)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        if (bookingIds.isEmpty()) {
+            ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+            result.setRows(new ArrayList<>());
+            result.setTotal(0L);
+            return result;
+        }
+        
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(
+            request.getPageNumber() - 1, 
+            request.getPageSize(), 
+            Sort.by(Sort.Direction.DESC, "createTime")
+        );
+        
+        // 查询对应的预约记录
+        Specification<RoomBooking> bookingSpec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // 客户域ID过滤
+            predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
+            
+            // 预约ID过滤（只查询当前用户审批过的预约）
+            predicates.add(root.get("id").in(bookingIds));
+            
+            // 预约名称模糊搜索
+            if (StringUtils.hasText(request.getReservationName())) {
+                predicates.add(criteriaBuilder.like(root.get("bookingName"), "%" + request.getReservationName() + "%"));
+            }
+            
+            // 申请人姓名模糊搜索
+            if (StringUtils.hasText(request.getApplicantName())) {
+                predicates.add(criteriaBuilder.like(root.get("applicantName"), "%" + request.getApplicantName() + "%"));
+            }
+            
+            // 日期范围过滤
+            if (StringUtils.hasText(request.getStartDate())) {
+                try {
+                    LocalDateTime startDateTime = LocalDate.parse(request.getStartDate()).atTime(0, 0, 0);
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), startDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid start date format: {}", request.getStartDate());
+                }
+            }
+            
+            if (StringUtils.hasText(request.getEndDate())) {
+                try {
+                    LocalDateTime endDateTime = LocalDate.parse(request.getEndDate()).atTime(23, 59, 59);
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createTime"), endDateTime));
+                } catch (Exception e) {
+                    log.warn("Invalid end date format: {}", request.getEndDate());
+                }
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        // 执行分页查询
+        Page<RoomBooking> page = roomBookingRepository.findAll(bookingSpec, pageable);
+        
+        // 转换为响应DTO
+        List<ApprovalListResponse> responseList = page.getContent().stream()
+            .map(this::convertToApprovalListResponse)
+            .collect(Collectors.toList());
+        
+        ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+        result.setRows(responseList);
+        result.setTotal(page.getTotalElements());
+        return result;
+    }
+
+    @Override
+    public ResponsePageDataEntity<ApprovalListResponse> getRejectedApprovals(ApprovalListRequest request) {
+        String customerId = SecurityUtil.getCustomerId();
+        String currentUserId = SecurityUtil.getCurrentUserId();
+        
+        // 查询当前用户已拒绝的审批记录
+        List<BookingApproval> rejectedApprovals = bookingApprovalRepository
+            .findByApproverIdAndCstmIdAndApprovalActionOrderByApprovalTimeDesc(
+                currentUserId, customerId, BookingApproval.ApprovalAction.REJECT);
+        
+        // 获取所有相关的预约ID
+        List<String> bookingIds = rejectedApprovals.stream()
+            .map(BookingApproval::getBookingId)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        if (bookingIds.isEmpty()) {
+            ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+            result.setRows(new ArrayList<>());
+            result.setTotal(0L);
+            return result;
+        }
+        
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(
+            request.getPageNumber() - 1, 
+            request.getPageSize(), 
+            Sort.by(Sort.Direction.DESC, "createTime")
+        );
+        
+        // 查询对应的预约记录
+        Specification<RoomBooking> bookingSpec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // 客户域ID过滤
+            predicates.add(criteriaBuilder.equal(root.get("cstmId"), customerId));
+            
+            // 预约ID过滤（只查询当前用户审批过的预约）
+            predicates.add(root.get("id").in(bookingIds));
+            
+            // 预约名称模糊搜索
+            if (StringUtils.hasText(request.getReservationName())) {
+                predicates.add(criteriaBuilder.like(root.get("bookingName"), "%" + request.getReservationName() + "%"));
+            }
+            
+            // 申请人姓名模糊搜索
+            if (StringUtils.hasText(request.getApplicantName())) {
+                predicates.add(criteriaBuilder.like(root.get("applicantName"), "%" + request.getApplicantName() + "%"));
+            }
+            
+            // 日期范围过滤
+            if (StringUtils.hasText(request.getStartDate())) {
+                try {
+                    LocalDate startDate = LocalDate.parse(request.getStartDate());
+                    predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                        criteriaBuilder.function("DATE", LocalDate.class, root.get("startTime")), 
+                        startDate
+                    ));
+                } catch (Exception e) {
+                    log.warn("Invalid start date format: {}", request.getStartDate());
+                }
+            }
+            
+            if (StringUtils.hasText(request.getEndDate())) {
+                try {
+                    LocalDate endDate = LocalDate.parse(request.getEndDate());
+                    predicates.add(criteriaBuilder.lessThanOrEqualTo(
+                        criteriaBuilder.function("DATE", LocalDate.class, root.get("endTime")), 
+                        endDate
+                    ));
+                } catch (Exception e) {
+                    log.warn("Invalid end date format: {}", request.getEndDate());
+                }
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        Page<RoomBooking> bookingPage = roomBookingRepository.findAll(bookingSpec, pageable);
+        
+        // 转换为响应对象
+        List<ApprovalListResponse> responseList = bookingPage.getContent().stream()
+            .map(this::convertToApprovalListResponse)
+            .collect(Collectors.toList());
+        
+        ResponsePageDataEntity<ApprovalListResponse> result = new ResponsePageDataEntity<>();
+        result.setRows(responseList);
+        result.setTotal(bookingPage.getTotalElements());
+        
+        return result;
+    }
+    
     /**
-     * 将数字转换为中文数字
+     * 获取中文数字
      */
     private String getChineseNumber(Integer number) {
         if (number == null) return "一";

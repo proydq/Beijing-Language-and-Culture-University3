@@ -34,6 +34,7 @@
         <ApprovalTable
           :approval-data="filteredApprovalData"
           :loading="loading"
+          :view-only-mode="activeApprovalType === 'approved' || activeApprovalType === 'rejected'"
           @review="openReview"
           @view="openDetail"
         />
@@ -76,9 +77,11 @@ import Sidebar from '../Layout/Sidebar.vue'
 import ApprovalTable from './ApprovalTable.vue'
 import ApprovalDialog from './ApprovalDialog.vue'
 import ReservationDetailDialog from '../Booking/ReservationDetailDialog.vue'
-import { 
-  getPendingApprovals, 
-  getAllApprovals, 
+import {
+  getPendingApprovals,
+  getAllApprovals,
+  getApprovedApprovals,
+  getRejectedApprovals,
   approveBooking,
   getBookingDetail,
   getApprovalHistory,
@@ -226,7 +229,7 @@ export default {
     const loadApprovalData = async () => {
       try {
         loading.value = true
-        
+
         // 构建请求参数
         const params = {
           pageNumber: pagination.currentPage,
@@ -236,11 +239,17 @@ export default {
           startDate: searchForm.dateRange.length > 0 ? searchForm.dateRange[0] : undefined,
           endDate: searchForm.dateRange.length > 1 ? searchForm.dateRange[1] : undefined
         }
-        
+
         let response
         if (activeApprovalType.value === 'pending') {
           // 获取待审批列表
           response = await getPendingApprovals(params)
+        } else if (activeApprovalType.value === 'approved') {
+          // 获取已通过审批列表（当前用户审批通过的记录）
+          response = await getApprovedApprovals(params)
+        } else if (activeApprovalType.value === 'rejected') {
+          // 获取已拒绝审批列表（当前用户审批拒绝的记录）
+          response = await getRejectedApprovals(params)
         } else {
           // 获取全部审批列表
           const statusMap = {
@@ -252,7 +261,7 @@ export default {
           params.approvalStatus = statusMap[activeApprovalType.value]
           response = await getAllApprovals(params)
         }
-        
+
         if (response.code === 200) {
           approvalData.value = response.data.rows || []
           pagination.total = response.data.total || 0
@@ -270,14 +279,14 @@ export default {
     const handleApprovalConfirm = async (result) => {
       try {
         loading.value = true
-        
+
         const approvalRequest = {
           action: result.result, // APPROVED 或 REJECTED
           comment: result.comment
         }
-        
+
         const response = await approveBooking(currentApproval.value.id, approvalRequest)
-        
+
         if (response.code === 200) {
           ElMessage.success('审批操作成功')
           // 重新加载数据
@@ -303,113 +312,34 @@ export default {
     const detailDialogVisible = ref(false)
     const reservationDetail = ref({})
 
-    const bookingBaseInfo = {
-      1: {
-        reservationName: '【活动1】的教室借用',
-        applicant: '王鹏',
-        reservationPeriod: '2025.08.24 星期四 第三节次',
-        description: '班级活动使用，需使用投影设备',
-        participants: '张三, 李四',
-        remark: '需要提前布置',
-      },
-      2: {
-        reservationName: '【学生会】定期会议',
-        applicant: '李明',
-        reservationPeriod: '2025.08.25 星期五 第五节次',
-        description: '学生组织定期内部会议',
-        participants: '刘强, 陈伟',
-        remark: '无',
-      },
-      3: {
-        reservationName: '【外聘讲座】演讲厅借用',
-        applicant: '赵敏',
-        reservationPeriod: '2025.08.20 星期一 第九节次',
-        description: '外聘教授举办讲座，要求提前布场',
-        participants: '张三, 李四, 王五',
-        remark: '讲座需准备扩音设备',
-      },
-      4: {
-        reservationName: '【活动八定名】的教室借用',
-        applicant: '王鹏',
-        reservationPeriod: '2025.04.24 第四节次',
-        description: '实验班借用智慧教室用于演示活动',
-        participants: '李四, 王五',
-        remark: '活动已取消',
-      },
-    }
 
-    const auditDetailData = {
-      1: [
-        {
-          levelName: '自动审批',
-          approvers: ['系统'],
-          confirmedApprover: '系统',
-          approvalTime: '2025-07-21 10:12:33',
-          comment: '系统自动通过',
-        },
-      ],
-      2: [
-        {
-          levelName: '自动审批',
-          approvers: ['系统'],
-          confirmedApprover: '系统',
-          approvalTime: '2025-08-21 09:00',
-          comment: '系统自动通过',
-        },
-        {
-          levelName: '一级审批',
-          approvers: ['赵主管', '钱经理'],
-          confirmedApprover: '钱经理',
-          approvalTime: '2025-08-22 12:00',
-          comment: '同意：排课正常，无异议',
-        },
-      ],
-      3: [
-        {
-          levelName: '自动审批',
-          approvers: ['系统'],
-          confirmedApprover: '系统',
-          approvalTime: '2025-08-15 08:00',
-          comment: '系统自动通过',
-        },
-        {
-          levelName: '一级审批',
-          approvers: ['赵主管'],
-          confirmedApprover: '赵主管',
-          approvalTime: '2025-08-16 09:30',
-          comment: '同意：排课正常，无异议',
-        },
-      ],
-      4: [
-        {
-          levelName: '自动审批',
-          approvers: ['系统'],
-          confirmedApprover: '系统',
-          approvalTime: '2025-04-20 09:00',
-          comment: '系统自动通过',
-        },
-        {
-          levelName: '一级审批',
-          approvers: ['赵主管'],
-          confirmedApprover: '赵主管',
-          approvalTime: '2025-04-21 11:00',
-          comment: '拒绝：活动已取消',
-        },
-      ],
-    }
 
-    const openDetail = (row) => {
-      const base = bookingBaseInfo[row.id] || {}
-      reservationDetail.value = {
-        userName: base.applicant || row.applicant,
-        reservationTitle: base.reservationName || row.bookingName,
-        borrowTime: base.reservationPeriod || row.bookingTime,
-        borrowDesc: base.description || row.reason,
-        participants: base.participants ? base.participants.split(', ') : [],
-        remark: base.remark || '',
-        approvalSteps: auditDetailData[row.id] || [],
+    const openDetail = async (row) => {
+      try {
+        loading.value = true
+        const response = await getBookingDetail(row.id)
+        if (response.code === 200) {
+          const detail = response.data
+          reservationDetail.value = {
+            id: detail.id,
+            userName: detail.applicantName || row.applicant,
+            reservationTitle: detail.bookingName || row.bookingName,
+            borrowTime: detail.bookingPeriod || row.bookingTime,
+            borrowDesc: detail.description || row.reason,
+            participants: detail.participants || [],
+            remark: detail.remark || '',
+            approvalSteps: detail.approvalSteps || [],
+          }
+          detailDialogVisible.value = true
+        } else {
+          ElMessage.error(response.message || '获取预约详情失败')
+        }
+      } catch (error) {
+        console.error('获取预约详情失败：', error)
+        ElMessage.error('获取预约详情失败')
+      } finally {
+        loading.value = false
       }
-      detailDialogVisible.value = true
     }
 
     onMounted(async () => {

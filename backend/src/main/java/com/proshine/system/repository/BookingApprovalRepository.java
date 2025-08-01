@@ -61,4 +61,15 @@ public interface BookingApprovalRepository extends JpaRepository<BookingApproval
      */
     @Query("SELECT COUNT(ba) FROM BookingApproval ba WHERE ba.approverId = :approverId AND ba.cstmId = :cstmId")
     Long countPendingApprovalsByApprover(@Param("approverId") String approverId, @Param("cstmId") String cstmId);
+    
+    /**
+     * 根据审批人ID和审批动作查询审批记录
+     * 
+     * @param approverId 审批人ID
+     * @param cstmId 客户域ID
+     * @param approvalAction 审批动作
+     * @return 审批记录列表
+     */
+    List<BookingApproval> findByApproverIdAndCstmIdAndApprovalActionOrderByApprovalTimeDesc(
+            String approverId, String cstmId, BookingApproval.ApprovalAction approvalAction);
 }

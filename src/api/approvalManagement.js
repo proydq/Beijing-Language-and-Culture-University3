@@ -34,6 +34,26 @@ export const getAllApprovals = (params) => {
 }
 
 /**
+ * 获取已通过审批列表
+ * @param {Object} params 查询参数
+ * @param {Number} params.pageNumber 页码
+ * @param {Number} params.pageSize 页大小
+ * @param {String} params.reservationName 预约名称（可选）
+ * @param {String} params.applicantName 申请人姓名（可选）
+ * @param {String} params.startDate 开始日期（可选）
+ * @param {String} params.endDate 结束日期（可选）
+ * @returns {Promise}
+ */// 获取已通过审批列表
+export const getApprovedApprovals = (params) => {
+  return request.post('/api/room-booking/approvals/approved', params)
+}
+
+// 获取已拒绝审批列表
+export const getRejectedApprovals = (params) => {
+  return request.post('/api/room-booking/approvals/rejected', params)
+}
+
+/**
  * 审批预约
  * @param {String} bookingId 预约ID
  * @param {Object} approvalData 审批数据
@@ -80,7 +100,7 @@ export const batchApprove = (batchData) => {
 // 审批状态映射
 export const APPROVAL_STATUS_MAP = {
   PENDING: '待审批',
-  APPROVED: '已通过', 
+  APPROVED: '已通过',
   REJECTED: '已拒绝',
   CANCELLED: '已取消'
 }

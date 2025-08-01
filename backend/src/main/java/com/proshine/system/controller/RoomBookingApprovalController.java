@@ -136,4 +136,42 @@ public class RoomBookingApprovalController {
             return ResponseEntity.fail("批量审批失败: " + e.getMessage());
         }
     }
+    
+    /**
+     * 获取已通过审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 已通过审批列表
+     */
+    @PostMapping("/approvals/approved")
+    public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getApprovedApprovals(
+            @RequestBody ApprovalListRequest request) {
+        try {
+            log.info("获取已通过审批列表，请求参数: {}", request);
+            ResponsePageDataEntity<ApprovalListResponse> result = roomBookingService.getApprovedApprovals(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取已通过审批列表失败", e);
+            return ResponseEntity.fail("获取已通过审批列表失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取已拒绝审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 已拒绝审批列表
+     */
+    @PostMapping("/approvals/rejected")
+    public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getRejectedApprovals(
+            @RequestBody ApprovalListRequest request) {
+        try {
+            log.info("获取已拒绝审批列表，请求参数: {}", request);
+            ResponsePageDataEntity<ApprovalListResponse> result = roomBookingService.getRejectedApprovals(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取已拒绝审批列表失败", e);
+            return ResponseEntity.fail("获取已拒绝审批列表失败: " + e.getMessage());
+        }
+    }
 }

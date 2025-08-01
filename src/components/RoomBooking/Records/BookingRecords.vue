@@ -2,26 +2,33 @@
   <div class="records-main-content">
     <div class="content-layout">
       <div class="tree-panel">
-        <el-input
-          v-model="treeFilter"
-          placeholder="搜索楼层..."
-          clearable
-          size="small"
-        >
-          <template #prefix>
-            <el-icon><search /></el-icon>
-          </template>
-        </el-input>
-        <el-tree
-          ref="treeRef"
-          class="floor-tree"
-          :data="buildingTreeData"
-          node-key="id"
-          highlight-current
-          :props="{ children: 'children', label: 'label' }"
-          :filter-node-method="filterNode"
-          @node-click="handleNodeClick"
-        />
+        <div class="sidebar-header">
+          <h3>楼栋架构</h3>
+        </div>
+        <div class="sidebar-content">
+          <el-input
+            v-model="sidebarSearch"
+            placeholder="搜索楼栋"
+            :prefix-icon="Search"
+            clearable
+            class="search-input"
+          />
+          <el-tree
+            :data="treeData"
+            :props="treeProps"
+            node-key="id"
+            :default-expanded-keys="['all']"
+            :highlight-current="true"
+            @node-click="handleNodeClick"
+            class="structure-tree"
+          >
+            <template #default="{ node, data }">
+              <span class="tree-node">
+                <span>{{ data.label }}</span>
+              </span>
+            </template>
+          </el-tree>
+        </div>
       </div>
       <div class="table-panel">
         <div class="search-sort-bar">
@@ -92,33 +99,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { getAreaTree } from '@/api/area'
 import BorrowDetailDialog from './BorrowDetailDialog.vue'
 
-const treeRef = ref()
-const treeFilter = ref('')
-const buildingTreeData = [
-  {
-    id: 1,
-    label: '教学楼A',
-    children: [
-      { id: 'A1', label: '1F' },
-      { id: 'A2', label: '2F' },
-      { id: 'A3', label: '3F' }
-    ]
-  },
-  {
-    id: 2,
-    label: '教学楼B',
-    children: [
-      { id: 'B1', label: '1F' },
-      { id: 'B2', label: '2F' }
-    ]
-  }
-]
-const selectedFloor = ref('')
+// 楼栋结构树数据
+const treeData = ref([])
+const treeProps = {
+  children: 'children',
+  label: 'label'
+}
+const sidebarSearch = ref('')
+
+// 当前选中的楼栋区域信息
+const selectedBuildingArea = ref(null)
 
 const searchKeyword = ref('')
 const sortOrder = ref('times_desc')
@@ -223,10 +219,36 @@ const allRecords = ref([
   }
 ])
 
+// 加载楼栋架构数据
+const loadBuildingTree = async () => {
+  try {
+    const response = await getAreaTree()
+    if (response.code === 200) {
+      // 将后端返回的区域树数据转换为前端需要的格式
+      const formatTreeData = (nodes) => {
+        return nodes.map(node => ({
+          label: node.areaName,
+          id: node.id,
+          type: node.type,
+          children: node.children && node.children.length > 0 ? formatTreeData(node.children) : undefined
+        }))
+      }
+      treeData.value = formatTreeData(response.data || [])
+    } else {
+      ElMessage.error(response.message || '获取楼栋架构失败')
+    }
+  } catch (error) {
+    console.error('获取楼栋架构失败:', error)
+    ElMessage.error('获取楼栋架构失败')
+  }
+}
+
 const filteredData = computed(() => {
   let data = allRecords.value
-  if (selectedFloor.value) {
-    data = data.filter(item => item.floor === selectedFloor.value)
+  if (selectedBuildingArea.value) {
+    // 这里可以根据选中的楼栋区域过滤数据
+    // 暂时保留原有的floor过滤逻辑，后续可以根据实际需求调整
+    data = data.filter(item => item.floor === selectedBuildingArea.value.name)
   }
   if (searchKeyword.value) {
     data = data.filter(item => item.roomName.includes(searchKeyword.value))
@@ -246,14 +268,13 @@ const pagedData = computed(() => {
   return filteredData.value.slice(start, start + pageSize.value)
 })
 
-function filterNode(value, data) {
-  if (!value) return true
-  return data.label.includes(value)
-}
-
-function handleNodeClick(data) {
-  if (data.children) return
-  selectedFloor.value = data.label
+const handleNodeClick = (data) => {
+  // 保存选中的区域信息
+  selectedBuildingArea.value = {
+    id: data.id,
+    name: data.label
+  }
+  // 重置分页到第一页
   currentPage.value = 1
 }
 
@@ -283,6 +304,11 @@ function handleCurrentChange(val) {
 const detailDialogVisible = ref(false)
 const currentRecords = ref([])
 const currentRoom = ref({})
+
+// 页面初始化
+onMounted(() => {
+  loadBuildingTree()
+})
 </script>
 
 <style scoped>
@@ -302,17 +328,54 @@ const currentRoom = ref({})
 .tree-panel {
   width: 220px;
   background: #fff;
-  padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 }
 
-.floor-tree {
-  margin-top: 10px;
-  flex: 1;
-  overflow: auto;
+.sidebar-header {
+  padding: 15px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.sidebar-content {
+  padding: 15px;
+}
+
+.search-input {
+  margin-bottom: 10px;
+}
+
+.structure-tree {
+  font-size: 14px;
+}
+
+.structure-tree :deep(.el-tree-node__content) {
+  height: 36px;
+  padding: 0 15px;
+}
+
+.structure-tree :deep(.el-tree-node__content:hover) {
+  background-color: #f5f7fa;
+}
+
+.structure-tree :deep(.is-current > .el-tree-node__content) {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  font-size: 14px;
 }
 
 .table-panel {

@@ -138,4 +138,20 @@ public interface RoomBookingService {
      * @return 操作结果消息
      */
     String cancelBooking(String bookingId, CancelBookingRequest request);
+    
+    /**
+     * 获取已通过审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<ApprovalListResponse> getApprovedApprovals(ApprovalListRequest request);
+
+    /**
+     * 获取已拒绝审批列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<ApprovalListResponse> getRejectedApprovals(ApprovalListRequest request);
 }

@@ -14,7 +14,7 @@
       <el-table-column label="操作" width="120" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" size="small" @click="handleAction(row)">
-            {{ row.status === 'PENDING' ? '立即审批' : '查看详情' }}
+            {{ viewOnlyMode || row.status !== 'PENDING' ? '查看详情' : '立即审批' }}
           </el-button>
         </template>
       </el-table-column>
@@ -40,14 +40,18 @@ export default {
       type: Boolean,
       default: false,
     },
+    viewOnlyMode: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: ['review', 'view'],
-  setup(_, { emit }) {
+  setup(props, { emit }) {
     const handleAction = (row) => {
-      if (row.status === 'PENDING') {
-        emit('review', row)
-      } else {
+      if (props.viewOnlyMode || row.status !== 'PENDING') {
         emit('view', row)
+      } else {
+        emit('review', row)
       }
     }
 
