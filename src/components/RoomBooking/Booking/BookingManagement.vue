@@ -196,9 +196,13 @@ export default {
     // 加载可预约房间
     const loadAvailableRooms = async () => {
       try {
-        const response = await getAvailableRooms({
-          roomAreaId: selectedBuildingArea.value?.id
-        })
+        const params = {}
+        // 只有选择了具体区域时才传递 roomAreaId 参数
+        if (selectedBuildingArea.value?.id && selectedBuildingArea.value.id !== 'all') {
+          params.roomAreaId = selectedBuildingArea.value.id
+        }
+        
+        const response = await getAvailableRooms(params)
         if (response.code === 200) {
           rooms.value = response.data || []
         } else {
@@ -224,7 +228,18 @@ export default {
               children: node.children && node.children.length > 0 ? formatTreeData(node.children) : undefined
             }))
           }
-          treeData.value = formatTreeData(response.data || [])
+          
+          // 添加"全部"选项在树的顶部
+          const formattedTreeData = formatTreeData(response.data || [])
+          treeData.value = [
+            {
+              label: '全部区域',
+              id: 'all',
+              type: 'all',
+              children: undefined
+            },
+            ...formattedTreeData
+          ]
         } else {
           ElMessage.error(response.message || '获取楼栋架构失败')
         }
@@ -235,20 +250,33 @@ export default {
     }
 
     // 处理树节点点击
-    const handleNodeClick = (data) => {
+    const handleNodeClick = async (data) => {
       // 保存选中的区域信息
-      selectedBuildingArea.value = {
-        id: data.id,
-        name: data.label
-      }
-      // 更新activeCategory和activeFloor
-      if (data.type === 'building') {
-        activeCategory.value = data.label
+      if (data.id === 'all') {
+        // 选择全部区域时，清空选中区域
+        selectedBuildingArea.value = null
+        activeCategory.value = '全部'
         activeFloor.value = ''
-      } else if (data.type === 'floor') {
-        // 如果点击的是楼层，需要设置楼栋和楼层
-        // 这里需要根据实际的树结构来获取父节点信息
-        activeFloor.value = data.label
+      } else {
+        selectedBuildingArea.value = {
+          id: data.id,
+          name: data.label
+        }
+        
+        // 更新activeCategory和activeFloor
+        if (data.type === 'building') {
+          activeCategory.value = data.label
+          activeFloor.value = ''
+        } else if (data.type === 'floor') {
+          // 如果点击的是楼层，需要设置楼栋和楼层
+          // 这里需要根据实际的树结构来获取父节点信息
+          activeFloor.value = data.label
+        }
+      }
+      
+      // 如果当前在房间预约页面，重新加载房间数据
+      if (activeMenuItem.value === '房间预约') {
+        await loadAvailableRooms()
       }
     }
 
@@ -263,6 +291,20 @@ export default {
       if (activeFloor.value) {
         filtered = filtered.filter(room => room.floor === activeFloor.value)
       }
+
+      // 按可预约状态排序：可预约的在前面，不可预约的在后面
+      filtered = filtered.sort((a, b) => {
+        // 判断房间是否可预约（假设 available 或 status 字段表示可预约状态）
+        const aAvailable = a.available !== false && a.status !== 'UNAVAILABLE' && a.status !== 'OCCUPIED'
+        const bAvailable = b.available !== false && b.status !== 'UNAVAILABLE' && b.status !== 'OCCUPIED'
+        
+        // 可预约的排在前面
+        if (aAvailable && !bAvailable) return -1
+        if (!aAvailable && bAvailable) return 1
+        
+        // 如果可预约状态相同，按房间名称排序
+        return (a.name || a.roomName || '').localeCompare(b.name || b.roomName || '')
+      })
 
       return filtered
     })
