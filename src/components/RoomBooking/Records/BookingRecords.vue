@@ -62,9 +62,9 @@
             stripe
           >
             <el-table-column prop="roomName" label="预约教室" min-width="120" />
-            <el-table-column prop="times" label="预约次数（次）" width="120" />
-            <el-table-column prop="duration" label="预约累计时长（分）" width="160" />
-            <el-table-column prop="people" label="累计预约人数（人）" width="150" />
+            <el-table-column prop="bookingCount" label="预约次数（次）" width="120" />
+            <el-table-column prop="totalDuration" label="预约累计时长（分）" width="160" />
+            <el-table-column prop="totalPeople" label="累计预约人数（人）" width="150" />
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click="viewDetails(row)">
@@ -92,17 +92,18 @@
 
   <BorrowDetailDialog
     v-model:visible="detailDialogVisible"
-    :record-list="currentRecords"
+    :room-id="currentRoom.id"
     :room-name="currentRoom.name"
     :room-code="currentRoom.code"
   />
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { getAreaTree } from '@/api/area'
+import { getRoomBookingStats, exportRoomBookingStats } from '@/api/roomBookingManagement'
 import BorrowDetailDialog from './BorrowDetailDialog.vue'
 
 // 楼栋结构树数据
@@ -121,103 +122,62 @@ const sortOrder = ref('times_desc')
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const total = ref(0)
 
-const allRecords = ref([
-  {
-    id: 1,
-    roomName: 'A-101',
-    roomCode: 'A101',
-    times: 5,
-    duration: 300,
-    people: 40,
-    floor: '1F',
-    records: [
-      {
-        id: 1,
-        name: '《借阅人生百味》的教室借用',
-        time: '2025.04.24 第一节次 第二节次',
-        date: '2025-04-24',
-        description: '本次借用用于课程研讨与拍摄活动，需使用多媒体设备...',
-        applicant: '王强',
-        auditStatus: '审核中',
-        usageStatus: '未开始'
-      },
-      {
-        id: 2,
-        name: '摄影交流会',
-        time: '2025.04.26 第三节次',
-        date: '2025-04-26',
-        description: '摄影社团活动。',
-        applicant: '李四',
-        auditStatus: '通过',
-        usageStatus: '已结束'
-      }
-    ]
-  },
-  {
-    id: 2,
-    roomName: 'A-201',
-    roomCode: 'A201',
-    times: 3,
-    duration: 180,
-    people: 30,
-    floor: '2F',
-    records: [
-      {
-        id: 1,
-        name: '《现代教育技术》期末讨论',
-        time: '2025.04.28 第一节次 第二节次',
-        date: '2025-04-28',
-        description: '讨论课程项目并进行汇报演练。',
-        applicant: '李四',
-        auditStatus: '通过',
-        usageStatus: '进行中'
-      }
-    ]
-  },
-  {
-    id: 3,
-    roomName: 'B-101',
-    roomCode: 'B101',
-    times: 8,
-    duration: 400,
-    people: 100,
-    floor: '1F',
-    records: [
-      {
-        id: 1,
-        name: '摄影培训交流',
-        time: '2025.04.15 第五节次 第七节次',
-        date: '2025-04-15',
-        description: '校内摄影社团培训活动，已完成拍摄练习。',
-        applicant: '张华',
-        auditStatus: '通过',
-        usageStatus: '已结束'
-      }
-    ]
-  },
-  {
-    id: 4,
-    roomName: 'B-202',
-    roomCode: 'B202',
-    times: 2,
-    duration: 90,
-    people: 20,
-    floor: '2F',
-    records: [
-      {
-        id: 1,
-        name: '舞蹈排练活动',
-        time: '2025.05.02 第二节次 第四节次',
-        date: '2025-05-02',
-        description: '因场地冲突，本次借用申请已被拒绝。',
-        applicant: '赵梅',
-        auditStatus: '拒绝',
-        usageStatus: '未开始'
-      }
-    ]
+// 教室预约统计数据
+const statsRecords = ref([])
+
+// 加载教室预约统计数据
+const loadRoomBookingStats = async () => {
+  try {
+    loading.value = true
+    const params = {
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      areaId: selectedBuildingArea.value?.id || undefined,
+      roomName: searchKeyword.value || undefined,
+      sortBy: getSortField(),
+      sortOrder: getSortOrder()
+    }
+    
+    const response = await getRoomBookingStats(params)
+    if (response.code === 200) {
+      statsRecords.value = response.data.rows || []
+      total.value = response.data.total || 0
+    } else {
+      ElMessage.error(response.message || '获取教室预约统计失败')
+    }
+  } catch (error) {
+    console.error('获取教室预约统计失败:', error)
+    ElMessage.error('获取教室预约统计失败')
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// 获取排序字段
+const getSortField = () => {
+  switch (sortOrder.value) {
+    case 'times_desc':
+      return 'bookingCount'
+    case 'duration_asc':
+      return 'totalDuration'
+    default:
+      return 'bookingCount'
+  }
+}
+
+// 获取排序方向
+const getSortOrder = () => {
+  switch (sortOrder.value) {
+    case 'times_desc':
+      return 'desc'
+    case 'duration_asc':
+      return 'asc'
+    default:
+      return 'desc'
+  }
+}
 
 // 加载楼栋架构数据
 const loadBuildingTree = async () => {
@@ -243,30 +203,7 @@ const loadBuildingTree = async () => {
   }
 }
 
-const filteredData = computed(() => {
-  let data = allRecords.value
-  if (selectedBuildingArea.value) {
-    // 这里可以根据选中的楼栋区域过滤数据
-    // 暂时保留原有的floor过滤逻辑，后续可以根据实际需求调整
-    data = data.filter(item => item.floor === selectedBuildingArea.value.name)
-  }
-  if (searchKeyword.value) {
-    data = data.filter(item => item.roomName.includes(searchKeyword.value))
-  }
-  data = [...data].sort((a, b) => {
-    if (sortOrder.value === 'times_desc') return b.times - a.times
-    if (sortOrder.value === 'duration_asc') return a.duration - b.duration
-    return 0
-  })
-  return data
-})
-
-const total = computed(() => filteredData.value.length)
-
-const pagedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredData.value.slice(start, start + pageSize.value)
-})
+const pagedData = computed(() => statsRecords.value)
 
 const handleNodeClick = (data) => {
   // 保存选中的区域信息
@@ -276,38 +213,100 @@ const handleNodeClick = (data) => {
   }
   // 重置分页到第一页
   currentPage.value = 1
+  loadRoomBookingStats()
 }
 
-function exportCurrent() {
-  ElMessage.success('导出当前页')
+// 导出当前页
+async function exportCurrent() {
+  try {
+    const params = {
+      exportType: 'current',
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      areaId: selectedBuildingArea.value?.id || undefined,
+      roomName: searchKeyword.value || undefined,
+      sortBy: getSortField(),
+      sortOrder: getSortOrder()
+    }
+    
+    const response = await exportRoomBookingStats(params)
+    if (response.code === 200) {
+      ElMessage.success(`导出成功，共${response.data.recordCount}条记录`)
+      // 这里可以添加下载文件的逻辑
+      // window.open(response.data.fileUrl)
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
 }
 
-function exportAll() {
-  ElMessage.success('导出全部页')
+// 导出全部页
+async function exportAll() {
+  try {
+    const params = {
+      exportType: 'all',
+      areaId: selectedBuildingArea.value?.id || undefined,
+      roomName: searchKeyword.value || undefined,
+      sortBy: getSortField(),
+      sortOrder: getSortOrder()
+    }
+    
+    const response = await exportRoomBookingStats(params)
+    if (response.code === 200) {
+      ElMessage.success(`导出成功，共${response.data.recordCount}条记录`)
+      // 这里可以添加下载文件的逻辑
+      // window.open(response.data.fileUrl)
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
 }
 
 function viewDetails(row) {
-  currentRecords.value = row.records || []
-  currentRoom.value = { name: row.roomName, code: row.roomCode }
+  currentRoom.value = { 
+    id: row.roomId,
+    name: row.roomName, 
+    code: row.roomCode || row.roomId // 如果没有roomCode，使用roomId作为fallback
+  }
   detailDialogVisible.value = true
 }
 
 function handleSizeChange(val) {
   pageSize.value = val
   currentPage.value = 1
+  loadRoomBookingStats()
 }
 
 function handleCurrentChange(val) {
   currentPage.value = val
+  loadRoomBookingStats()
 }
 
 const detailDialogVisible = ref(false)
-const currentRecords = ref([])
 const currentRoom = ref({})
+
+// 监听搜索关键字变化
+watch(searchKeyword, () => {
+  currentPage.value = 1
+  loadRoomBookingStats()
+})
+
+// 监听排序变化
+watch(sortOrder, () => {
+  currentPage.value = 1
+  loadRoomBookingStats()
+})
 
 // 页面初始化
 onMounted(() => {
   loadBuildingTree()
+  loadRoomBookingStats()
 })
 </script>
 

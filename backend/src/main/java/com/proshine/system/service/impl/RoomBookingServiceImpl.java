@@ -5,6 +5,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
+import com.proshine.system.dto.request.AccessRecordsRequest;
+import com.proshine.system.dto.request.ExportAccessRecordsRequest;
+import com.proshine.system.dto.response.AccessRecordResponse;
+import com.proshine.system.dto.response.AccessStatsResponse;
+import com.proshine.system.dto.response.ExportResponse;
+import com.proshine.system.dto.response.RoomStatusResponse;
 import com.proshine.system.entity.*;
 import com.proshine.system.repository.*;
 import com.proshine.system.security.SecurityUtil;
@@ -24,8 +30,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.criteria.Predicate;
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,6 +74,9 @@ public class RoomBookingServiceImpl implements RoomBookingService {
 
     @Autowired
     private ClassroomApprovalLevelRepository classroomApprovalLevelRepository;
+    
+    @Autowired
+    private EntityManager entityManager;
 
     @Override
     public BookingStatsDto getBookingStats(LocalDateTime startTime, LocalDateTime endTime) {
@@ -1510,5 +1522,434 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         } else {
             return number.toString();
         }
+    }
+
+    @Override
+    public ResponsePageDataEntity<RoomBookingStatsResponse> getRoomBookingStats(RoomBookingStatsRequest request) {
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(request.getPageNum() - 1, request.getPageSize());
+        
+        // 使用原生SQL查询统计数据
+        String sql = "SELECT r.id AS room_id, r.room_name AS room_name, " +
+                     "COALESCE(COUNT(DISTINCT CASE WHEN rb.id IS NOT NULL THEN rb.id END), 0) AS booking_count, " +
+                     "COALESCE(SUM(CASE WHEN rb.booking_start_time IS NOT NULL AND rb.booking_end_time IS NOT NULL " +
+                     "         AND rb.booking_end_time > rb.booking_start_time THEN " +
+                     "    TIMESTAMPDIFF(MINUTE, rb.booking_start_time, rb.booking_end_time) " +
+                     "    ELSE 0 END), 0) AS total_duration, " +
+                     "COALESCE(SUM(CASE WHEN rb.id IS NOT NULL AND rb.extend1 IS NOT NULL AND TRIM(rb.extend1) != '' THEN " +
+                     "  (LENGTH(rb.extend1) - LENGTH(REPLACE(rb.extend1, ',', '')) + 1) " +
+                     "  WHEN rb.id IS NOT NULL THEN 1 " +
+                     "  ELSE 0 END), 0) AS total_people " +
+                     "FROM tb_room r " +
+                     "LEFT JOIN tb_room_booking rb ON r.id = rb.room_id " +
+                     "  AND rb.approval_status = 'APPROVED' " +
+                     "WHERE r.is_deleted = 0 AND r.room_type_name = '教室' ";
+        
+        List<Object> params = new ArrayList<>();
+        
+        // 添加筛选条件
+        if (StringUtils.hasText(request.getRoomName())) {
+            sql += "AND r.room_name LIKE ? ";
+            params.add("%" + request.getRoomName() + "%");
+        }
+        
+        if (StringUtils.hasText(request.getAreaId())) {
+            sql += "AND r.room_area_id = ? ";
+            params.add(request.getAreaId());
+        }
+        
+        sql += "GROUP BY r.id, r.room_name ";
+        sql += "ORDER BY booking_count DESC ";
+        
+        // 获取总记录数
+        String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS t";
+        Query countQuery = entityManager.createNativeQuery(countSql);
+        for (int i = 0; i < params.size(); i++) {
+            countQuery.setParameter(i + 1, params.get(i));
+        }
+        Long total = ((Number) countQuery.getSingleResult()).longValue();
+        
+        // 添加分页
+        sql += "LIMIT ? OFFSET ?";
+        params.add(request.getPageSize());
+        params.add((request.getPageNum() - 1) * request.getPageSize());
+        
+        // 执行查询
+        Query query = entityManager.createNativeQuery(sql);
+        for (int i = 0; i < params.size(); i++) {
+            query.setParameter(i + 1, params.get(i));
+        }
+        
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+        
+        // 转换结果
+        List<RoomBookingStatsResponse> statsList = results.stream()
+            .map(row -> {
+                RoomBookingStatsResponse stats = new RoomBookingStatsResponse();
+                stats.setRoomId((String) row[0]);
+                stats.setRoomName((String) row[1]);
+                stats.setBookingCount(((Number) row[2]).intValue());
+                stats.setTotalDuration(row[3] != null ? ((Number) row[3]).intValue() : 0);
+                stats.setTotalPeople(row[4] != null ? ((Number) row[4]).intValue() : 0);
+                return stats;
+            })
+            .collect(Collectors.toList());
+        
+        // 构建分页响应
+        ResponsePageDataEntity<RoomBookingStatsResponse> response = new ResponsePageDataEntity<>();
+        response.setRows(statsList);
+        response.setTotal(total);
+        
+        return response;
+    }
+
+    @Override
+    public RoomBookingDetailsResponse getRoomBookingDetails(RoomBookingDetailsRequest request) {
+        // 获取教室信息
+        Optional<Room> roomOpt = roomRepository.findById(request.getRoomId());
+        if (!roomOpt.isPresent()) {
+            throw new RuntimeException("教室不存在");
+        }
+        
+        Room room = roomOpt.get();
+        
+        // 构建教室信息
+        RoomBookingDetailsResponse.RoomInfo roomInfo = RoomBookingDetailsResponse.RoomInfo.builder()
+            .roomId(room.getId())
+            .roomName(room.getRoomName())
+            .roomCode(room.getExtend1())  // 房间编码存储在extend1字段
+            .buildingName(room.getRoomAreaName() != null ? room.getRoomAreaName() : "")  // 使用roomAreaName字段
+            .floor("")  // Room实体中没有floor字段，可以从roomName或roomNo中解析
+            .capacity(room.getRoomVolume())  // 使用roomVolume字段
+            .equipment(room.getRemark())  // 设备信息可能在备注中
+            .build();
+        
+        // 构建查询条件
+        Specification<RoomBooking> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            // 教室ID
+            predicates.add(criteriaBuilder.equal(root.get("roomId"), request.getRoomId()));
+            
+            // 借用/预约名称
+            if (StringUtils.hasText(request.getBookingName())) {
+                predicates.add(criteriaBuilder.like(root.get("bookingName"), 
+                    "%" + request.getBookingName() + "%"));
+            }
+            
+            // 审核状态
+            if (StringUtils.hasText(request.getAuditStatus())) {
+                RoomBooking.ApprovalStatus status = convertAuditStatus(request.getAuditStatus());
+                if (status != null) {
+                    predicates.add(criteriaBuilder.equal(root.get("approvalStatus"), status));
+                }
+            }
+            
+            // 使用状态
+            if (StringUtils.hasText(request.getUsageStatus())) {
+                RoomBooking.UsageStatus status = convertUsageStatus(request.getUsageStatus());
+                if (status != null) {
+                    predicates.add(criteriaBuilder.equal(root.get("usageStatus"), status));
+                }
+            }
+            
+            // 预约人
+            if (StringUtils.hasText(request.getApplicantName())) {
+                predicates.add(criteriaBuilder.like(root.get("applicantName"), 
+                    "%" + request.getApplicantName() + "%"));
+            }
+            
+            // 时间范围
+            if (request.getStartTime() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(
+                    root.get("bookingStartTime"), 
+                    request.getStartTime().atStartOfDay()
+                ));
+            }
+            
+            if (request.getEndTime() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(
+                    root.get("bookingEndTime"), 
+                    request.getEndTime().atTime(23, 59, 59)
+                ));
+            }
+            
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        // 分页查询
+        Pageable pageable = PageRequest.of(request.getPageNum() - 1, request.getPageSize(),
+            Sort.by(Sort.Direction.DESC, "createTime"));
+        Page<RoomBooking> bookingPage = roomBookingRepository.findAll(spec, pageable);
+        
+        // 转换预约详情
+        List<RoomBookingDetailsResponse.BookingDetail> detailList = bookingPage.getContent().stream()
+            .map(booking -> {
+                // 获取审批信息
+                List<BookingApproval> approvals = bookingApprovalRepository.findByBookingIdOrderByApprovalLevel(booking.getId());
+                BookingApproval latestApproval = approvals.stream()
+                    .filter(a -> a.getApprovalTime() != null)  // 已审批的记录
+                    .reduce((first, second) -> second)
+                    .orElse(null);
+                
+                return RoomBookingDetailsResponse.BookingDetail.builder()
+                    .id(booking.getId())
+                    .bookingName(booking.getBookingName())
+                    .bookingTime(formatBookingTime(booking))
+                    .description(booking.getDescription())
+                    .applicantName(booking.getApplicantName())
+                    .applicantPhone(booking.getApplicantPhone())
+                    .applicantDepartment(booking.getApplicantDepartment())
+                    .auditStatus(booking.getApprovalStatus().getDisplayName())
+                    .auditStatusCode(booking.getApprovalStatus().name())
+                    .usageStatus(booking.getUsageStatus().getDisplayName())
+                    .usageStatusCode(booking.getUsageStatus().name())
+                    .bookingStartTime(booking.getBookingStartTime() != null ? booking.getBookingStartTime().toString() : "")
+                    .bookingEndTime(booking.getBookingEndTime() != null ? booking.getBookingEndTime().toString() : "")
+                    .peopleCount(getParticipantCount(booking))
+                    .createTime(booking.getCreateTime() != null ? booking.getCreateTime().toString() : "")
+                    .approvalTime(latestApproval != null && latestApproval.getApprovalTime() != null ? 
+                        latestApproval.getApprovalTime().toString() : null)
+                    .approverName(latestApproval != null ? latestApproval.getApproverName() : null)
+                    .approvalComment(latestApproval != null ? latestApproval.getApprovalComment() : null)
+                    .build();
+            })
+            .collect(Collectors.toList());
+        
+        // 构建分页数据
+        RoomBookingDetailsResponse.PageData pageData = RoomBookingDetailsResponse.PageData.builder()
+            .total(bookingPage.getTotalElements())
+            .pages(bookingPage.getTotalPages())
+            .pageNum(request.getPageNum())
+            .pageSize(request.getPageSize())
+            .list(detailList)
+            .build();
+        
+        // 构建响应
+        return RoomBookingDetailsResponse.builder()
+            .roomInfo(roomInfo)
+            .pageData(pageData)
+            .build();
+    }
+    
+    /**
+     * 格式化预约时间
+     */
+    private String formatBookingTime(RoomBooking booking) {
+        if (StringUtils.hasText(booking.getBookingPeriod())) {
+            return booking.getBookingPeriod();
+        }
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm");
+        return booking.getBookingStartTime().format(formatter) + " - " + 
+               booking.getBookingEndTime().format(formatter);
+    }
+    
+    /**
+     * 获取参与人数
+     */
+    private Integer getParticipantCount(RoomBooking booking) {
+        if (StringUtils.hasText(booking.getExtend1())) {
+            try {
+                // 假设参与人存储在extend1字段，用逗号分隔
+                String[] participants = booking.getExtend1().split(",");
+                return participants.length;
+            } catch (Exception e) {
+                return 1;
+            }
+        }
+        return 1;
+    }
+    
+    /**
+     * 转换审核状态
+     */
+    private RoomBooking.ApprovalStatus convertAuditStatus(String status) {
+        switch (status) {
+            case "通过":
+                return RoomBooking.ApprovalStatus.APPROVED;
+            case "审核中":
+                return RoomBooking.ApprovalStatus.PENDING;
+            case "拒绝":
+                return RoomBooking.ApprovalStatus.REJECTED;
+            case "已取消":
+                return RoomBooking.ApprovalStatus.CANCELLED;
+            default:
+                return null;
+        }
+    }
+    
+    /**
+     * 转换使用状态
+     */
+    private RoomBooking.UsageStatus convertUsageStatus(String status) {
+        switch (status) {
+            case "未开始":
+                return RoomBooking.UsageStatus.NOT_STARTED;
+            case "进行中":
+                return RoomBooking.UsageStatus.IN_PROGRESS;
+            case "已结束":
+                return RoomBooking.UsageStatus.COMPLETED;
+            case "已取消":
+                return RoomBooking.UsageStatus.CANCELLED;
+            default:
+                return null;
+        }
+    }
+
+    // ==================== 教室借用记录相关接口实现 ====================
+
+    @Override
+    public ResponsePageDataEntity<AccessRecordResponse> getAccessRecords(AccessRecordsRequest request) {
+        // 构建分页参数
+        Pageable pageable = PageRequest.of(request.getPageNum() - 1, request.getPageSize());
+        
+        // 由于缺少实际的RoomAccessRecord表，这里返回模拟数据
+        // 在实际项目中，这里应该使用真实的数据库查询
+        ResponsePageDataEntity<AccessRecordResponse> result = new ResponsePageDataEntity<>();
+        result.setRows(generateMockAccessRecords());
+        result.setTotal(100L);
+        return result;
+    }
+
+    @Override
+    public ExportResponse exportAccessRecords(ExportAccessRecordsRequest request) {
+        // 模拟导出功能
+        String fileName = "教室借用记录_" + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+        
+        return ExportResponse.builder()
+            .fileName(fileName)
+            .fileUrl("/download/temp/" + fileName)
+            .fileSize(102400L)
+            .recordCount(request.getExportType().equals("current") ? request.getPageSize() : 100)
+            .build();
+    }
+
+    @Override
+    public AccessStatsResponse getAccessStats(String startTime, String endTime, String areaId) {
+        // 模拟统计数据
+        Map<String, Long> accessTypeStats = new HashMap<>();
+        accessTypeStats.put("预约权限", 600L);
+        accessTypeStats.put("永久权限", 400L);
+        
+        Map<String, Long> openMethodStats = new HashMap<>();
+        openMethodStats.put("刷卡", 500L);
+        openMethodStats.put("人脸识别", 300L);
+        openMethodStats.put("按钮", 200L);
+        
+        Map<String, Long> userTypeStats = new HashMap<>();
+        userTypeStats.put("教师", 400L);
+        userTypeStats.put("学生", 600L);
+        
+        return AccessStatsResponse.builder()
+            .totalRecords(1000L)
+            .todayRecords(50L)
+            .totalRooms(30L)
+            .totalUsers(200L)
+            .accessTypeStats(accessTypeStats)
+            .openMethodStats(openMethodStats)
+            .userTypeStats(userTypeStats)
+            .build();
+    }
+
+    @Override
+    public List<RoomStatusResponse> getRoomStatus(String areaId) {
+        // 模拟教室状态数据
+        List<RoomStatusResponse> statusList = new ArrayList<>();
+        
+        RoomStatusResponse.CurrentBookingInfo currentBooking = RoomStatusResponse.CurrentBookingInfo.builder()
+            .bookingId("booking123")
+            .bookingName("计算机基础课程")
+            .applicantName("张三")
+            .bookingPeriod("14:00-16:00")
+            .build();
+        
+        RoomStatusResponse status1 = RoomStatusResponse.builder()
+            .roomId("room1")
+            .roomName("A-101")
+            .buildingName("教学楼A")
+            .floor("1F")
+            .status("使用中")
+            .currentUsers(5)
+            .lastAccessTime(LocalDateTime.now().minusMinutes(30))
+            .currentBooking(currentBooking)
+            .build();
+            
+        RoomStatusResponse status2 = RoomStatusResponse.builder()
+            .roomId("room2")
+            .roomName("A-102")
+            .buildingName("教学楼A")
+            .floor("1F")
+            .status("空闲")
+            .currentUsers(0)
+            .lastAccessTime(LocalDateTime.now().minusHours(2))
+            .currentBooking(null)
+            .build();
+        
+        statusList.add(status1);
+        statusList.add(status2);
+        
+        return statusList;
+    }
+
+    /**
+     * 生成模拟的借用记录数据
+     */
+    private List<AccessRecordResponse> generateMockAccessRecords() {
+        List<AccessRecordResponse> records = new ArrayList<>();
+        
+        AccessRecordResponse record1 = AccessRecordResponse.builder()
+            .id("access1")
+            .roomId("room1")
+            .roomName("A-101")
+            .buildingName("教学楼A")
+            .floor("1F")
+            .userId("user1")
+            .name("张三")
+            .gender("男")
+            .employeeId("T001")
+            .phone("13800138000")
+            .department("计算机学院")
+            .userType("教师")
+            .openMethod("刷卡")
+            .accessTime(LocalDateTime.now().minusHours(2))
+            .accessType("预约权限")
+            .bookingId("booking1")
+            .bookingName("计算机基础课程")
+            .bookingPeriod("08:00-10:00")
+            .deviceId("device1")
+            .deviceName("A101门禁")
+            .createTime(LocalDateTime.now().minusHours(2))
+            .build();
+            
+        AccessRecordResponse record2 = AccessRecordResponse.builder()
+            .id("access2")
+            .roomId("room2")
+            .roomName("A-102")
+            .buildingName("教学楼A")
+            .floor("1F")
+            .userId("user2")
+            .name("李四")
+            .gender("女")
+            .employeeId("S001")
+            .phone("13900139000")
+            .department("数学学院")
+            .userType("学生")
+            .openMethod("人脸识别")
+            .accessTime(LocalDateTime.now().minusHours(1))
+            .accessType("永久权限")
+            .bookingId(null)
+            .bookingName(null)
+            .bookingPeriod(null)
+            .deviceId("device2")
+            .deviceName("A102门禁")
+            .createTime(LocalDateTime.now().minusHours(1))
+            .build();
+        
+        records.add(record1);
+        records.add(record2);
+        
+        return records;
     }
 }

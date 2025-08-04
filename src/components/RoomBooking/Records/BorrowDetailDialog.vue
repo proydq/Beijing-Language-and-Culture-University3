@@ -53,15 +53,21 @@
       </div>
     </div>
 
-    <el-table :data="pagedData" stripe style="width: 100%" class="record-table">
-      <el-table-column prop="name" label="借用/预约名称" min-width="150" align="center" />
-      <el-table-column prop="time" label="预约时间" min-width="200" align="center" />
+    <el-table 
+      v-loading="loading"
+      :data="pagedData" 
+      stripe 
+      style="width: 100%" 
+      class="record-table"
+    >
+      <el-table-column prop="bookingName" label="借用/预约名称" min-width="150" align="center" />
+      <el-table-column prop="bookingTime" label="预约时间" min-width="200" align="center" />
       <el-table-column prop="description" label="描述" min-width="200" align="center">
         <template #default="{ row }">
           <span class="desc">{{ row.description }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="applicant" label="预约人" width="100" align="center" />
+      <el-table-column prop="applicantName" label="预约人" width="100" align="center" />
       <el-table-column prop="auditStatus" label="审核状态" width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="auditTagType(row.auditStatus)" effect="plain">{{ row.auditStatus }}</el-tag>
@@ -82,8 +88,10 @@
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
         :page-sizes="[10, 20, 50, 100]"
-        :total="filteredRecords.length"
+        :total="total"
         layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
       />
     </div>
 
@@ -93,79 +101,29 @@
       </div>
     </template>
   </el-dialog>
-  <el-dialog v-model="detailInnerVisible" title="预约详情" width="600px" :close-on-click-modal="false">
-    <div class="section">
-      <el-row class="field-item">
-        <el-col :span="8" class="label">借用/预约名称：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.name || '/' }}</el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">借用类型：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.type || '/' }}</el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">审核状态：</el-col>
-        <el-col :span="16" class="value">
-          <span :class="statusClass(detailRecord.auditStatus)">{{ detailRecord.auditStatus || '/' }}</span>
-        </el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">使用状态：</el-col>
-        <el-col :span="16" class="value">
-          <span :class="statusClass(detailRecord.usageStatus)">{{ detailRecord.usageStatus || '/' }}</span>
-        </el-col>
-      </el-row>
-    </div>
-    <div class="section">
-      <el-row class="field-item">
-        <el-col :span="8" class="label">预约时间：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.time || '/' }}</el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">使用时长：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.duration || '/' }}</el-col>
-      </el-row>
-    </div>
-    <div class="section">
-      <el-row class="field-item">
-        <el-col :span="8" class="label">预约人：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.applicant || '/' }}</el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">工号：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.jobNumber || '/' }}</el-col>
-      </el-row>
-      <el-row class="field-item">
-        <el-col :span="8" class="label">联系方式：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.contact || '/' }}</el-col>
-      </el-row>
-    </div>
-    <div class="section">
-      <el-row class="field-item">
-        <el-col :span="8" class="label">借用描述：</el-col>
-        <el-col :span="16" class="value">{{ detailRecord.description || '/' }}</el-col>
-      </el-row>
-    </div>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="detailInnerVisible = false">关闭</el-button>
-      </div>
-    </template>
-  </el-dialog>
+  <!-- 预约详情弹窗 -->
+  <ReservationDetailDialog
+    v-model="reservationDetailDialogVisible"
+    :detail="reservationDetail"
+    :show-cancel-reservation="false"
+    width="600px"
+  />
 </template>
 
 <script setup>
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getRoomBookingDetails, exportRoomBookingDetails, getBookingDetail } from '@/api/roomBookingManagement'
+import ReservationDetailDialog from '../Booking/ReservationDetailDialog.vue'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
-  recordList: { type: Array, default: () => [] },
+  roomId: { type: String, default: '' },
   roomName: { type: String, default: '' },
   roomCode: { type: String, default: '' }
 })
 
-const emit = defineEmits(['update:visible', 'view-detail'])
+const emit = defineEmits(['update:visible'])
 
 const visible = computed({
   get: () => props.visible,
@@ -182,43 +140,67 @@ const filters = reactive({
 
 const currentPage = ref(1)
 const pageSize = ref(10)
+const loading = ref(false)
+const total = ref(0)
+const bookingDetails = ref([])
 
-const detailInnerVisible = ref(false)
-const detailRecord = ref({})
 
-const filteredRecords = computed(() => {
-  let list = props.recordList
-  if (filters.name) {
-    list = list.filter(item => item.name.includes(filters.name))
-  }
-  if (filters.auditStatus) {
-    list = list.filter(item => item.auditStatus === filters.auditStatus)
-  }
-  if (filters.usageStatus) {
-    list = list.filter(item => item.usageStatus === filters.usageStatus)
-  }
-  if (filters.applicant) {
-    list = list.filter(item => item.applicant.includes(filters.applicant))
-  }
-  if (filters.dateRange && filters.dateRange.length === 2) {
-    const [start, end] = filters.dateRange
-    const startTime = new Date(start).getTime()
-    const endTime = new Date(end).getTime()
-    list = list.filter(item => {
-      const t = new Date(item.date || item.time).getTime()
-      return t >= startTime && t <= endTime
-    })
-  }
-  return list
+// 预约详情弹窗相关
+const reservationDetailDialogVisible = ref(false)
+const reservationDetail = ref({
+  userName: '',
+  reservationTitle: '',
+  borrowTime: '',
+  borrowDesc: '',
+  participants: [],
+  remark: '',
+  approvalSteps: []
 })
 
-const pagedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredRecords.value.slice(start, start + pageSize.value)
-})
+// 加载教室预约详情数据
+const loadRoomBookingDetails = async () => {
+  if (!props.roomId) return
+  
+  try {
+    loading.value = true
+    const params = {
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      bookingName: filters.name || undefined,
+      auditStatus: filters.auditStatus || undefined,
+      usageStatus: filters.usageStatus || undefined,
+      applicantName: filters.applicant || undefined,
+      startTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[0]) : undefined,
+      endTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[1]) : undefined
+    }
+    
+    const response = await getRoomBookingDetails(props.roomId, params)
+    if (response.code === 200) {
+      bookingDetails.value = response.data.pageData?.list || []
+      total.value = response.data.pageData?.total || 0
+    } else {
+      ElMessage.error(response.message || '获取教室预约详情失败')
+    }
+  } catch (error) {
+    console.error('获取教室预约详情失败:', error)
+    ElMessage.error('获取教室预约详情失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 格式化日期
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return d.toISOString().slice(0, 10)
+}
+
+const pagedData = computed(() => bookingDetails.value)
 
 function handleSearch() {
   currentPage.value = 1
+  loadRoomBookingDetails()
 }
 
 function resetFilters() {
@@ -228,33 +210,118 @@ function resetFilters() {
   filters.applicant = ''
   filters.dateRange = ''
   currentPage.value = 1
+  loadRoomBookingDetails()
 }
 
-function exportCurrent() {
-  ElMessage.success('导出当前页')
-}
-
-function exportAll() {
-  ElMessage.success('导出全部页')
-}
-
-function openDetail(row) {
-  detailRecord.value = { ...row }
-  detailInnerVisible.value = true
-}
-
-function statusClass(status) {
-  const map = {
-    通过: 'status-green',
-    拒绝: 'status-red',
-    审核中: 'status-blue',
-    已取消: 'status-gray',
-    未开始: 'status-gray',
-    进行中: 'status-blue',
-    已结束: 'status-green'
+// 导出当前页
+async function exportCurrent() {
+  if (!props.roomId) return
+  
+  try {
+    const params = {
+      exportType: 'current',
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      bookingName: filters.name || undefined,
+      auditStatus: filters.auditStatus || undefined,
+      usageStatus: filters.usageStatus || undefined,
+      applicantName: filters.applicant || undefined,
+      startTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[0]) : undefined,
+      endTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[1]) : undefined
+    }
+    
+    const response = await exportRoomBookingDetails(props.roomId, params)
+    if (response.code === 200) {
+      ElMessage.success(`导出成功，共${response.data.recordCount}条记录`)
+      // 这里可以添加下载文件的逻辑
+      // window.open(response.data.fileUrl)
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
   }
-  return map[status] || ''
 }
+
+// 导出全部页
+async function exportAll() {
+  if (!props.roomId) return
+  
+  try {
+    const params = {
+      exportType: 'all',
+      bookingName: filters.name || undefined,
+      auditStatus: filters.auditStatus || undefined,
+      usageStatus: filters.usageStatus || undefined,
+      applicantName: filters.applicant || undefined,
+      startTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[0]) : undefined,
+      endTime: filters.dateRange && filters.dateRange.length === 2 ? formatDate(filters.dateRange[1]) : undefined
+    }
+    
+    const response = await exportRoomBookingDetails(props.roomId, params)
+    if (response.code === 200) {
+      ElMessage.success(`导出成功，共${response.data.recordCount}条记录`)
+      // 这里可以添加下载文件的逻辑
+      // window.open(response.data.fileUrl)
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
+
+async function openDetail(row) {
+  try {
+    const response = await getBookingDetail(row.id)
+    if (response.code === 200) {
+      const data = response.data
+      
+      // 转换审批步骤数据格式
+      const approvalSteps = (data.approvalSteps || []).map(step => ({
+        levelName: step.levelName,
+        approvers: step.approvers || [],
+        confirmedApprover: step.confirmedApprover || '',
+        approvalTime: step.approvalTime ? 
+          new Date(step.approvalTime).toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }) : '/',
+        comment: step.comment || '/'
+      }))
+
+      // 提取参与人姓名
+      const participants = data.participantDetails 
+        ? data.participantDetails.map(p => p.name) 
+        : (data.participants || [])
+
+      reservationDetail.value = {
+        id: data.id,
+        userName: data.applicantName,
+        reservationTitle: data.bookingName,
+        borrowTime: data.bookingPeriod,
+        borrowDesc: data.description,
+        participants: participants,
+        remark: data.remark || data.reason || '',
+        approvalSteps: approvalSteps
+      }
+      reservationDetailDialogVisible.value = true
+    } else {
+      ElMessage.error('获取预约详情失败：' + (response.message || '未知错误'))
+    }
+  } catch (error) {
+    console.error('获取预约详情失败：', error)
+    ElMessage.error('获取预约详情失败，请稍后重试')
+  }
+}
+
 
 function auditTagType(status) {
   const map = {
@@ -265,6 +332,33 @@ function auditTagType(status) {
   }
   return map[status] || ''
 }
+
+// 分页处理
+function handleSizeChange(val) {
+  pageSize.value = val
+  currentPage.value = 1
+  loadRoomBookingDetails()
+}
+
+function handleCurrentChange(val) {
+  currentPage.value = val
+  loadRoomBookingDetails()
+}
+
+// 监听弹窗显示状态和roomId变化
+watch(() => props.visible, (newVal) => {
+  if (newVal && props.roomId) {
+    currentPage.value = 1
+    loadRoomBookingDetails()
+  }
+})
+
+watch(() => props.roomId, (newVal) => {
+  if (newVal && props.visible) {
+    currentPage.value = 1
+    loadRoomBookingDetails()
+  }
+})
 </script>
 
 <style scoped>
@@ -294,30 +388,6 @@ function auditTagType(status) {
 }
 .dialog-footer {
   text-align: right;
-}
-.section {
-  margin-bottom: 20px;
-}
-.field-item {
-  margin-bottom: 8px;
-}
-.label {
-  color: #666;
-}
-.value {
-  color: #333;
-}
-.status-green {
-  color: #67c23a;
-}
-.status-red {
-  color: #f56c6c;
-}
-.status-blue {
-  color: #409eff;
-}
-.status-gray {
-  color: #909399;
 }
 </style>
 

@@ -185,6 +185,135 @@ export const getBookingTrendCustom = (startTime, endTime) => {
   })
 }
 
+// ==================== 教室借用记录接口 ====================
+
+/**
+ * 获取教室预约统计列表
+ * @param {Object} params 查询参数
+ * @param {Number} params.pageNum 页码，默认1
+ * @param {Number} params.pageSize 每页条数，默认10
+ * @param {String} params.roomName 教室名称（可选，支持模糊搜索）
+ * @param {String} params.areaId 区域ID（可选，用于楼栋筛选）
+ * @returns {Promise}
+ */
+export const getRoomBookingStats = (params) => {
+  return request.post('/api/room-booking/access-records/booking-stats', params)
+}
+
+/**
+ * 获取教室预约详情
+ * @param {String} roomId 教室ID
+ * @param {Object} params 查询参数
+ * @param {Number} params.pageNum 页码，默认1
+ * @param {Number} params.pageSize 每页条数，默认10
+ * @param {String} params.bookingName 借用/预约名称（可选，支持模糊搜索）
+ * @param {String} params.auditStatus 审核状态（通过/审核中/拒绝，可选）
+ * @param {String} params.usageStatus 使用状态（未开始/进行中/已结束，可选）
+ * @param {String} params.applicantName 预约人（可选）
+ * @param {String} params.startTime 预约开始日期（可选，格式: YYYY-MM-DD）
+ * @param {String} params.endTime 预约结束日期（可选，格式: YYYY-MM-DD）
+ * @returns {Promise}
+ */
+export const getRoomBookingDetails = (roomId, params) => {
+  return request.post(`/api/room-booking/access-records/room/${roomId}/details`, params)
+}
+
+/**
+ * 导出教室预约详情
+ * @param {String} roomId 教室ID
+ * @param {Object} params 导出参数
+ * @param {String} params.exportType 导出类型：current-当前页，all-全部数据
+ * @param {Number} params.pageNum 页码（exportType为current时必填）
+ * @param {Number} params.pageSize 每页条数（exportType为current时必填）
+ * @param {String} params.bookingName 借用/预约名称（可选）
+ * @param {String} params.auditStatus 审核状态（可选）
+ * @param {String} params.usageStatus 使用状态（可选）
+ * @param {String} params.applicantName 预约人（可选）
+ * @param {String} params.startTime 预约开始日期（可选）
+ * @param {String} params.endTime 预约结束日期（可选）
+ * @returns {Promise}
+ */
+export const exportRoomBookingDetails = (roomId, params) => {
+  return request.post(`/api/room-booking/access-records/room/${roomId}/export`, params)
+}
+
+/**
+ * 导出教室预约统计数据
+ * @param {Object} params 导出参数
+ * @param {String} params.exportType 导出类型：current-当前页，all-全部数据
+ * @param {Number} params.pageNum 页码（exportType为current时必填）
+ * @param {Number} params.pageSize 每页条数（exportType为current时必填）
+ * @param {String} params.areaId 区域ID（可选）
+ * @param {String} params.roomName 教室名称（可选，支持模糊搜索）
+ * @param {String} params.sortBy 排序字段（可选：bookingCount-预约次数，totalDuration-累计时长，totalPeople-累计人数）
+ * @param {String} params.sortOrder 排序方向（可选：asc-升序，desc-降序）
+ * @returns {Promise}
+ */
+export const exportRoomBookingStats = (params) => {
+  return request.post('/api/room-booking/access-records/booking-stats/export', params)
+}
+
+// ==================== 教室借用记录相关接口 ====================
+
+/**
+ * 获取教室借用记录列表
+ * @param {Object} params 查询参数
+ * @param {Number} params.pageNum 页码，默认1
+ * @param {Number} params.pageSize 每页条数，默认10
+ * @param {String} params.areaId 区域ID（可选）
+ * @param {String} params.roomId 教室ID（可选）
+ * @param {String} params.basicInfo 基础信息（姓名/工号/联系方式，可选）
+ * @param {String} params.startTime 开始时间（可选）
+ * @param {String} params.endTime 结束时间（可选）
+ * @param {String} params.openMethod 开门方式（可选）
+ * @param {String} params.accessType 通行类型（可选）
+ * @returns {Promise}
+ */
+export const getAccessRecords = (params) => {
+  return request.post('/api/room-booking/access-records', params)
+}
+
+/**
+ * 导出教室借用记录
+ * @param {Object} params 导出参数
+ * @param {String} params.exportType 导出类型：current-当前页，all-全部页
+ * @param {Number} params.pageNum 页码（exportType为current时必填）
+ * @param {Number} params.pageSize 每页条数（exportType为current时必填）
+ * @param {String} params.areaId 区域ID（可选）
+ * @param {String} params.roomId 教室ID（可选）
+ * @param {String} params.basicInfo 基础信息（可选）
+ * @param {String} params.startTime 开始时间（可选）
+ * @param {String} params.endTime 结束时间（可选）
+ * @param {String} params.openMethod 开门方式（可选）
+ * @param {String} params.accessType 通行类型（可选）
+ * @returns {Promise}
+ */
+export const exportAccessRecords = (params) => {
+  return request.post('/api/room-booking/access-records/export', params)
+}
+
+/**
+ * 获取教室借用统计信息
+ * @param {Object} params 查询参数
+ * @param {String} params.startTime 开始时间（可选）
+ * @param {String} params.endTime 结束时间（可选）
+ * @param {String} params.areaId 区域ID（可选）
+ * @returns {Promise}
+ */
+export const getAccessStats = (params = {}) => {
+  return request.get('/api/room-booking/access-records/stats', { params })
+}
+
+/**
+ * 获取教室实时使用状态
+ * @param {String} areaId 区域ID（可选）
+ * @returns {Promise}
+ */
+export const getRoomStatus = (areaId) => {
+  const params = areaId ? { areaId } : {}
+  return request.get('/api/room-booking/access-records/room-status', { params })
+}
+
 // ==================== 常量定义 ====================
 
 // 审批状态
@@ -215,4 +344,17 @@ export const APPLICANT_TYPES = {
   TEACHER: '教师',
   STUDENT: '学生',
   ADMIN: '管理员'
+}
+
+// 开门方式
+export const OPEN_METHODS = {
+  CARD: '刷卡',
+  FACE: '人脸识别',
+  BUTTON: '按钮'
+}
+
+// 通行类型
+export const ACCESS_TYPES = {
+  RESERVATION: '预约权限',
+  PERMANENT: '永久权限'
 }

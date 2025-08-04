@@ -3,10 +3,17 @@ package com.proshine.system.controller;
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
+import com.proshine.system.dto.request.AccessRecordsRequest;
+import com.proshine.system.dto.request.ExportAccessRecordsRequest;
+import com.proshine.system.dto.response.AccessRecordResponse;
+import com.proshine.system.dto.response.AccessStatsResponse;
+import com.proshine.system.dto.response.ExportResponse;
+import com.proshine.system.dto.response.RoomStatusResponse;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -236,6 +243,108 @@ public class RoomBookingController {
             return ResponseEntity.success(result);
         } catch (Exception e) {
             log.error("取消预约失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教室预约统计列表
+     * 获取教室预约统计信息，包括预约次数、累计时长、累计人数等
+     * 
+     * @param request 查询请求参数
+     * @return 教室预约统计数据
+     */
+    @PostMapping("/access-records/booking-stats")
+    public ResponseEntity<ResponsePageDataEntity<RoomBookingStatsResponse>> getRoomBookingStats(@RequestBody RoomBookingStatsRequest request) {
+        try {
+            log.info("==========/api/room-booking/access-records/booking-stats [POST]=============request:{}", request);
+            ResponsePageDataEntity<RoomBookingStatsResponse> result = roomBookingService.getRoomBookingStats(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取教室预约统计失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教室预约详情
+     * 获取指定教室的详细预约记录列表，支持筛选和分页
+     * 
+     * @param roomId 教室ID（路径参数）
+     * @param request 查询请求参数
+     * @return 教室预约详情数据
+     */
+    @PostMapping("/access-records/room/{roomId}/details")
+    public ResponseEntity<RoomBookingDetailsResponse> getRoomBookingDetails(@PathVariable String roomId, @RequestBody RoomBookingDetailsRequest request) {
+        try {
+            log.info("==========/api/room-booking/access-records/room/{}/details [POST]=============roomId:{}, request:{}", roomId, roomId, request);
+            request.setRoomId(roomId);
+            RoomBookingDetailsResponse result = roomBookingService.getRoomBookingDetails(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取教室预约详情失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    // ==================== 教室借用记录相关接口 ====================
+    
+    /**
+     * 获取教室借用记录列表
+     */
+    @PostMapping("/access-records")
+    public ResponseEntity<ResponsePageDataEntity<AccessRecordResponse>> getAccessRecords(@RequestBody AccessRecordsRequest request) {
+        try {
+            ResponsePageDataEntity<AccessRecordResponse> result = roomBookingService.getAccessRecords(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取教室借用记录失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 导出教室借用记录
+     */
+    @PostMapping("/access-records/export")
+    public ResponseEntity<ExportResponse> exportAccessRecords(@RequestBody ExportAccessRecordsRequest request) {
+        try {
+            ExportResponse result = roomBookingService.exportAccessRecords(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("导出教室借用记录失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教室借用统计信息
+     */
+    @GetMapping("/access-records/stats")
+    public ResponseEntity<AccessStatsResponse> getAccessStats(
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) String areaId) {
+        try {
+            AccessStatsResponse result = roomBookingService.getAccessStats(startTime, endTime, areaId);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取教室借用统计信息失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取教室实时使用状态
+     */
+    @GetMapping("/access-records/room-status")
+    public ResponseEntity<List<RoomStatusResponse>> getRoomStatus(
+            @RequestParam(required = false) String areaId) {
+        try {
+            List<RoomStatusResponse> result = roomBookingService.getRoomStatus(areaId);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取教室实时使用状态失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
     }
