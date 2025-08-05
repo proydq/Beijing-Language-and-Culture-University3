@@ -61,4 +61,9 @@ public class RoomBookingDetailsRequest {
      */
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endTime;
+    
+    /**
+     * 导出类型（可选：current-当前页，all-全部数据）
+     */
+    private String exportType;
 }

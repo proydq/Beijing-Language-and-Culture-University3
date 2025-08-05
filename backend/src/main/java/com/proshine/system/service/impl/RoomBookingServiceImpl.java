@@ -1827,6 +1827,50 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     @Override
+    public ExportResponse exportRoomBookingStats(RoomBookingStatsRequest request) {
+        // 模拟导出统计数据功能
+        String fileName = "教室预约统计_" + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+        
+        // 根据请求参数确定导出记录数
+        int recordCount;
+        if ("current".equals(request.getExportType())) {
+            recordCount = request.getPageSize() != null ? request.getPageSize() : 10;
+        } else {
+            // 这里可以根据实际业务需求查询总数
+            recordCount = 50; // 假设总共有50条统计记录
+        }
+        
+        return ExportResponse.builder()
+            .fileName(fileName)
+            .fileUrl("/download/temp/" + fileName)
+            .fileSize(81920L) // 约80KB
+            .recordCount(recordCount)
+            .build();
+    }
+
+    @Override
+    public ExportResponse exportRoomBookingDetails(RoomBookingDetailsRequest request) {
+        // 模拟导出教室预约详情功能
+        String fileName = "教室预约详情_" + request.getRoomId() + "_" + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx";
+        
+        // 根据请求参数确定导出记录数
+        int recordCount;
+        if ("current".equals(request.getExportType())) {
+            recordCount = request.getPageSize() != null ? request.getPageSize() : 10;
+        } else {
+            // 这里可以根据实际业务需求查询该教室的总预约记录数
+            recordCount = 25; // 假设该教室有25条预约记录
+        }
+        
+        return ExportResponse.builder()
+            .fileName(fileName)
+            .fileUrl("/download/temp/" + fileName)
+            .fileSize(65536L) // 约64KB
+            .recordCount(recordCount)
+            .build();
+    }
+
+    @Override
     public AccessStatsResponse getAccessStats(String startTime, String endTime, String areaId) {
         // 模拟统计数据
         Map<String, Long> accessTypeStats = new HashMap<>();

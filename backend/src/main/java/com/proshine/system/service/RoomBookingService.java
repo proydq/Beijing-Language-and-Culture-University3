@@ -196,6 +196,22 @@ public interface RoomBookingService {
     ExportResponse exportAccessRecords(ExportAccessRecordsRequest request);
 
     /**
+     * 导出教室预约统计数据
+     * 
+     * @param request 导出请求参数
+     * @return 导出结果
+     */
+    ExportResponse exportRoomBookingStats(RoomBookingStatsRequest request);
+
+    /**
+     * 导出指定教室的预约详情
+     * 
+     * @param request 导出请求参数
+     * @return 导出结果
+     */
+    ExportResponse exportRoomBookingDetails(RoomBookingDetailsRequest request);
+
+    /**
      * 获取教室借用统计信息
      * 
      * @param startTime 开始时间（可选）

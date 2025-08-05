@@ -31,4 +31,19 @@ public class RoomBookingStatsRequest {
      * 区域ID（可选，用于楼栋筛选）
      */
     private String areaId;
+    
+    /**
+     * 排序字段（可选）
+     */
+    private String sortBy;
+    
+    /**
+     * 排序方向（可选：asc-升序，desc-降序）
+     */
+    private String sortOrder;
+    
+    /**
+     * 导出类型（可选：current-当前页，all-全部数据）
+     */
+    private String exportType;
 }

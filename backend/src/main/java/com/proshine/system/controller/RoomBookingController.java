@@ -318,6 +318,37 @@ public class RoomBookingController {
     }
 
     /**
+     * 导出教室预约统计数据
+     */
+    @PostMapping("/access-records/booking-stats/export")
+    public ResponseEntity<ExportResponse> exportRoomBookingStats(@RequestBody RoomBookingStatsRequest request) {
+        try {
+            ExportResponse result = roomBookingService.exportRoomBookingStats(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("导出教室预约统计数据失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 导出指定教室的预约详情
+     */
+    @PostMapping("/access-records/room/{roomId}/export")
+    public ResponseEntity<ExportResponse> exportRoomBookingDetails(
+            @PathVariable String roomId, 
+            @RequestBody RoomBookingDetailsRequest request) {
+        try {
+            request.setRoomId(roomId);
+            ExportResponse result = roomBookingService.exportRoomBookingDetails(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("导出教室预约详情失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
      * 获取教室借用统计信息
      */
     @GetMapping("/access-records/stats")
