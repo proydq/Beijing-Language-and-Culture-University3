@@ -51,4 +51,7 @@ public interface RoomAccessRecordRepository extends JpaRepository<RoomAccessReco
      */
     @Query("SELECT r FROM RoomAccessRecord r WHERE r.roomId = :roomId ORDER BY r.accessTime DESC")
     List<RoomAccessRecord> findLatestByRoomId(@Param("roomId") String roomId);
+
+    // 注意：远程开门记录相关的查询已经通过现有的通用查询方法实现
+    // 只需要在查询时设置 accessType = "远程开门" 即可
 }

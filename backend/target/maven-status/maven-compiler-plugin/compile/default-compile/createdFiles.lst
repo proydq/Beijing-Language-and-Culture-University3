@@ -9,6 +9,7 @@ com\proshine\system\dto\ClassroomAddResult.class
 com\proshine\system\dto\SearchBlacklistCondition.class
 com\proshine\system\repository\SysUserRoleRepository.class
 com\proshine\system\entity\BookingRecord$RecordType.class
+com\proshine\system\dto\response\RemoteAccessStatsResponse$RemoteAccessStatsResponseBuilder.class
 com\proshine\system\service\ContinuousBookingSettingService.class
 com\proshine\system\dto\RoomBookingDetailsResponse$RoomInfo$RoomInfoBuilder.class
 com\proshine\common\response\ResponsePageDataEntity.class
@@ -71,6 +72,8 @@ com\proshine\system\entity\BookingApproval$ApprovalAction.class
 com\proshine\system\dto\request\ExportAccessRecordsRequest.class
 com\proshine\system\dto\ContinuousBookingSettingWithRoomDto.class
 com\proshine\system\controller\TitleController.class
+com\proshine\system\dto\response\RemoteAccessStatsResponse$HourlyStatItem.class
+com\proshine\system\dto\response\RemoteAccessStatsResponse.class
 com\proshine\system\dto\ExportClassroomVo.class
 com\proshine\system\entity\BookingTimeRuleUser.class
 com\proshine\system\entity\SysPermission.class
@@ -130,11 +133,13 @@ com\proshine\system\service\impl\ContinuousBookingSettingServiceImpl.class
 com\proshine\system\dto\BookingStatsDto.class
 com\proshine\system\dto\CreateBookingRequest$PersonDetails.class
 com\proshine\system\dto\SearchUserCondition.class
+com\proshine\system\entity\RemoteOperationLog.class
 com\proshine\system\dto\SchoolWeekVO.class
 com\proshine\system\dto\SearchAvailableRoomCondition.class
 com\proshine\system\entity\UserBlacklist$BlacklistType.class
 com\proshine\system\dto\ContinuousBookingSettingDto.class
 com\proshine\system\dto\BookingTimeValidationDto$AvailableTimeRange.class
+com\proshine\system\dto\response\RemoteOpenDoorResponse.class
 com\proshine\system\entity\RoomBooking$Urgency.class
 com\proshine\system\security\JwtUtil.class
 com\proshine\system\service\impl\PositionServiceImpl.class
@@ -150,6 +155,7 @@ com\proshine\system\service\UserBookingLimitService.class
 com\proshine\system\dto\BookingPersonnelPermissionSaveRequest.class
 com\proshine\system\dto\SearchContinuousBookingSettingCondition.class
 com\proshine\system\repository\ApprovalConfigRepository.class
+com\proshine\system\dto\request\RemoteOpenDoorRequest.class
 com\proshine\system\entity\UserBlacklist.class
 com\proshine\system\entity\ApprovalConfig.class
 com\proshine\system\controller\OrganizationController.class
@@ -159,6 +165,7 @@ com\proshine\system\service\impl\RoomBookingServiceImpl$1.class
 com\proshine\system\dto\request\AccessRecordsRequest.class
 com\proshine\system\exception\RoomException$RoomExportException.class
 com\proshine\system\user\service\impl\UserServiceImpl.class
+com\proshine\system\dto\response\RemoteOpenDoorResponse$RemoteOpenDoorResponseBuilder.class
 com\proshine\system\dto\response\RoomStatusResponse$RoomStatusResponseBuilder.class
 com\proshine\system\dto\RoomBookingDetailsResponse$BookingDetail$BookingDetailBuilder.class
 com\proshine\system\dto\BookingPersonnelPermissionDto.class
@@ -196,6 +203,7 @@ com\proshine\system\entity\SysUser.class
 com\proshine\system\entity\TbAttendanceAdministrativeCourseTimeConfig.class
 com\proshine\system\dto\ContinuousBookingSettingWithRoomDto$1.class
 com\proshine\system\repository\RoomBookingRepository.class
+com\proshine\system\dto\request\OperationLogsRequest.class
 com\proshine\system\controller\SysUserController.class
 com\proshine\system\dto\BatchUpdateContinuousBookingRequest.class
 com\proshine\system\dto\RoomWeeklyScheduleRequest.class
@@ -205,6 +213,8 @@ com\proshine\system\dto\CancelBookingRequest.class
 com\proshine\system\dto\BookingTimeRuleDto.class
 com\proshine\system\entity\ViolationSetting.class
 com\proshine\system\exception\RoomException$RoomImportException.class
+com\proshine\system\dto\request\RemoteAccessRecordsRequest.class
+com\proshine\system\repository\RemoteOperationLogRepository.class
 com\proshine\system\dto\ClassroomUpdateVo$ApprovalLevelVo.class
 com\proshine\system\entity\SysPosition.class
 com\proshine\system\repository\SysFileRepository.class
@@ -238,6 +248,7 @@ com\proshine\system\repository\TbAttendanceAdministrativeCourseTimeConfigReposit
 com\proshine\system\repository\UserBookingLimitRepository.class
 com\proshine\system\entity\ContinuousBookingSetting$ContinuousType.class
 com\proshine\system\controller\BookingPersonnelPermissionController.class
+com\proshine\system\dto\response\RemoteAccessRecordResponse.class
 com\proshine\system\controller\RoomController.class
 com\proshine\system\controller\UserBookingLimitController.class
 com\proshine\system\dto\RoleVo.class
@@ -268,6 +279,7 @@ com\proshine\system\service\impl\SchemeManagementServiceImpl.class
 com\proshine\system\entity\RoomBooking$ApprovalStatus.class
 com\proshine\system\service\AreaService.class
 com\proshine\system\entity\Room.class
+com\proshine\system\dto\response\RemoteAccessStatsResponse$StatItem.class
 com\proshine\system\entity\Room$RoomType.class
 com\proshine\system\security\UserPrincipal.class
 com\proshine\system\service\impl\RecycleBinServiceImpl.class
@@ -277,5 +289,6 @@ com\proshine\system\entity\SysUser$Status.class
 com\proshine\system\repository\BookingPersonnelPermissionUserRepository.class
 com\proshine\system\dto\ViolationSettingUpdateRequest.class
 com\proshine\common\dto\SearchBaseCondition.class
+com\proshine\system\dto\response\RemoteAccessRecordResponse$RemoteAccessRecordResponseBuilder.class
 com\proshine\system\dto\SyncResult.class
 com\proshine\system\service\impl\BookingPersonnelPermissionServiceImpl.class

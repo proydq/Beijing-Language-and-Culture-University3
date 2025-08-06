@@ -8,7 +8,10 @@
       "Bash(curl:*)",
       "Bash(npm run build:*)",
       "Bash(git checkout:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c:*)",
+      "Bash(start mvn spring-boot:run)"
     ],
     "deny": []
   }

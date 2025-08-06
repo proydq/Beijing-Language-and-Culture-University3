@@ -70,13 +70,13 @@
 
         <!-- 表格 -->
         <div class="content-table">
-          <el-table :data="pagedData" stripe style="width: 100%">
+          <el-table :data="pagedData" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="roomName" label="预约教室" min-width="120" />
-            <el-table-column prop="username" label="姓名" width="100" />
+            <el-table-column prop="name" label="姓名" width="100" />
             <el-table-column prop="gender" label="性别" width="80" />
-            <el-table-column prop="jobNumber" label="工号" width="120" />
-            <el-table-column prop="contact" label="联系方式" width="140" />
-            <el-table-column prop="openType" label="开门方式" min-width="120" />
+            <el-table-column prop="employeeId" label="工号" width="120" />
+            <el-table-column prop="phone" label="联系方式" width="140" />
+            <el-table-column prop="openMethod" label="开门方式" min-width="120" />
             <el-table-column prop="accessTime" label="通行时间" min-width="180" />
             <el-table-column prop="accessType" label="通行类型" min-width="120" />
           </el-table>
@@ -88,7 +88,7 @@
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50, 100]"
-            :total="filteredData.length"
+            :total="total"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -110,6 +110,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { getAreaTree } from '@/api/area'
+import { remoteAccessRecordsApi } from '@/api/remoteAccessRecords.js'
 
 // 楼栋结构树数据
 const treeData = ref([])
@@ -162,136 +163,71 @@ const filterForm = reactive({
   endTime: ''
 })
 
-const allRecords = ref([
-  {
-    id: 1,
-    roomName: 'A-101',
-    username: '张三',
-    gender: '男',
-    jobNumber: 'T001',
-    contact: '13800138000',
-    openType: '刷卡',
-    accessTime: '2024-07-01 08:00:00',
-    accessType: '远程开门',
-    floor: '1F'
-  },
-  {
-    id: 2,
-    roomName: 'A-102',
-    username: '李四',
-    gender: '女',
-    jobNumber: 'T002',
-    contact: '13800138001',
-    openType: '人脸识别',
-    accessTime: '2024-07-01 09:30:00',
-    accessType: '远程开门',
-    floor: '1F'
-  },
-  {
-    id: 3,
-    roomName: 'A-201',
-    username: '王五',
-    gender: '男',
-    jobNumber: 'T003',
-    contact: '13800138002',
-    openType: '按钮',
-    accessTime: '2024-07-01 10:00:00',
-    accessType: '远程开门',
-    floor: '2F'
-  },
-  {
-    id: 4,
-    roomName: 'B-101',
-    username: '赵六',
-    gender: '女',
-    jobNumber: 'T004',
-    contact: '13800138003',
-    openType: '刷卡',
-    accessTime: '2024-07-02 11:20:00',
-    accessType: '远程开门',
-    floor: '1F'
-  },
-  {
-    id: 5,
-    roomName: 'B-202',
-    username: '孙七',
-    gender: '男',
-    jobNumber: 'T005',
-    contact: '13800138004',
-    openType: '人脸识别',
-    accessTime: '2024-07-02 13:40:00',
-    accessType: '远程开门',
-    floor: '2F'
-  },
-  {
-    id: 6,
-    roomName: 'B-203',
-    username: '周八',
-    gender: '女',
-    jobNumber: 'T006',
-    contact: '13800138005',
-    openType: '按钮',
-    accessTime: '2024-07-03 08:10:00',
-    accessType: '远程开门',
-    floor: '2F'
-  },
-  {
-    id: 7,
-    roomName: 'A-103',
-    username: '吴九',
-    gender: '男',
-    jobNumber: 'T007',
-    contact: '13800138006',
-    openType: '刷卡',
-    accessTime: '2024-07-03 09:50:00',
-    accessType: '远程开门',
-    floor: '1F'
-  },
-  {
-    id: 8,
-    roomName: 'A-202',
-    username: '郑十',
-    gender: '女',
-    jobNumber: 'T008',
-    contact: '13800138007',
-    openType: '人脸识别',
-    accessTime: '2024-07-03 11:00:00',
-    accessType: '远程开门',
-    floor: '2F'
-  }
-])
+// 远程开门记录数据
+const allRecords = ref([])
+const loading = ref(false)
+const total = ref(0)
 
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-const filteredData = computed(() => {
-  let data = allRecords.value
-  if (selectedBuildingArea.value) {
-    // 这里可以根据选中的楼栋区域过滤数据
-    // 暂时保留原有的floor过滤逻辑，后续可以根据实际需求调整
-    data = data.filter(item => item.floor === selectedBuildingArea.value.name)
+// 加载远程开门记录数据
+const loadRemoteAccessRecords = async () => {
+  try {
+    loading.value = true
+    
+    // 构建查询参数
+    const params = {
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      basicInfo: filterForm.basicInfo || undefined,
+      areaId: selectedBuildingArea.value?.id || undefined
+    }
+    
+    // 处理时间参数
+    if (filterForm.startTime) {
+      params.startTime = formatDateTime(filterForm.startTime)
+    }
+    if (filterForm.endTime) {
+      params.endTime = formatDateTime(filterForm.endTime)
+    }
+    
+    const response = await remoteAccessRecordsApi.getRemoteAccessRecords(params)
+    
+    if (response.code === 200) {
+      allRecords.value = response.data?.rows || []
+      total.value = response.data?.total || 0
+    } else {
+      ElMessage.error(response.message || '获取远程开门记录失败')
+    }
+  } catch (error) {
+    console.error('加载远程开门记录失败:', error)
+    ElMessage.error('加载远程开门记录失败')
+  } finally {
+    loading.value = false
   }
-  if (filterForm.basicInfo) {
-    data = data.filter(item =>
-      [item.username, item.jobNumber, item.contact].some(v => v.includes(filterForm.basicInfo))
-    )
-  }
-  if (filterForm.startTime) {
-    data = data.filter(item => new Date(item.accessTime) >= new Date(filterForm.startTime))
-  }
-  if (filterForm.endTime) {
-    data = data.filter(item => new Date(item.accessTime) <= new Date(filterForm.endTime))
-  }
-  return data
-})
+}
 
+// 格式化时间
+const formatDateTime = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + ' ' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0')
+}
+
+// 直接使用API返回的数据，不需要前端过滤
 const pagedData = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredData.value.slice(start, start + pageSize.value)
+  return allRecords.value
 })
 
 function search() {
   currentPage.value = 1
+  loadRemoteAccessRecords()
 }
 
 function reset() {
@@ -301,28 +237,114 @@ function reset() {
   sidebarSearch.value = ''
   selectedBuildingArea.value = null
   currentPage.value = 1
+  loadRemoteAccessRecords()
 }
 
-function exportCurrentPage() {
-  ElMessage.success('导出当前页')
+// 导出当前页
+async function exportCurrentPage() {
+  try {
+    const params = {
+      exportType: 'current',
+      pageNum: currentPage.value,
+      pageSize: pageSize.value,
+      basicInfo: filterForm.basicInfo || undefined,
+      areaId: selectedBuildingArea.value?.id || undefined
+    }
+    
+    // 处理时间参数
+    if (filterForm.startTime) {
+      params.startTime = formatDateTime(filterForm.startTime)
+    }
+    if (filterForm.endTime) {
+      params.endTime = formatDateTime(filterForm.endTime)
+    }
+    
+    const response = await remoteAccessRecordsApi.exportRemoteAccessRecords(params)
+    
+    if (response.code === 200) {
+      const { fileUrl, fileName } = response.data
+      
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = fileUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      ElMessage.success('导出成功')
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
 }
 
-function exportAllPages() {
-  ElMessage.success('导出全部页')
+// 导出全部页
+async function exportAllPages() {
+  try {
+    const params = {
+      exportType: 'all',
+      basicInfo: filterForm.basicInfo || undefined,
+      areaId: selectedBuildingArea.value?.id || undefined
+    }
+    
+    // 处理时间参数
+    if (filterForm.startTime) {
+      params.startTime = formatDateTime(filterForm.startTime)
+    }
+    if (filterForm.endTime) {
+      params.endTime = formatDateTime(filterForm.endTime)
+    }
+    
+    const response = await remoteAccessRecordsApi.exportRemoteAccessRecords(params)
+    
+    if (response.code === 200) {
+      const { fileUrl, fileName } = response.data
+      
+      // 创建下载链接
+      const link = document.createElement('a')
+      link.href = fileUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      ElMessage.success('导出成功')
+    } else {
+      ElMessage.error(response.message || '导出失败')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
 }
 
 function handleSizeChange(val) {
   pageSize.value = val
   currentPage.value = 1
+  loadRemoteAccessRecords()
 }
 
 function handleCurrentChange(val) {
   currentPage.value = val
+  loadRemoteAccessRecords()
 }
+
+// 监听选中区域变化，重新加载数据
+watch(() => selectedBuildingArea.value, () => {
+  if (selectedBuildingArea.value) {
+    currentPage.value = 1
+    loadRemoteAccessRecords()
+  }
+}, { deep: true })
 
 // 页面初始化
 onMounted(() => {
   loadBuildingTree()
+  loadRemoteAccessRecords()
 })
 </script>
 

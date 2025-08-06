@@ -221,4 +221,27 @@ public interface RoomRepository extends JpaRepository<Room, String>, JpaSpecific
                                                @Param("roomName") String roomName,
                                                @Param("roomAreaId") String roomAreaId,
                                                Pageable pageable);
+
+    /**
+     * 查询指定客户域和区域的活跃房间
+     * 
+     * @param customerId 客户域ID
+     * @param areaId 区域ID
+     * @return 房间列表
+     */
+    @Query("SELECT r FROM Room r WHERE r.cstmId = :customerId " +
+           "AND r.roomAreaId = :areaId " +
+           "AND (r.isDeleted IS NULL OR r.isDeleted = false)")
+    List<Room> findByCustomerIdAndRoomAreaId(@Param("customerId") String customerId, 
+                                           @Param("areaId") String areaId);
+
+    /**
+     * 查询指定客户域的所有活跃房间
+     * 
+     * @param customerId 客户域ID
+     * @return 房间列表
+     */
+    @Query("SELECT r FROM Room r WHERE r.cstmId = :customerId " +
+           "AND (r.isDeleted IS NULL OR r.isDeleted = false)")
+    List<Room> findByCustomerId(@Param("customerId") String customerId);
 }

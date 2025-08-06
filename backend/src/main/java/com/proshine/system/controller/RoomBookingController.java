@@ -5,10 +5,17 @@ import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
 import com.proshine.system.dto.request.AccessRecordsRequest;
 import com.proshine.system.dto.request.ExportAccessRecordsRequest;
+import com.proshine.system.dto.request.RemoteAccessRecordsRequest;
+import com.proshine.system.dto.request.RemoteOpenDoorRequest;
+import com.proshine.system.dto.request.OperationLogsRequest;
 import com.proshine.system.dto.response.AccessRecordResponse;
 import com.proshine.system.dto.response.AccessStatsResponse;
 import com.proshine.system.dto.response.ExportResponse;
 import com.proshine.system.dto.response.RoomStatusResponse;
+import com.proshine.system.dto.response.RemoteAccessRecordResponse;
+import com.proshine.system.dto.response.RemoteAccessStatsResponse;
+import com.proshine.system.dto.response.RemoteOpenDoorResponse;
+import com.proshine.system.entity.RemoteOperationLog;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -376,6 +383,107 @@ public class RoomBookingController {
             return ResponseEntity.success(result);
         } catch (Exception e) {
             log.error("获取教室实时使用状态失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    // ==================== 远程开门记录相关接口 ====================
+
+    /**
+     * 获取远程开门记录列表
+     */
+    @PostMapping("/remote-access-records")
+    public ResponseEntity<ResponsePageDataEntity<RemoteAccessRecordResponse>> getRemoteAccessRecords(
+            @RequestBody RemoteAccessRecordsRequest request) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records [POST]=============request:{}", request);
+            ResponsePageDataEntity<RemoteAccessRecordResponse> result = roomBookingService.getRemoteAccessRecords(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取远程开门记录失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 导出远程开门记录
+     */
+    @PostMapping("/remote-access-records/export")
+    public ResponseEntity<ExportResponse> exportRemoteAccessRecords(
+            @RequestBody RemoteAccessRecordsRequest request) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records/export [POST]=============request:{}", request);
+            ExportResponse result = roomBookingService.exportRemoteAccessRecords(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("导出远程开门记录失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取远程开门统计信息
+     */
+    @GetMapping("/remote-access-records/stats")
+    public ResponseEntity<RemoteAccessStatsResponse> getRemoteAccessStats(
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) String areaId) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records/stats [GET]=============startTime:{}, endTime:{}, areaId:{}", startTime, endTime, areaId);
+            RemoteAccessStatsResponse result = roomBookingService.getRemoteAccessStats(startTime, endTime, areaId);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取远程开门统计信息失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 执行远程开门操作
+     */
+    @PostMapping("/remote-access-records/open-door")
+    public ResponseEntity<RemoteOpenDoorResponse> executeRemoteOpenDoor(
+            @RequestBody @javax.validation.Valid RemoteOpenDoorRequest request) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records/open-door [POST]=============request:{}", request);
+            RemoteOpenDoorResponse result = roomBookingService.executeRemoteOpenDoor(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("远程开门操作失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取远程开门操作日志
+     */
+    @PostMapping("/remote-access-records/operation-logs")
+    public ResponseEntity<ResponsePageDataEntity<RemoteOperationLog>> getOperationLogs(
+            @RequestBody OperationLogsRequest request) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records/operation-logs [POST]=============request:{}", request);
+            ResponsePageDataEntity<RemoteOperationLog> result = roomBookingService.getOperationLogs(request);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取操作日志失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取可远程开门的教室列表
+     */
+    @GetMapping("/remote-access-records/available-rooms")
+    public ResponseEntity<List<RoomStatusResponse>> getAvailableRemoteRooms(
+            @RequestParam(required = false) String areaId,
+            @RequestParam(required = false) String status) {
+        try {
+            log.info("==========/api/room-booking/remote-access-records/available-rooms [GET]=============areaId:{}, status:{}", areaId, status);
+            List<RoomStatusResponse> result = roomBookingService.getAvailableRemoteRooms(areaId, status);
+            return ResponseEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取可远程开门教室列表失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
     }

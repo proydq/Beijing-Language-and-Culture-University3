@@ -166,4 +166,20 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, String
                                              @Param("endTime") LocalDateTime endTime,
                                              @Param("cstmId") String cstmId,
                                              @Param("excludeId") String excludeId);
+
+    /**
+     * 查询指定教室当前时间段内的预约
+     * 
+     * @param roomId 教室ID
+     * @param currentTime 当前时间
+     * @return 当前预约列表
+     */
+    @Query("SELECT rb FROM RoomBooking rb WHERE rb.roomId = :roomId " +
+           "AND rb.approvalStatus = 'APPROVED' " +
+           "AND rb.usageStatus = 'IN_USE' " +
+           "AND rb.bookingStartTime <= :currentTime " +
+           "AND rb.bookingEndTime >= :currentTime " +
+           "ORDER BY rb.bookingStartTime ASC")
+    List<RoomBooking> findCurrentBookingsByRoomId(@Param("roomId") String roomId,
+                                                  @Param("currentTime") LocalDateTime currentTime);
 }

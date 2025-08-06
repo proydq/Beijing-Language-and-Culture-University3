@@ -87,6 +87,18 @@ public class RoomAccessRecord {
     @Column(name = "device_name", columnDefinition = "VARCHAR(100) COMMENT '门禁设备名称（冗余）'")
     private String deviceName;
 
+    @Column(name = "operator_id", columnDefinition = "VARCHAR(36) COMMENT '实际操作员ID'")
+    private String operatorId;
+
+    @Column(name = "operator_name", columnDefinition = "VARCHAR(50) COMMENT '实际操作员姓名'")
+    private String operatorName;
+
+    @Column(name = "operator_type", columnDefinition = "VARCHAR(20) COMMENT '操作员类型'")
+    private String operatorType;
+
+    @Column(name = "reason", columnDefinition = "VARCHAR(500) COMMENT '开门原因'")
+    private String reason;
+
     @Column(name = "create_time", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'")
     private LocalDateTime createTime;
 

@@ -3,10 +3,17 @@ package com.proshine.system.service;
 import com.proshine.system.dto.*;
 import com.proshine.system.dto.request.AccessRecordsRequest;
 import com.proshine.system.dto.request.ExportAccessRecordsRequest;
+import com.proshine.system.dto.request.RemoteAccessRecordsRequest;
+import com.proshine.system.dto.request.RemoteOpenDoorRequest;
+import com.proshine.system.dto.request.OperationLogsRequest;
 import com.proshine.system.dto.response.AccessRecordResponse;
 import com.proshine.system.dto.response.AccessStatsResponse;
 import com.proshine.system.dto.response.ExportResponse;
 import com.proshine.system.dto.response.RoomStatusResponse;
+import com.proshine.system.dto.response.RemoteAccessRecordResponse;
+import com.proshine.system.dto.response.RemoteAccessStatsResponse;
+import com.proshine.system.dto.response.RemoteOpenDoorResponse;
+import com.proshine.system.entity.RemoteOperationLog;
 import com.proshine.common.response.ResponsePageDataEntity;
 
 import java.time.LocalDateTime;
@@ -228,4 +235,57 @@ public interface RoomBookingService {
      * @return 教室状态列表
      */
     List<RoomStatusResponse> getRoomStatus(String areaId);
+
+    // ==================== 远程开门记录相关接口 ====================
+
+    /**
+     * 获取远程开门记录列表
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<RemoteAccessRecordResponse> getRemoteAccessRecords(RemoteAccessRecordsRequest request);
+
+    /**
+     * 导出远程开门记录
+     * 
+     * @param request 导出请求参数
+     * @return 导出结果
+     */
+    ExportResponse exportRemoteAccessRecords(RemoteAccessRecordsRequest request);
+
+    /**
+     * 获取远程开门统计信息
+     * 
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @param areaId 区域ID（可选）
+     * @return 统计信息
+     */
+    RemoteAccessStatsResponse getRemoteAccessStats(String startTime, String endTime, String areaId);
+
+    /**
+     * 执行远程开门操作
+     * 
+     * @param request 远程开门请求参数
+     * @return 操作结果
+     */
+    RemoteOpenDoorResponse executeRemoteOpenDoor(RemoteOpenDoorRequest request);
+
+    /**
+     * 获取远程开门操作日志
+     * 
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    ResponsePageDataEntity<RemoteOperationLog> getOperationLogs(OperationLogsRequest request);
+
+    /**
+     * 获取可远程开门的教室列表
+     * 
+     * @param areaId 区域ID（可选）
+     * @param status 教室状态（可选）
+     * @return 教室列表
+     */
+    List<RoomStatusResponse> getAvailableRemoteRooms(String areaId, String status);
 }
