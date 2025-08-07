@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 分页查询违规设置
@@ -6,7 +6,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const searchViolationSettings = (condition) => {
-  return request.post('/violation-settings/search', condition)
+  return request.post(`${API_PATHS.VIOLATION_SETTINGS}/search`, condition)
 }
 
 /**
@@ -15,7 +15,7 @@ export const searchViolationSettings = (condition) => {
  * @returns {Promise}
  */
 export const getViolationSettingByRoomId = (roomId) => {
-  return request.get(`/violation-settings/${roomId}`)
+  return request.get(`${API_PATHS.VIOLATION_SETTINGS}/${roomId}`)
 }
 
 /**
@@ -25,7 +25,7 @@ export const getViolationSettingByRoomId = (roomId) => {
  * @returns {Promise}
  */
 export const updateViolationSetting = (roomId, data) => {
-  return request.put(`/violation-settings/${roomId}`, data)
+  return request.put(`${API_PATHS.VIOLATION_SETTINGS}/${roomId}`, data)
 }
 
 /**
@@ -34,7 +34,7 @@ export const updateViolationSetting = (roomId, data) => {
  * @returns {Promise}
  */
 export const batchUpdateViolationSettings = (data) => {
-  return request.put('/violation-settings/batch', data)
+  return request.put(`${API_PATHS.VIOLATION_SETTINGS}/batch`, data)
 }
 
 /**
@@ -45,7 +45,7 @@ export const batchUpdateViolationSettings = (data) => {
  * @returns {Promise}
  */
 export const createOrUpdateViolationSetting = (roomId, startTime, violationCount) => {
-  return request.post('/violation-settings', null, {
+  return request.post(API_PATHS.VIOLATION_SETTINGS, null, {
     params: { roomId, startTime, violationCount }
   })
 }
@@ -56,7 +56,7 @@ export const createOrUpdateViolationSetting = (roomId, startTime, violationCount
  * @returns {Promise}
  */
 export const deleteViolationSetting = (roomId) => {
-  return request.delete(`/violation-settings/${roomId}`)
+  return request.delete(`${API_PATHS.VIOLATION_SETTINGS}/${roomId}`)
 }
 
 /**
@@ -65,7 +65,7 @@ export const deleteViolationSetting = (roomId) => {
  * @returns {Promise}
  */
 export const batchDeleteViolationSettings = (roomIds) => {
-  return request.delete('/violation-settings/batch', { data: roomIds })
+  return request.delete(`${API_PATHS.VIOLATION_SETTINGS}/batch`, { data: roomIds })
 }
 
 /**
@@ -75,7 +75,7 @@ export const batchDeleteViolationSettings = (roomIds) => {
  * @returns {Promise}
  */
 export const shouldAddToBlacklist = (userId, roomId) => {
-  return request.get('/violation-settings/check-blacklist', {
+  return request.get(`${API_PATHS.VIOLATION_SETTINGS}/check-blacklist`, {
     params: { userId, roomId }
   })
 }
@@ -89,7 +89,7 @@ export const shouldAddToBlacklist = (userId, roomId) => {
  * @returns {Promise}
  */
 export const processUserViolation = (userId, roomId, bookingId, overtimeMinutes) => {
-  return request.post('/violation-settings/process-violation', null, {
+  return request.post(`${API_PATHS.VIOLATION_SETTINGS}/process-violation`, null, {
     params: { userId, roomId, bookingId, overtimeMinutes }
   })
 }

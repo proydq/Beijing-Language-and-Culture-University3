@@ -590,6 +590,16 @@
               >
                 <el-icon><plus /></el-icon>
               </el-upload>
+              <el-progress 
+                v-if="avatarCalculating || avatarUploadProgress > 0"
+                :percentage="avatarCalculating ? 50 : avatarUploadProgress"
+                :status="avatarCalculating ? 'warning' : ''"
+                style="margin-top: 10px"
+              >
+                <template #default="{ percentage }">
+                  <span>{{ avatarCalculating ? '计算文件特征...' : `上传中 ${percentage}%` }}</span>
+                </template>
+              </el-progress>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -603,6 +613,16 @@
               >
                 <el-icon><plus /></el-icon>
               </el-upload>
+              <el-progress 
+                v-if="faceCalculating || faceUploadProgress > 0"
+                :percentage="faceCalculating ? 50 : faceUploadProgress"
+                :status="faceCalculating ? 'warning' : ''"
+                style="margin-top: 10px"
+              >
+                <template #default="{ percentage }">
+                  <span>{{ faceCalculating ? '计算文件特征...' : `上传中 ${percentage}%` }}</span>
+                </template>
+              </el-progress>
             </el-form-item>
           </el-col>
         </el-row>

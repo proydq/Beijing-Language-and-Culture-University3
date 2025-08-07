@@ -1,5 +1,8 @@
 package com.proshine.system.service.impl;
 
+import com.proshine.common.constant.SystemConstants;
+import com.proshine.common.enums.ErrorCode;
+import com.proshine.common.exception.BusinessException;
 import com.proshine.system.dto.LoginRequest;
 import com.proshine.system.dto.LoginResponse;
 import com.proshine.system.entity.SysUser;
@@ -14,15 +17,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 认证服务实现类
  */
 @Service
 @Slf4j
+@Transactional(rollbackFor = Exception.class)
 public class AuthenticationServiceImpl implements AuthenticationService {
     
     @Autowired
@@ -61,14 +68,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
             
             if (!userOptional.isPresent()) {
-                throw new RuntimeException("用户不存在");
+                throw new BusinessException(ErrorCode.AUTH_USER_NOT_FOUND);
             }
             
             SysUser user = userOptional.get();
             
             // 检查用户状态
             if (user.getStatus() == SysUser.Status.DISABLED) {
-                throw new RuntimeException("用户已被禁用");
+                throw new BusinessException(ErrorCode.AUTH_USER_DISABLED);
             }
             
             // 生成JWT令牌
@@ -80,10 +87,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             
         } catch (AuthenticationException e) {
             log.error("用户登录失败：{}", e.getMessage());
-            throw new RuntimeException("用户名或密码错误");
+            throw new BusinessException(ErrorCode.AUTH_USERNAME_PASSWORD_ERROR);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("用户登录异常：", e);
-            throw new RuntimeException("登录失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
     }
     
@@ -107,11 +116,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 log.info("JWT令牌刷新成功");
                 return newToken;
             } else {
-                throw new RuntimeException("令牌刷新失败");
+                throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
             }
         } catch (Exception e) {
             log.error("刷新JWT令牌异常：", e);
-            throw new RuntimeException("令牌刷新失败：" + e.getMessage());
+            throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
         }
     }
     
@@ -141,17 +150,37 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 return false;
             }
             
-            // 生成新密码（这里简单设置为123456，实际应该发送短信验证码）
-            String newPassword = "123456";
-            user.setPassword(passwordEncoder.encode(newPassword));
-            userRepository.save(user);
+            // 生成6位数字验证码
+            String verifyCode = generateVerifyCode();
             
-            log.info("用户 {} 密码重置成功", username);
+            // TODO: 实际项目中应该调用短信服务发送验证码
+            // smsService.sendVerifyCode(phone, verifyCode);
+            
+            // 临时存储验证码（实际项目中应该使用Redis等缓存）
+            // 这里为了保持功能可用，暂时将验证码记录到日志中
+            log.info("【开发环境】用户 {} 的密码重置验证码：{}", username, verifyCode);
+            
+            // 在实际项目中，应该将验证码存储到缓存中
+            // cacheService.set(SystemConstants.CacheKey.PASSWORD_RESET_PREFIX + username, 
+            //     verifyCode, SystemConstants.VERIFY_CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
+            
             return true;
             
         } catch (Exception e) {
             log.error("忘记密码处理异常：", e);
             return false;
         }
+    }
+    
+    /**
+     * 生成6位数字验证码
+     */
+    private String generateVerifyCode() {
+        Random random = new Random();
+        StringBuilder code = new StringBuilder();
+        for (int i = 0; i < SystemConstants.VERIFY_CODE_LENGTH; i++) {
+            code.append(random.nextInt(10));
+        }
+        return code.toString();
     }
 }

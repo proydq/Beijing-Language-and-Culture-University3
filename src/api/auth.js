@@ -1,4 +1,4 @@
-import api from './index'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 认证相关API
@@ -13,7 +13,7 @@ export const authAPI = {
    * @returns {Promise} 登录响应
    */
   login(loginData) {
-    return api.post('/authentication/login', loginData)
+    return request.post(`${API_PATHS.AUTHENTICATION}/login`, loginData)
   },
 
   /**
@@ -21,7 +21,7 @@ export const authAPI = {
    * @returns {Promise} 登出响应
    */
   logout() {
-    return api.post('/authentication/logout')
+    return request.post(`${API_PATHS.AUTHENTICATION}/logout`)
   },
 
   /**
@@ -29,7 +29,7 @@ export const authAPI = {
    * @returns {Promise} 刷新令牌响应
    */
   refreshToken() {
-    return api.post('/authentication/refresh')
+    return request.post(`${API_PATHS.AUTHENTICATION}/token/refresh`)
   },
 
   /**
@@ -40,7 +40,7 @@ export const authAPI = {
    * @returns {Promise} 忘记密码响应
    */
   forgotPassword(data) {
-    return api.post('/authentication/forgot-password', data)
+    return request.post(`${API_PATHS.AUTHENTICATION}/forgot-password`, data)
   }
 }
 

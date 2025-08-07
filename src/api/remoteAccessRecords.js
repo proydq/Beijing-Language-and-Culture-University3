@@ -1,4 +1,4 @@
-import api from './index.js'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 远程开门记录相关API
@@ -10,7 +10,7 @@ export const remoteAccessRecordsApi = {
    * @returns {Promise}
    */
   getRemoteAccessRecords(params) {
-    return api.post('/api/room-booking/remote-access-records', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/remote-access-records`, params)
   },
 
   /**
@@ -19,7 +19,7 @@ export const remoteAccessRecordsApi = {
    * @returns {Promise}
    */
   exportRemoteAccessRecords(params) {
-    return api.post('/api/room-booking/remote-access-records/export', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/remote-access-records/export`, params)
   },
 
   /**
@@ -29,7 +29,7 @@ export const remoteAccessRecordsApi = {
    */
   getRemoteAccessStats(params = {}) {
     const queryString = new URLSearchParams(params).toString()
-    return api.get(`/api/room-booking/remote-access-records/stats${queryString ? '?' + queryString : ''}`)
+    return request.get(`${API_PATHS.ROOM_BOOKING}/remote-access-records/stats${queryString ? '?' + queryString : ''}`)
   },
 
   /**
@@ -38,7 +38,7 @@ export const remoteAccessRecordsApi = {
    * @returns {Promise}
    */
   executeRemoteOpenDoor(params) {
-    return api.post('/api/room-booking/remote-access-records/open-door', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/remote-access-records/open-door`, params)
   },
 
   /**
@@ -47,7 +47,7 @@ export const remoteAccessRecordsApi = {
    * @returns {Promise}
    */
   getOperationLogs(params) {
-    return api.post('/api/room-booking/remote-access-records/operation-logs', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/remote-access-records/operation-logs`, params)
   },
 
   /**
@@ -57,7 +57,7 @@ export const remoteAccessRecordsApi = {
    */
   getAvailableRemoteRooms(params = {}) {
     const queryString = new URLSearchParams(params).toString()
-    return api.get(`/api/room-booking/remote-access-records/available-rooms${queryString ? '?' + queryString : ''}`)
+    return request.get(`${API_PATHS.ROOM_BOOKING}/remote-access-records/available-rooms${queryString ? '?' + queryString : ''}`)
   }
 }
 

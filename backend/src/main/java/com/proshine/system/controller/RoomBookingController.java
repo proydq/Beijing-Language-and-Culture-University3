@@ -95,20 +95,15 @@ public class RoomBookingController {
     @GetMapping("/trend")
     public ResponseEntity<List<BookingTrendDto>> getBookingTrend(
             @RequestParam(defaultValue = "7") int days) {
-        try {
-            log.info("==========/api/room-booking/trend [GET]=============days:{}", days);
-            
-            // 验证天数参数
-            if (days != 7 && days != 15 && days != 30 && days != 90) {
-                return ResponseEntity.fail("天数参数只支持7、15、30、90");
-            }
-            
-            List<BookingTrendDto> result = roomBookingService.getBookingTrend(days);
-            return ResponseEntity.success(result);
-        } catch (Exception e) {
-            log.error("获取借用趋势数据失败：", e);
-            return ResponseEntity.fail(e.getMessage());
+        log.info("获取借用趋势数据 - days: {}", days);
+        
+        // 验证天数参数
+        if (days != 7 && days != 15 && days != 30 && days != 90) {
+            return ResponseEntity.fail("天数参数只支持7、15、30、90");
         }
+        
+        List<BookingTrendDto> result = roomBookingService.getBookingTrend(days);
+        return ResponseEntity.success(result);
     }
 
     /**
@@ -123,20 +118,15 @@ public class RoomBookingController {
     public ResponseEntity<List<BookingTrendDto>> getBookingTrendCustom(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
-        try {
-            log.info("==========/api/room-booking/trend/custom [GET]=============startTime:{}, endTime:{}", startTime, endTime);
-            
-            // 验证时间范围
-            if (startTime.isAfter(endTime)) {
-                return ResponseEntity.fail("开始时间不能晚于结束时间");
-            }
-            
-            List<BookingTrendDto> result = roomBookingService.getBookingTrend(startTime, endTime);
-            return ResponseEntity.success(result);
-        } catch (Exception e) {
-            log.error("获取借用趋势数据失败：", e);
-            return ResponseEntity.fail(e.getMessage());
+        log.info("获取借用趋势数据(自定义) - startTime: {}, endTime: {}", startTime, endTime);
+        
+        // 验证时间范围
+        if (startTime.isAfter(endTime)) {
+            return ResponseEntity.fail("开始时间不能晚于结束时间");
         }
+        
+        List<BookingTrendDto> result = roomBookingService.getBookingTrend(startTime, endTime);
+        return ResponseEntity.success(result);
     }
 
     /**

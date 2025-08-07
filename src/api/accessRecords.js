@@ -1,4 +1,4 @@
-import api from './index.js'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 教室出入记录相关API
@@ -10,7 +10,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   getAccessRecords(params) {
-    return api.post('/api/room-booking/access-records', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records`, params)
   },
 
   /**
@@ -19,7 +19,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   exportAccessRecords(params) {
-    return api.post('/api/room-booking/access-records/export', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records/export`, params)
   },
 
   /**
@@ -29,7 +29,7 @@ export const accessRecordsApi = {
    */
   getAccessStats(params = {}) {
     const queryString = new URLSearchParams(params).toString()
-    return api.get(`/api/room-booking/access-records/stats${queryString ? '?' + queryString : ''}`)
+    return request.get(`${API_PATHS.ROOM_BOOKING}/access-records/stats${queryString ? '?' + queryString : ''}`)
   },
 
   /**
@@ -39,7 +39,7 @@ export const accessRecordsApi = {
    */
   getRoomStatus(params = {}) {
     const queryString = new URLSearchParams(params).toString()
-    return api.get(`/api/room-booking/access-records/room-status${queryString ? '?' + queryString : ''}`)
+    return request.get(`${API_PATHS.ROOM_BOOKING}/access-records/room-status${queryString ? '?' + queryString : ''}`)
   },
 
   /**
@@ -48,7 +48,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   getRoomBookingStats(params) {
-    return api.post('/api/room-booking/access-records/booking-stats', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records/booking-stats`, params)
   },
 
   /**
@@ -58,7 +58,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   getRoomBookingDetails(roomId, params) {
-    return api.post(`/api/room-booking/access-records/room/${roomId}/details`, params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records/room/${roomId}/details`, params)
   },
 
   /**
@@ -67,7 +67,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   exportRoomBookingStats(params) {
-    return api.post('/api/room-booking/access-records/booking-stats/export', params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records/booking-stats/export`, params)
   },
 
   /**
@@ -77,7 +77,7 @@ export const accessRecordsApi = {
    * @returns {Promise}
    */
   exportRoomBookingDetails(roomId, params) {
-    return api.post(`/api/room-booking/access-records/room/${roomId}/export`, params)
+    return request.post(`${API_PATHS.ROOM_BOOKING}/access-records/room/${roomId}/export`, params)
   }
 }
 

@@ -1,6 +1,8 @@
 package com.proshine.system.controller;
 
+import com.proshine.common.constant.SystemConstants;
 import com.proshine.common.response.ResponseEntity;
+import com.proshine.system.dto.ForgotPasswordRequest;
 import com.proshine.system.dto.LoginRequest;
 import com.proshine.system.dto.LoginResponse;
 import com.proshine.system.service.AuthenticationService;
@@ -31,19 +33,10 @@ public class AuthenticationController {
      */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        try {
-            log.info("==========/authentication/login=============");
-            log.info("用户登录请求：{}", loginRequest.getUsername());
-            
-            LoginResponse loginResponse = authenticationService.login(loginRequest);
-            
-            log.info("用户 {} 登录成功", loginRequest.getUsername());
-            return ResponseEntity.success(loginResponse);
-            
-        } catch (Exception e) {
-            log.error("用户登录失败：", e);
-            return ResponseEntity.fail(e.getMessage());
-        }
+        log.info("用户登录请求 - username: {}", loginRequest.getUsername());
+        LoginResponse loginResponse = authenticationService.login(loginRequest);
+        log.info("用户 {} 登录成功", loginRequest.getUsername());
+        return ResponseEntity.success(loginResponse);
     }
     
     /**
@@ -54,21 +47,12 @@ public class AuthenticationController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        try {
-            log.info("==========/authentication/logout=============");
-            
-            String token = getTokenFromRequest(request);
-            if (StringUtils.hasText(token)) {
-                authenticationService.logout(token);
-            }
-            
-            log.info("用户登出成功");
-            return ResponseEntity.success(null);
-            
-        } catch (Exception e) {
-            log.error("用户登出失败：", e);
-            return ResponseEntity.fail(e.getMessage());
+        String token = getTokenFromRequest(request);
+        if (StringUtils.hasText(token)) {
+            authenticationService.logout(token);
         }
+        log.info("用户登出成功");
+        return ResponseEntity.success();
     }
     
     /**
@@ -77,25 +61,15 @@ public class AuthenticationController {
      * @param request HTTP请求
      * @return 新的JWT令牌
      */
-    @GetMapping("/refresh")
+    @PostMapping("/token/refresh")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
-        try {
-            log.info("==========/authentication/refresh=============");
-            
-            String token = getTokenFromRequest(request);
-            if (!StringUtils.hasText(token)) {
-                return ResponseEntity.fail("令牌不能为空");
-            }
-            
-            String newToken = authenticationService.refreshToken(token);
-            
-            log.info("JWT令牌刷新成功");
-            return ResponseEntity.success(newToken);
-            
-        } catch (Exception e) {
-            log.error("刷新JWT令牌失败：", e);
-            return ResponseEntity.fail(e.getMessage());
+        String token = getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return ResponseEntity.fail("令牌不能为空");
         }
+        String newToken = authenticationService.refreshToken(token);
+        log.info("JWT令牌刷新成功");
+        return ResponseEntity.success(newToken);
     }
     
     /**
@@ -107,26 +81,20 @@ public class AuthenticationController {
      * @return 处理结果
      */
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(
-            @RequestParam String username,
-            @RequestParam String phone,
-            @RequestParam(required = false) String customerId) {
-        try {
-            log.info("==========/authentication/forgot-password=============");
-            log.info("忘记密码请求：用户名={}, 手机号={}", username, phone);
-            
-            boolean success = authenticationService.forgotPassword(username, phone, customerId);
-            
-            if (success) {
-                log.info("忘记密码处理成功，用户名：{}", username);
-                return ResponseEntity.success(null);
-            } else {
-                return ResponseEntity.fail("用户名或手机号不正确");
-            }
-            
-        } catch (Exception e) {
-            log.error("忘记密码处理失败：", e);
-            return ResponseEntity.fail(e.getMessage());
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        log.info("忘记密码请求 - username: {}", request.getUsername());
+        
+        boolean success = authenticationService.forgotPassword(
+            request.getUsername(), 
+            request.getPhone(), 
+            request.getCustomerId()
+        );
+        
+        if (success) {
+            log.info("验证码已发送至手机号：{}", maskPhone(request.getPhone()));
+            return ResponseEntity.success();
+        } else {
+            return ResponseEntity.fail("用户名或手机号不正确");
         }
     }
     
@@ -137,10 +105,20 @@ public class AuthenticationController {
      * @return JWT令牌
      */
     private String getTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        String bearerToken = request.getHeader(SystemConstants.TOKEN_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(SystemConstants.TOKEN_PREFIX)) {
+            return bearerToken.substring(SystemConstants.TOKEN_PREFIX.length());
         }
         return null;
+    }
+    
+    /**
+     * 手机号脱敏显示
+     */
+    private String maskPhone(String phone) {
+        if (phone == null || phone.length() != 11) {
+            return phone;
+        }
+        return phone.substring(0, 3) + "****" + phone.substring(7);
     }
 }

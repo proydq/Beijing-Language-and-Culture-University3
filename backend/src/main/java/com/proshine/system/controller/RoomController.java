@@ -43,16 +43,11 @@ public class RoomController {
      */
     @PostMapping("/search")
     public ResponseEntity<ResponsePageDataEntity<RoomVo>> searchRooms(@RequestBody SearchRoomCondition condition) {
-        try {
-            log.info("==========/api/room/search=============roomName:{}, roomNo:{}, roomTypeName:{}, pageNumber:{}, pageSize:{}", 
-                    condition.getRoomName(), condition.getRoomNo(), condition.getRoomTypeName(), 
-                    condition.getPageNumber(), condition.getPageSize());
-            ResponsePageDataEntity<RoomVo> result = roomService.searchRooms(condition);
-            return ResponseEntity.success(result);
-        } catch (Exception e) {
-            log.error("分页查询房间列表失败：", e);
-            return ResponseEntity.fail(e.getMessage());
-        }
+        log.info("查询房间列表 - roomName: {}, roomNo: {}, roomTypeName: {}, page: {}/{}", 
+                condition.getRoomName(), condition.getRoomNo(), condition.getRoomTypeName(), 
+                condition.getPageNumber(), condition.getPageSize());
+        ResponsePageDataEntity<RoomVo> result = roomService.searchRooms(condition);
+        return ResponseEntity.success(result);
     }
 
     /**
@@ -63,14 +58,9 @@ public class RoomController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<RoomVo> getRoomById(@PathVariable String id) {
-        try {
-            log.info("==========/api/room/{} [GET]=============id:{}", id, id);
-            RoomVo result = roomService.getRoomById(id);
-            return ResponseEntity.success(result);
-        } catch (Exception e) {
-            log.error("查询房间详情失败：", e);
-            return ResponseEntity.fail(e.getMessage());
-        }
+        log.info("查询房间详情 - id: {}", id);
+        RoomVo result = roomService.getRoomById(id);
+        return ResponseEntity.success(result);
     }
 
     /**
@@ -81,15 +71,10 @@ public class RoomController {
      */
     @PostMapping
     public ResponseEntity<RoomVo> saveRoom(@Valid @RequestBody RoomSaveVo roomSaveVo) {
-        try {
-            log.info("==========/api/room [POST]=============roomName:{}, roomNo:{}, roomTypeName:{}", 
-                    roomSaveVo.getRoomName(), roomSaveVo.getRoomNo(), roomSaveVo.getRoomTypeName());
-            RoomVo result = roomService.saveRoom(roomSaveVo);
-            return ResponseEntity.success(result);
-        } catch (Exception e) {
-            log.error("保存房间失败：", e);
-            return ResponseEntity.fail(e.getMessage());
-        }
+        log.info("保存房间 - roomName: {}, roomNo: {}, roomTypeName: {}", 
+                roomSaveVo.getRoomName(), roomSaveVo.getRoomNo(), roomSaveVo.getRoomTypeName());
+        RoomVo result = roomService.saveRoom(roomSaveVo);
+        return ResponseEntity.success(result);
     }
 
     /**

@@ -1,4 +1,4 @@
-import api from './index.js'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 连续预约设置相关API
@@ -13,7 +13,7 @@ import api from './index.js'
  * @returns {Promise} 设置列表
  */
 export const getContinuousBookingSettings = (params = {}) => {
-  return api.post('/continuous-booking-settings/list', params)
+  return request.post(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/list`, params)
 }
 
 /**
@@ -30,7 +30,7 @@ export const getContinuousBookingSettings = (params = {}) => {
  * @returns {Promise} 设置列表（包含房间信息）
  */
 export const searchContinuousBookingSettings = (condition = {}) => {
-  return api.post('/continuous-booking-settings/search', condition)
+  return request.post(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/search`, condition)
 }
 
 /**
@@ -39,7 +39,7 @@ export const searchContinuousBookingSettings = (condition = {}) => {
  * @returns {Promise} 设置详情
  */
 export const getContinuousBookingSettingByRoomId = (roomId) => {
-  return api.get(`/continuous-booking-settings/${roomId}`)
+  return request.get(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/${roomId}`)
 }
 
 /**
@@ -53,7 +53,7 @@ export const getContinuousBookingSettingByRoomId = (roomId) => {
  * @returns {Promise} 更新结果
  */
 export const updateContinuousBookingSetting = (roomId, settingData) => {
-  return api.put(`/continuous-booking-settings/${roomId}`, settingData)
+  return request.put(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/${roomId}`, settingData)
 }
 
 /**
@@ -67,7 +67,7 @@ export const updateContinuousBookingSetting = (roomId, settingData) => {
  * @returns {Promise} 批量更新结果
  */
 export const batchUpdateContinuousBookingSettings = (batchData) => {
-  return api.post('/continuous-booking-settings/batch-update', batchData)
+  return request.post(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/batch-update`, batchData)
 }
 
 /**
@@ -75,7 +75,7 @@ export const batchUpdateContinuousBookingSettings = (batchData) => {
  * @returns {Promise} 楼层选项
  */
 export const getFloorOptions = () => {
-  return api.get('/continuous-booking-settings/floor-options')
+  return request.get(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/floor-options`)
 }
 
 /**
@@ -84,7 +84,7 @@ export const getFloorOptions = () => {
  * @returns {Promise} 删除结果
  */
 export const deleteContinuousBookingSetting = (roomId) => {
-  return api.delete(`/continuous-booking-settings/${roomId}`)
+  return request.delete(`${API_PATHS.CONTINUOUS_BOOKING_SETTINGS}/${roomId}`)
 }
 
 /**

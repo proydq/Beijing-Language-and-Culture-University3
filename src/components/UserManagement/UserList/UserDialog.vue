@@ -49,6 +49,16 @@
             >
               <el-icon><Plus /></el-icon>
             </el-upload>
+            <el-progress 
+              v-if="avatarUpload.calculating.value || avatarUpload.uploadProgress.value > 0"
+              :percentage="avatarUpload.calculating.value ? 50 : avatarUpload.uploadProgress.value"
+              :status="avatarUpload.calculating.value ? 'warning' : ''"
+              style="margin-top: 10px"
+            >
+              <template #default="{ percentage }">
+                <span>{{ avatarUpload.calculating.value ? '计算文件特征...' : `上传中 ${percentage}%` }}</span>
+              </template>
+            </el-progress>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -62,6 +72,16 @@
             >
               <el-icon><Plus /></el-icon>
             </el-upload>
+            <el-progress 
+              v-if="faceUpload.calculating.value || faceUpload.uploadProgress.value > 0"
+              :percentage="faceUpload.calculating.value ? 50 : faceUpload.uploadProgress.value"
+              :status="faceUpload.calculating.value ? 'warning' : ''"
+              style="margin-top: 10px"
+            >
+              <template #default="{ percentage }">
+                <span>{{ faceUpload.calculating.value ? '计算文件特征...' : `上传中 ${percentage}%` }}</span>
+              </template>
+            </el-progress>
           </el-form-item>
         </el-col>
       </el-row>
@@ -199,6 +219,7 @@ import { Plus } from '@element-plus/icons-vue'
 import { useOrganizationManagement } from '@/composables/useOrganizationManagement.js'
 import { usePositionManagement } from '@/composables/usePositionManagement.js'
 import { useTitleManagement } from '@/composables/useTitleManagement.js'
+import { useFileUploadEnhanced } from '@/composables/useFileUploadEnhanced'
 
 const props = defineProps({
   detailDialogVisible: { type: Boolean, default: false },
@@ -213,6 +234,33 @@ const formRef = ref()
 const loading = ref(false)
 const avatarList = ref([])
 const faceList = ref([])
+
+// 初始化增强文件上传
+const avatarUpload = useFileUploadEnhanced({
+  maxSize: 5 * 1024 * 1024, // 5MB
+  allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+  category: 'avatar',
+  onSuccess: (result) => {
+    userForm.avatar = result.url
+    avatarList.value = [{ url: result.url, name: result.fileInfo?.fileName || 'avatar' }]
+  },
+  onError: (error) => {
+    ElMessage.error('头像上传失败: ' + (error.message || '未知错误'))
+  }
+})
+
+const faceUpload = useFileUploadEnhanced({
+  maxSize: 5 * 1024 * 1024, // 5MB
+  allowedTypes: ['image/jpeg', 'image/png'],
+  category: 'face',
+  onSuccess: (result) => {
+    userForm.faceImage = result.url
+    faceList.value = [{ url: result.url, name: result.fileInfo?.fileName || 'face' }]
+  },
+  onError: (error) => {
+    ElMessage.error('人脸照片上传失败: ' + (error.message || '未知错误'))
+  }
+})
 
 const {
   departmentOptions: departments,
@@ -279,6 +327,10 @@ const resetForm = () => {
   avatarList.value = []
   faceList.value = []
   formRef.value?.resetFields()
+  
+  // 清空文件上传状态
+  avatarUpload.clearFile()
+  faceUpload.clearFile()
 }
 
 const handleDialogClose = () => {
@@ -300,17 +352,27 @@ const handleSubmit = async () => {
   }
 }
 
-const handleAvatarChange = (file, fileList) => {
+const handleAvatarChange = async (file, fileList) => {
   avatarList.value = fileList.slice(-1)
-  if (file.raw) {
-    userForm.avatar = URL.createObjectURL(file.raw)
+  if (!file.raw) return
+  
+  try {
+    // 使用增强的文件上传，支持文件去重和秒传
+    await avatarUpload.handleUpload(file.raw)
+  } catch (e) {
+    console.error('头像上传失败:', e)
   }
 }
 
-const handleFaceChange = (file, fileList) => {
+const handleFaceChange = async (file, fileList) => {
   faceList.value = fileList.slice(-1)
-  if (file.raw) {
-    userForm.faceImage = URL.createObjectURL(file.raw)
+  if (!file.raw) return
+  
+  try {
+    // 使用增强的文件上传，支持文件去重和秒传
+    await faceUpload.handleUpload(file.raw)
+  } catch (e) {
+    console.error('人脸照片上传失败:', e)
   }
 }
 </script>

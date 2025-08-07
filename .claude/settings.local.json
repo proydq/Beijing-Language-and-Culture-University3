@@ -11,7 +11,10 @@
       "Bash(git restore:*)",
       "Bash(taskkill:*)",
       "Bash(cmd /c:*)",
-      "Bash(start mvn spring-boot:run)"
+      "Bash(start mvn spring-boot:run)",
+      "Bash(mysql:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

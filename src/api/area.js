@@ -1,4 +1,4 @@
-import api from './index.js'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 区域管理相关API
@@ -12,7 +12,7 @@ import api from './index.js'
  * @returns {Promise} 区域树形数据
  */
 export const getAreaTree = (params = {}) => {
-  return api.get('/area/tree', { params })
+  return request.get(`${API_PATHS.AREA}/tree`, { params })
 }
 
 /**
@@ -21,7 +21,7 @@ export const getAreaTree = (params = {}) => {
  * @returns {Promise} 区域详情
  */
 export const getAreaById = (id) => {
-  return api.get(`/area/${id}`)
+  return request.get(`${API_PATHS.AREA}/${id}`)
 }
 
 /**
@@ -35,7 +35,7 @@ export const getAreaById = (id) => {
  * @returns {Promise} 新增结果
  */
 export const addArea = (areaData) => {
-  return api.post('/area', areaData)
+  return request.post(API_PATHS.AREA, areaData)
 }
 
 /**
@@ -45,7 +45,7 @@ export const addArea = (areaData) => {
  * @returns {Promise} 更新结果
  */
 export const updateArea = (id, areaData) => {
-  return api.put(`/area/${id}`, areaData)
+  return request.put(`${API_PATHS.AREA}/${id}`, areaData)
 }
 
 /**
@@ -54,7 +54,7 @@ export const updateArea = (id, areaData) => {
  * @returns {Promise} 删除结果
  */
 export const deleteArea = (id) => {
-  return api.delete(`/area/${id}`)
+  return request.delete(`${API_PATHS.AREA}/${id}`)
 }
 
 /**
@@ -63,7 +63,7 @@ export const deleteArea = (id) => {
  * @returns {Promise} 删除结果
  */
 export const cascadeDeleteArea = (id) => {
-  return api.delete(`/area/${id}/cascade`)
+  return request.delete(`${API_PATHS.AREA}/${id}/cascade`)
 }
 
 /**
@@ -80,7 +80,7 @@ export const cascadeDeleteArea = (id) => {
  * @returns {Promise} 分页结果
  */
 export const searchArea = (condition) => {
-  return api.post('/area/search', condition)
+  return request.post(`${API_PATHS.AREA}/search`, condition)
 }
 
 /**

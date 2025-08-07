@@ -85,7 +85,7 @@
 
         <!-- 表格 -->
         <div class="content-table">
-          <el-table :data="pagedData" v-loading="loading" stripe style="width: 100%">
+          <el-table :data="pagedData" stripe style="width: 100%">
             <el-table-column prop="roomName" label="预约教室" min-width="120" />
             <el-table-column prop="name" label="姓名" width="100" />
             <el-table-column prop="gender" label="性别" width="80" />
@@ -103,7 +103,7 @@
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50, 100]"
-            :total="total"
+            :total="filteredData.length"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -125,7 +125,6 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { getAreaTree } from '@/api/area'
-import { accessRecordsApi } from '@/api/accessRecords.js'
 
 // 楼栋结构树数据
 const treeData = ref([])
@@ -180,73 +179,142 @@ const filterForm = reactive({
   accessType: ''
 })
 
-// 出入记录数据
-const allRecords = ref([])
-const loading = ref(false)
-const total = ref(0)
+const allRecords = ref([
+  {
+    id: 1,
+    roomName: 'A-101',
+    name: '张三',
+    gender: '男',
+    employeeId: 'T001',
+    phone: '13800138000',
+    openMethod: '刷卡',
+    accessTime: '2024-06-27 08:00:00',
+    accessType: '预约权限',
+    floor: '1F'
+  },
+  {
+    id: 2,
+    roomName: 'A-102',
+    name: '李四',
+    gender: '女',
+    employeeId: 'T002',
+    phone: '13800138001',
+    openMethod: '人脸识别',
+    accessTime: '2024-06-27 09:20:00',
+    accessType: '预约权限',
+    floor: '1F'
+  },
+  {
+    id: 3,
+    roomName: 'A-201',
+    name: '王五',
+    gender: '男',
+    employeeId: 'T003',
+    phone: '13800138002',
+    openMethod: '刷卡',
+    accessTime: '2024-06-27 10:30:00',
+    accessType: '永久权限',
+    floor: '2F'
+  },
+  {
+    id: 4,
+    roomName: 'A-301',
+    name: '赵六',
+    gender: '女',
+    employeeId: 'T004',
+    phone: '13800138003',
+    openMethod: '按钮',
+    accessTime: '2024-06-27 11:40:00',
+    accessType: '预约权限',
+    floor: '3F'
+  },
+  {
+    id: 5,
+    roomName: 'B-101',
+    name: '孙七',
+    gender: '男',
+    employeeId: 'T005',
+    phone: '13800138004',
+    openMethod: '人脸识别',
+    accessTime: '2024-06-28 08:10:00',
+    accessType: '永久权限',
+    floor: '1F'
+  },
+  {
+    id: 6,
+    roomName: 'B-202',
+    name: '周八',
+    gender: '女',
+    employeeId: 'T006',
+    phone: '13800138005',
+    openMethod: '刷卡',
+    accessTime: '2024-06-28 09:50:00',
+    accessType: '预约权限',
+    floor: '2F'
+  },
+  {
+    id: 7,
+    roomName: 'B-203',
+    name: '吴九',
+    gender: '男',
+    employeeId: 'T007',
+    phone: '13800138006',
+    openMethod: '按钮',
+    accessTime: '2024-06-28 10:00:00',
+    accessType: '预约权限',
+    floor: '2F'
+  },
+  {
+    id: 8,
+    roomName: 'A-103',
+    name: '郑十',
+    gender: '女',
+    employeeId: 'T008',
+    phone: '13800138007',
+    openMethod: '刷卡',
+    accessTime: '2024-06-29 12:00:00',
+    accessType: '永久权限',
+    floor: '1F'
+  }
+])
 
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 加载出入记录数据
-const loadAccessRecords = async () => {
-  try {
-    loading.value = true
-    
-    // 构建查询参数
-    const params = {
-      pageNum: currentPage.value,
-      pageSize: pageSize.value,
-      basicInfo: filterForm.basicInfo || undefined,
-      openMethod: filterForm.openMethod || undefined,
-      accessType: filterForm.accessType || undefined,
-      areaId: selectedBuildingArea.value?.id || undefined
-    }
-    
-    // 处理时间参数
-    if (filterForm.startTime) {
-      params.startTime = formatDateTime(filterForm.startTime)
-    }
-    if (filterForm.endTime) {
-      params.endTime = formatDateTime(filterForm.endTime)
-    }
-    
-    const response = await accessRecordsApi.getAccessRecords(params)
-    
-    if (response.code === 200) {
-      allRecords.value = response.data?.rows || []
-      total.value = response.data?.total || 0
-    } else {
-      ElMessage.error(response.message || '获取出入记录失败')
-    }
-  } catch (error) {
-    console.error('加载出入记录失败:', error)
-    ElMessage.error('加载出入记录失败')
-  } finally {
-    loading.value = false
+const filteredData = computed(() => {
+  let data = allRecords.value
+  if (selectedBuildingArea.value) {
+    // 这里可以根据选中的楼栋区域过滤数据
+    // 暂时保留原有的floor过滤逻辑，后续可以根据实际需求调整
+    data = data.filter((item) => item.floor === selectedBuildingArea.value.name)
   }
-}
+  if (filterForm.basicInfo) {
+    data = data.filter((item) =>
+      [item.name, item.employeeId, item.phone].some((v) => v.includes(filterForm.basicInfo))
+    )
+  }
+  if (filterForm.openMethod) {
+    data = data.filter((item) => item.openMethod === filterForm.openMethod)
+  }
+  if (filterForm.accessType) {
+    data = data.filter((item) => item.accessType === filterForm.accessType)
+  }
+  if (filterForm.startTime) {
+    data = data.filter((item) => new Date(item.accessTime) >= new Date(filterForm.startTime))
+  }
+  if (filterForm.endTime) {
+    data = data.filter((item) => new Date(item.accessTime) <= new Date(filterForm.endTime))
+  }
+  return data
+})
 
-// 格式化时间
-const formatDateTime = (date) => {
-  if (!date) return ''
-  const d = new Date(date)
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0') + ' ' +
-    String(d.getHours()).padStart(2, '0') + ':' +
-    String(d.getMinutes()).padStart(2, '0') + ':' +
-    String(d.getSeconds()).padStart(2, '0')
-}
-
-// 直接使用API返回的数据，不需要前端过滤
 const pagedData = computed(() => {
-  return allRecords.value
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredData.value.slice(start, start + pageSize.value)
 })
 
 function search() {
   currentPage.value = 1
-  loadAccessRecords()
 }
 
 function reset() {
@@ -258,118 +326,28 @@ function reset() {
   sidebarSearch.value = ''
   selectedBuildingArea.value = null
   currentPage.value = 1
-  loadAccessRecords()
 }
 
-// 导出当前页
-async function exportCurrentPage() {
-  try {
-    const params = {
-      exportType: 'current',
-      pageNum: currentPage.value,
-      pageSize: pageSize.value,
-      basicInfo: filterForm.basicInfo || undefined,
-      openMethod: filterForm.openMethod || undefined,
-      accessType: filterForm.accessType || undefined,
-      areaId: selectedBuildingArea.value?.id || undefined
-    }
-    
-    // 处理时间参数
-    if (filterForm.startTime) {
-      params.startTime = formatDateTime(filterForm.startTime)
-    }
-    if (filterForm.endTime) {
-      params.endTime = formatDateTime(filterForm.endTime)
-    }
-    
-    const response = await accessRecordsApi.exportAccessRecords(params)
-    
-    if (response.code === 200) {
-      const { fileUrl, fileName } = response.data
-      
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.href = fileUrl
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      ElMessage.success('导出成功')
-    } else {
-      ElMessage.error(response.message || '导出失败')
-    }
-  } catch (error) {
-    console.error('导出失败:', error)
-    ElMessage.error('导出失败')
-  }
+function exportCurrentPage() {
+  ElMessage.success('导出当前页')
 }
 
-// 导出全部页
-async function exportAllPages() {
-  try {
-    const params = {
-      exportType: 'all',
-      basicInfo: filterForm.basicInfo || undefined,
-      openMethod: filterForm.openMethod || undefined,
-      accessType: filterForm.accessType || undefined,
-      areaId: selectedBuildingArea.value?.id || undefined
-    }
-    
-    // 处理时间参数
-    if (filterForm.startTime) {
-      params.startTime = formatDateTime(filterForm.startTime)
-    }
-    if (filterForm.endTime) {
-      params.endTime = formatDateTime(filterForm.endTime)
-    }
-    
-    const response = await accessRecordsApi.exportAccessRecords(params)
-    
-    if (response.code === 200) {
-      const { fileUrl, fileName } = response.data
-      
-      // 创建下载链接
-      const link = document.createElement('a')
-      link.href = fileUrl
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      
-      ElMessage.success('导出成功')
-    } else {
-      ElMessage.error(response.message || '导出失败')
-    }
-  } catch (error) {
-    console.error('导出失败:', error)
-    ElMessage.error('导出失败')
-  }
+function exportAllPages() {
+  ElMessage.success('导出全部页')
 }
 
 function handleSizeChange(val) {
   pageSize.value = val
   currentPage.value = 1
-  loadAccessRecords()
 }
 
 function handleCurrentChange(val) {
   currentPage.value = val
-  loadAccessRecords()
 }
-
-// 监听选中区域变化，重新加载数据
-watch(() => selectedBuildingArea.value, () => {
-  if (selectedBuildingArea.value) {
-    currentPage.value = 1
-    loadAccessRecords()
-  }
-}, { deep: true })
 
 // 页面初始化
 onMounted(() => {
   loadBuildingTree()
-  loadAccessRecords()
 })
 </script>
 

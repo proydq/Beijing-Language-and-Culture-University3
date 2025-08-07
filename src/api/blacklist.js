@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 分页查询黑名单
@@ -6,7 +6,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const searchBlacklist = (condition) => {
-  return request.post('/blacklist/search', condition)
+  return request.post(`${API_PATHS.BLACKLIST}/search`, condition)
 }
 
 /**
@@ -15,7 +15,7 @@ export const searchBlacklist = (condition) => {
  * @returns {Promise}
  */
 export const addToBlacklist = (data) => {
-  return request.post('/blacklist', data)
+  return request.post(API_PATHS.BLACKLIST, data)
 }
 
 /**
@@ -24,7 +24,7 @@ export const addToBlacklist = (data) => {
  * @returns {Promise}
  */
 export const removeFromBlacklist = (blacklistId) => {
-  return request.delete(`/blacklist/${blacklistId}`)
+  return request.delete(`${API_PATHS.BLACKLIST}/${blacklistId}`)
 }
 
 /**
@@ -33,7 +33,7 @@ export const removeFromBlacklist = (blacklistId) => {
  * @returns {Promise}
  */
 export const batchRemoveFromBlacklist = (blacklistIds) => {
-  return request.delete('/blacklist/batch', { data: blacklistIds })
+  return request.delete(`${API_PATHS.BLACKLIST}/batch`, { data: blacklistIds })
 }
 
 /**
@@ -42,7 +42,7 @@ export const batchRemoveFromBlacklist = (blacklistIds) => {
  * @returns {Promise}
  */
 export const isUserInBlacklist = (userId) => {
-  return request.get(`/blacklist/check/${userId}`)
+  return request.get(`${API_PATHS.BLACKLIST}/check/${userId}`)
 }
 
 /**
@@ -53,7 +53,7 @@ export const isUserInBlacklist = (userId) => {
  * @returns {Promise}
  */
 export const getUserViolationRecords = (userId, pageNumber = 1, pageSize = 10) => {
-  return request.get(`/blacklist/violation-records/${userId}`, {
+  return request.get(`${API_PATHS.BLACKLIST}/violation-records/${userId}`, {
     params: { pageNumber, pageSize }
   })
 }

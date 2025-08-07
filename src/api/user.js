@@ -1,4 +1,4 @@
-import api from './index'
+import { request, API_PATHS } from './apiConfig'
 
 /**
  * 用户管理相关API
@@ -10,7 +10,7 @@ export const userAPI = {
    * @returns {Promise} 用户列表响应
    */
   searchUsers(searchCondition) {
-    return api.post('/api/user/search', searchCondition)
+    return request.post(`${API_PATHS.USER}/search`, searchCondition)
   },
 
   /**
@@ -19,7 +19,7 @@ export const userAPI = {
    * @returns {Promise} 用户详情响应
    */
   getUserById(id) {
-    return api.get(`/api/user/${id}`)
+    return request.get(`${API_PATHS.USER}/${id}`)
   },
 
   /**
@@ -28,7 +28,7 @@ export const userAPI = {
    * @returns {Promise} 保存响应
    */
   saveUser(userData) {
-    return api.post('/api/user', userData)
+    return request.post(API_PATHS.USER, userData)
   },
 
   /**
@@ -37,7 +37,7 @@ export const userAPI = {
    * @returns {Promise} 更新响应
    */
   updateUser(userData) {
-    return api.put(`/api/user/${userData.id}`, userData)
+    return request.put(`${API_PATHS.USER}/${userData.id}`, userData)
   },
 
   /**
@@ -46,7 +46,7 @@ export const userAPI = {
    * @returns {Promise} 删除响应
    */
   deleteUsers(ids) {
-    return api.post('/sys/user/delete', ids)
+    return request.post(`${API_PATHS.SYSTEM_USER}/delete`, ids)
   },
 
   /**
@@ -55,7 +55,7 @@ export const userAPI = {
    * @returns {Promise} 移动响应
    */
   moveUsersToRecycleBin(ids) {
-    return api.post('/sys/user/moveToRecycleBin', ids)
+    return request.post(`${API_PATHS.SYSTEM_USER}/moveToRecycleBin`, ids)
   },
 
   /**
@@ -65,7 +65,7 @@ export const userAPI = {
    * @returns {Promise} 修改响应
    */
   updateUserStatus(id, status) {
-    return api.post('/sys/user/updateStatus', { id, status })
+    return request.post(`${API_PATHS.SYSTEM_USER}/updateStatus`, { id, status })
   },
 
   /**
@@ -74,7 +74,7 @@ export const userAPI = {
    * @returns {Promise} 重置响应
    */
   resetUserPassword(id) {
-    return api.post('/sys/user/resetPassword', { id })
+    return request.post(`${API_PATHS.SYSTEM_USER}/resetPassword`, { id })
   },
 
   /**
@@ -84,7 +84,7 @@ export const userAPI = {
    * @returns {Promise} 分配响应
    */
   assignUserRoles(userId, roleIds) {
-    return api.post('/sys/user/assignRoles', { userId, roleIds })
+    return request.post(`${API_PATHS.SYSTEM_USER}/assignRoles`, { userId, roleIds })
   },
 
   /**
@@ -93,7 +93,7 @@ export const userAPI = {
    * @returns {Promise} 检查响应
    */
   checkUsernameExists(username) {
-    return api.get(`/sys/user/checkUsername/${username}`)
+    return request.get(`${API_PATHS.SYSTEM_USER}/checkUsername/${username}`)
   },
 
   /**
@@ -102,7 +102,7 @@ export const userAPI = {
    * @returns {Promise} 检查响应
    */
   checkJobNumberExists(jobNumber) {
-    return api.get(`/sys/user/checkJobNumber/${jobNumber}`)
+    return request.get(`${API_PATHS.SYSTEM_USER}/checkJobNumber/${jobNumber}`)
   },
 
   /**
@@ -110,7 +110,7 @@ export const userAPI = {
    * @returns {Promise}
    */
   getAllDepartments() {
-    return api.get('/api/organization/all')
+    return request.get(`${API_PATHS.ORGANIZATION}/all`)
   },
 
   /**
@@ -118,7 +118,7 @@ export const userAPI = {
    * @returns {Promise}
    */
   getAllPositions() {
-    return api.get('/api/position/all')
+    return request.get(`${API_PATHS.POSITION}/all`)
   },
 
   /**
@@ -126,7 +126,7 @@ export const userAPI = {
    * @returns {Promise}
    */
   getAllTitles() {
-    return api.get('/api/title/all')
+    return request.get(`${API_PATHS.TITLE}/all`)
   }
 }
 

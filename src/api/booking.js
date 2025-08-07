@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request, API_PATHS } from './apiConfig'
 
 // ==================== 用户预约限制相关接口 ====================
 
@@ -8,7 +8,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const getUserBookingLimit = (userId) => {
-  return request.get(`/user-booking-limits/${userId}`)
+  return request.get(`${API_PATHS.USER_BOOKING_LIMITS}/${userId}`)
 }
 
 /**
@@ -17,7 +17,7 @@ export const getUserBookingLimit = (userId) => {
  * @returns {Promise}
  */
 export const setUserBookingLimit = (limitData) => {
-  return request.post('/user-booking-limits', limitData)
+  return request.post(API_PATHS.USER_BOOKING_LIMITS, limitData)
 }
 
 /**
@@ -26,7 +26,7 @@ export const setUserBookingLimit = (limitData) => {
  * @returns {Promise}
  */
 export const batchSetUserBookingLimits = (limitDataList) => {
-  return request.post('/user-booking-limits/batch', limitDataList)
+  return request.post(`${API_PATHS.USER_BOOKING_LIMITS}/batch`, limitDataList)
 }
 
 /**
@@ -35,7 +35,7 @@ export const batchSetUserBookingLimits = (limitDataList) => {
  * @returns {Promise}
  */
 export const deleteUserBookingLimit = (userId) => {
-  return request.delete(`/user-booking-limits/${userId}`)
+  return request.delete(`${API_PATHS.USER_BOOKING_LIMITS}/${userId}`)
 }
 
 /**
@@ -43,7 +43,7 @@ export const deleteUserBookingLimit = (userId) => {
  * @returns {Promise}
  */
 export const getAllUserBookingLimits = () => {
-  return request.get('/user-booking-limits/all')
+  return request.get(`${API_PATHS.USER_BOOKING_LIMITS}/all`)
 }
 
 // ==================== 预约时间规则相关接口 ====================
@@ -57,7 +57,7 @@ export const getAllUserBookingLimits = () => {
  * @returns {Promise}
  */
 export const getBookingTimeRuleList = (params) => {
-  return request.get('/booking-time-rules/list', { params })
+  return request.get(`${API_PATHS.BOOKING_TIME_RULES}/list`, { params })
 }
 
 /**
@@ -66,7 +66,7 @@ export const getBookingTimeRuleList = (params) => {
  * @returns {Promise}
  */
 export const getBookingTimeRuleById = (id) => {
-  return request.get(`/booking-time-rules/${id}`)
+  return request.get(`${API_PATHS.BOOKING_TIME_RULES}/${id}`)
 }
 
 /**
@@ -75,7 +75,7 @@ export const getBookingTimeRuleById = (id) => {
  * @returns {Promise}
  */
 export const createBookingTimeRule = (ruleData) => {
-  return request.post('/booking-time-rules', ruleData)
+  return request.post(API_PATHS.BOOKING_TIME_RULES, ruleData)
 }
 
 /**
@@ -85,7 +85,7 @@ export const createBookingTimeRule = (ruleData) => {
  * @returns {Promise}
  */
 export const updateBookingTimeRule = (id, ruleData) => {
-  return request.put(`/booking-time-rules/${id}`, ruleData)
+  return request.put(`${API_PATHS.BOOKING_TIME_RULES}/${id}`, ruleData)
 }
 
 /**
@@ -94,7 +94,7 @@ export const updateBookingTimeRule = (id, ruleData) => {
  * @returns {Promise}
  */
 export const deleteBookingTimeRule = (id) => {
-  return request.delete(`/booking-time-rules/${id}`)
+  return request.delete(`${API_PATHS.BOOKING_TIME_RULES}/${id}`)
 }
 
 /**
@@ -103,7 +103,7 @@ export const deleteBookingTimeRule = (id) => {
  * @returns {Promise}
  */
 export const getBookingTimeRulesByUserId = (userId) => {
-  return request.get(`/booking-time-rules/user/${userId}`)
+  return request.get(`${API_PATHS.BOOKING_TIME_RULES}/user/${userId}`)
 }
 
 // ==================== 预约时间验证相关接口 ====================
@@ -118,8 +118,8 @@ export const getBookingTimeRulesByUserId = (userId) => {
  * @param {String} request.bookingDate 预约日期
  * @returns {Promise}
  */
-export const checkBookingTime = (request) => {
-  return request.post('/booking-validation/check-time', request)
+export const checkBookingTime = (requestData) => {
+  return request.post(`${API_PATHS.BOOKING_VALIDATION}/check-time`, requestData)
 }
 
 /**
@@ -129,7 +129,7 @@ export const checkBookingTime = (request) => {
  * @returns {Promise}
  */
 export const getAvailableBookingTimes = (userId, date) => {
-  return request.get('/booking-validation/available-times', {
+  return request.get(`${API_PATHS.BOOKING_VALIDATION}/available-times`, {
     params: { userId, date }
   })
 }

@@ -91,6 +91,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     private RoomAccessRecordRepository roomAccessRecordRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public BookingStatsDto getBookingStats(LocalDateTime startTime, LocalDateTime endTime) {
         String customerId = SecurityUtil.getCustomerId();
         
@@ -126,6 +127,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingDistributionDto> getBookingDistribution(LocalDateTime startTime, LocalDateTime endTime) {
         String customerId = SecurityUtil.getCustomerId();
         
@@ -148,6 +150,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingTrendDto> getBookingTrend(int days) {
         LocalDateTime endTime = LocalDateTime.now();
         LocalDateTime startTime = endTime.minusDays(days);
@@ -155,6 +158,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingTrendDto> getBookingTrend(LocalDateTime startTime, LocalDateTime endTime) {
         String customerId = SecurityUtil.getCustomerId();
         
@@ -189,6 +193,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ResponsePageDataEntity<BookingListResponse> getMyBookings(MyBookingsRequest request) {
         String customerId = SecurityUtil.getCustomerId();
         String userId = SecurityUtil.getCurrentUserId();

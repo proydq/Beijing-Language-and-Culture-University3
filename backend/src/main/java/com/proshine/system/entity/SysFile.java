@@ -21,7 +21,7 @@ public class SysFile {
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid")
-    @Column(name = "id", columnDefinition = "VARCHAR(32) COMMENT '主键UUID'")
+    @Column(name = "id", columnDefinition = "VARCHAR(64) COMMENT '主键UUID'")
     private String id;
 
     @Column(name = "file_name", columnDefinition = "VARCHAR(255) COMMENT '文件名'")

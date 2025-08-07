@@ -2,10 +2,37 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
-import { uploadFile } from '@/api/upload.js'
+import { useFileUploadEnhanced } from '@/composables/useFileUploadEnhanced'
 
 export function useUserManagement() {
   const router = useRouter()
+  
+  // 初始化增强文件上传
+  const avatarUpload = useFileUploadEnhanced({
+    maxSize: 5 * 1024 * 1024, // 5MB
+    allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+    category: 'avatar',
+    onSuccess: (result) => {
+      userForm.avatar = result.url
+      avatarList.value = [{ url: result.url, name: result.fileInfo?.fileName || 'avatar' }]
+    },
+    onError: (error) => {
+      ElMessage.error('头像上传失败: ' + (error.message || '未知错误'))
+    }
+  })
+  
+  const faceUpload = useFileUploadEnhanced({
+    maxSize: 5 * 1024 * 1024, // 5MB
+    allowedTypes: ['image/jpeg', 'image/png'],
+    category: 'face',
+    onSuccess: (result) => {
+      userForm.faceImage = result.url
+      faceList.value = [{ url: result.url, name: result.fileInfo?.fileName || 'face' }]
+    },
+    onError: (error) => {
+      ElMessage.error('人脸照片上传失败: ' + (error.message || '未知错误'))
+    }
+  })
 
   // 基础数据
   const activeTab = ref('userList')
@@ -318,6 +345,10 @@ export function useUserManagement() {
     avatarList.value = []
     faceList.value = []
     formRef.value?.resetFields()
+    
+    // 清空文件上传状态
+    avatarUpload.clearFile()
+    faceUpload.clearFile()
   }
 
   const handleAdd = () => {
@@ -438,26 +469,24 @@ export function useUserManagement() {
   const handleAvatarChange = async (file, fileList) => {
     avatarList.value = fileList.slice(-1)
     if (!file.raw) return
-    const formData = new FormData()
-    formData.append('file', file.raw)
+    
     try {
-      const res = await uploadFile(formData)
-      userForm.avatar = res.data.url
+      // 使用增强的文件上传，支持文件去重和秒传
+      await avatarUpload.handleUpload(file.raw)
     } catch (e) {
-      ElMessage.error('头像上传失败')
+      console.error('头像上传失败:', e)
     }
   }
 
   const handleFaceChange = async (file, fileList) => {
     faceList.value = fileList.slice(-1)
     if (!file.raw) return
-    const formData = new FormData()
-    formData.append('file', file.raw)
+    
     try {
-      const res = await uploadFile(formData)
-      userForm.faceImage = res.data.url
+      // 使用增强的文件上传，支持文件去重和秒传
+      await faceUpload.handleUpload(file.raw)
     } catch (e) {
-      ElMessage.error('人脸照片上传失败')
+      console.error('人脸照片上传失败:', e)
     }
   }
 
@@ -556,6 +585,12 @@ export function useUserManagement() {
     handleSaveUser,
     handleSizeChange,
     handleCurrentChange,
-    fetchUserList
+    fetchUserList,
+    
+    // 文件上传状态
+    avatarUploadProgress: avatarUpload.uploadProgress,
+    avatarCalculating: avatarUpload.calculating,
+    faceUploadProgress: faceUpload.uploadProgress,
+    faceCalculating: faceUpload.calculating
   }
 }
