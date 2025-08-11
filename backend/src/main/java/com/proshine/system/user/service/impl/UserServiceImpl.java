@@ -1,5 +1,6 @@
 package com.proshine.system.user.service.impl;
 
+import com.proshine.common.dto.BCryptUtil;
 import com.proshine.common.enums.GlobalEnum;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.entity.SysOrganization;
@@ -134,6 +135,14 @@ public class UserServiceImpl implements UserService {
     public UserVO create(UserSaveRequest request) {
         SysUser user = new SysUser();
         BeanUtils.copyProperties(request, user);
+        
+        // 设置username为工号
+        user.setUsername(request.getJobNumber());
+        
+        // 设置password为工号的加密形式
+        String encryptedPassword = BCryptUtil.encode(request.getJobNumber());
+        user.setPassword(encryptedPassword);
+        
         user.setPositionName(positionRepository.findById(request.getPositionId()).get().getName());
         user.setTitleName(titleRepository.findById(request.getTitleId()).get().getName());
         user.setDepartmentName(organizationRepository.findById(request.getDepartmentId()).get().getName());
