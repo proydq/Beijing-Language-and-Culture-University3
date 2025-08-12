@@ -38,15 +38,6 @@
       <div v-if="isNormalUser" class="category-section">
         <h3 class="category-title">房屋借用系统</h3>
         <div class="card-grid">
-          <div class="function-card" @click="handleCardClick('房屋信息管理')" v-if="showRoomManagement">
-            <div class="card-icon">
-              <el-icon size="24"><office-building /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋信息管理</h4>
-              <p>查看可用教室信息，包含教室位置、容量、设备等基础信息</p>
-            </div>
-          </div>
           <div class="function-card active" @click="handleCardClick('房屋借用管理')" v-if="showBookingManagement">
             <div class="card-icon">
               <el-icon size="24"><calendar /></el-icon>
@@ -59,8 +50,33 @@
         </div>
       </div>
       
+      <!-- 审批员界面：显示房屋信息管理和房屋借用管理 -->
+      <div v-else-if="isApprover" class="category-section">
+        <h3 class="category-title">房屋借用系统</h3>
+        <div class="card-grid">
+          <div class="function-card" @click="handleCardClick('房屋信息管理')">
+            <div class="card-icon">
+              <el-icon size="24"><office-building /></el-icon>
+            </div>
+            <div class="card-content">
+              <h4>房屋信息管理</h4>
+              <p>查看教室信息，包含教室位置、容量、设备等基础信息</p>
+            </div>
+          </div>
+          <div class="function-card active" @click="handleCardClick('房屋借用管理')">
+            <div class="card-icon">
+              <el-icon size="24"><calendar /></el-icon>
+            </div>
+            <div class="card-content">
+              <h4>房屋借用管理</h4>
+              <p>预约教室，审批预约申请，管理所有预约记录</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- 管理员界面：显示所有模块 -->
-      <template v-else>
+      <template v-else-if="isAdmin">
       <!-- 基础分类 -->
       <div class="category-section">
         <h3 class="category-title">基础分类</h3>
@@ -466,17 +482,56 @@ export default {
     const showRoleManagement = computed(() => hasPermission('ROLE_MANAGE'))
     const showPermissionManagement = computed(() => hasPermission('PERMISSION_MANAGE'))
     
-    // 检查是否是普通用户（只有房屋借用权限）
-    const isNormalUser = computed(() => {
+    // 检查用户类型
+    const userType = computed(() => {
       const permissions = userStore.permissions
-      // 如果用户只有房屋相关权限，则认为是普通用户
-      const hasOnlyRoomPermissions = permissions.some(p => 
-        p.includes('ROOM_') || p.includes('BOOKING_')
-      ) && !permissions.some(p => 
-        p.includes('USER_') || p.includes('ROLE_') || p.includes('SYSTEM_')
+      
+      // 检查是否有系统管理权限
+      const hasSystemPermissions = permissions.some(p => 
+        p.includes('USER_MANAGE') || 
+        p.includes('ROLE_MANAGE') || 
+        p.includes('SYSTEM_MANAGE') ||
+        p.includes('PERMISSION_MANAGE')
       )
-      return hasOnlyRoomPermissions
+      
+      // 检查是否有其他高级管理权限（这些权限普通审批员不应该有）
+      const hasAdvancedPermissions = permissions.some(p =>
+        p.includes('AREA_MANAGE') ||
+        p.includes('SCHEME_MANAGE') ||
+        p.includes('BLACKLIST_MANAGE') ||
+        p.includes('VIOLATION_MANAGE') ||
+        p.includes('RECYCLE_BIN_MANAGE') ||
+        p.includes('ROOM_ADD') ||
+        p.includes('ROOM_EDIT') ||
+        p.includes('ROOM_DELETE')
+      )
+      
+      // 检查是否有审批权限
+      const hasApprovalPermissions = permissions.some(p => 
+        p.includes('BOOKING_APPROVE') || 
+        p.includes('BOOKING_REJECT') ||
+        p.includes('BOOKING_APPROVAL_APPROVE') ||
+        p.includes('BOOKING_APPROVAL_MANAGE')
+      )
+      
+      // 判断用户类型
+      if (hasSystemPermissions || hasAdvancedPermissions) {
+        return 'admin'  // 管理员（有系统管理权限或高级管理权限）
+      } else if (hasApprovalPermissions) {
+        return 'approver'  // 审批员（只有审批权限）
+      } else {
+        return 'normal'  // 普通用户
+      }
     })
+    
+    // 是否是普通用户
+    const isNormalUser = computed(() => userType.value === 'normal')
+    
+    // 是否是审批员
+    const isApprover = computed(() => userType.value === 'approver')
+    
+    // 是否是管理员
+    const isAdmin = computed(() => userType.value === 'admin')
     
     // 组件挂载时检查动态路由
     onMounted(() => {
@@ -580,7 +635,11 @@ export default {
       showSystemManagement,
       showRoleManagement,
       showPermissionManagement,
-      isNormalUser
+      // 用户类型
+      userType,
+      isNormalUser,
+      isApprover,
+      isAdmin
     }
   },
 }

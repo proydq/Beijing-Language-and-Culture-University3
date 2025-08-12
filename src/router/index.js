@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { generateDynamicRoutes } from './dynamicRoutes'
+import { checkRoutePermission } from '@/config/routePermissions'
 import Dashboard from '../views/Dashboard.vue'
 import UserManagement from '../views/UserManagement.vue'
 import OrganizationManagement from '../views/OrganizationManagement.vue'
@@ -156,17 +157,14 @@ router.beforeEach((to, from, next) => {
       return
     }
 
-    // 检查权限
-    if (to.meta.permissions && to.meta.permissions.length > 0) {
-      // 检查是否有任意一个权限
-      const hasPermission = userStore.hasAnyPermission(...to.meta.permissions)
-      
-      if (!hasPermission) {
-        // 没有权限，提示并跳转到首页
-        ElMessage.error('您没有访问该页面的权限')
-        next('/dashboard')
-        return
-      }
+    // 使用新的权限检查逻辑
+    const hasPermission = checkRoutePermission(to.path, userStore.permissions)
+    
+    if (!hasPermission) {
+      // 没有权限，提示并跳转到首页
+      ElMessage.error('您没有访问该页面的权限')
+      next('/dashboard')
+      return
     }
 
     // 已登录且有权限，允许访问

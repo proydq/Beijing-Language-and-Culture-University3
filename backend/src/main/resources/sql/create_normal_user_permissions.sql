@@ -40,7 +40,7 @@ VALUES
 ('rp_normal_007', 'role_normal', 'perm032', NOW(), 'demo'),  -- BOOKING_SEARCH 预订查询
 ('rp_normal_008', 'role_normal', 'perm033', NOW(), 'demo'),  -- BOOKING_VIEW 预订查看
 ('rp_normal_009', 'role_normal', 'perm034', NOW(), 'demo'),  -- BOOKING_CREATE 创建预订
-('rp_normal_010', 'role_normal', 'perm037', NOW(), 'demo'),  -- BOOKING_CANCEL 取消预订
+('rp_normal_010', 'role_normal', 'perm036', NOW(), 'demo'),  -- BOOKING_CANCEL 取消预订
 -- 区域查看权限（房间管理需要）
 ('rp_normal_011', 'role_normal', 'perm058', NOW(), 'demo');  -- AREA_VIEW 区域查看
 
