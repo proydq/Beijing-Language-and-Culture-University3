@@ -81,6 +81,8 @@
 
 <script>
 import { authAPI } from '@/api/auth'
+import { useUserStore } from '@/stores/user'
+import { addDynamicRoutes } from '@/router/index'
 
 export default {
   name: 'LoginPage',
@@ -157,16 +159,161 @@ export default {
     handleLoginSuccess(userData) {
       console.log('开始处理登录成功，用户数据:', userData);
 
-      // 保存用户信息到本地存储
-      localStorage.setItem('userToken', userData.token);
-      localStorage.setItem('userInfo', JSON.stringify({
-        id: userData.userId,
-        username: userData.username,
-        realName: userData.realName,
-        customerId: userData.customerId
-      }));
+      console.log('权限列表:', userData.permissions);
+      console.log('权限树:', userData.permissionTree);
+      console.log('完整的登录响应数据:', JSON.stringify(userData, null, 2));
+      
+      // 修复权限树数据（临时解决方案）
+      if (userData.permissionTree && userData.permissionTree.length > 0) {
+        console.log('正在修复权限树数据...');
+        
+        // 打印当前权限树的代码
+        console.log('当前权限树代码:', userData.permissionTree.map(n => n.code));
+        
+        // 修复权限树中缺失的字段
+        const fixedPermissionTree = userData.permissionTree.map(node => {
+          const fixed = { ...node };
+          
+          console.log(`正在处理节点: ${node.code}, 类型: ${node.type}, 当前path: ${node.path}`);
+          
+          // 为MENU类型权限添加路径和组件（如果缺失的话）
+          if (node.type === 'MENU' && (!node.path || !node.component)) {
+            console.log(`需要修复的菜单: ${node.code}`);
+            
+            switch (node.code) {
+              case 'USER_MANAGE':
+                fixed.path = '/user-management';
+                fixed.component = 'UserManagement';
+                fixed.icon = 'user';
+                fixed.visible = true;
+                console.log('修复USER_MANAGE');
+                break;
+              case 'ROLE_MANAGE':
+                fixed.path = '/role-management';
+                fixed.component = 'RoleManagement';
+                fixed.icon = 'user-filled';
+                fixed.visible = true;
+                console.log('修复ROLE_MANAGE');
+                break;
+              case 'ROOM_MANAGE':
+                fixed.path = '/house-management';
+                fixed.component = 'HouseManagement';
+                fixed.icon = 'office-building';
+                fixed.visible = true;
+                console.log('修复ROOM_MANAGE');
+                break;
+              case 'BOOKING_MANAGE':
+                fixed.path = '/room-booking';
+                fixed.component = 'RoomBooking';
+                fixed.icon = 'calendar';
+                fixed.visible = true;
+                console.log('修复BOOKING_MANAGE');
+                break;
+              case 'ORG_MANAGE':
+                fixed.path = '/organization-management';
+                fixed.component = 'OrganizationManagement';
+                fixed.icon = 'office-building';
+                fixed.visible = true;
+                console.log('修复ORG_MANAGE');
+                break;
+              case 'POSITION_MANAGE':
+                fixed.path = '/position-management';
+                fixed.component = 'PositionManagement';
+                fixed.icon = 'postcard';
+                fixed.visible = true;
+                console.log('修复POSITION_MANAGE');
+                break;
+              case 'TITLE_MANAGE':
+                fixed.path = '/level-management';
+                fixed.component = 'LevelManagement';
+                fixed.icon = 'medal';
+                fixed.visible = true;
+                console.log('修复TITLE_MANAGE');
+                break;
+              case 'PERMISSION_MANAGE':
+                fixed.path = '/permission-management';
+                fixed.component = 'PermissionManagement';
+                fixed.icon = 'lock';
+                fixed.visible = true;
+                console.log('修复PERMISSION_MANAGE');
+                break;
+              case 'SYSTEM_MANAGE':
+                fixed.path = '/admin-management';
+                fixed.component = 'AdminManagement';
+                fixed.icon = 'setting';
+                fixed.visible = true;
+                console.log('修复SYSTEM_MANAGE');
+                break;
+              case 'FILE_MANAGE':
+                fixed.path = '/access-control-records';
+                fixed.component = 'AccessControlRecords';
+                fixed.icon = 'folder';
+                fixed.visible = true;
+                console.log('修复FILE_MANAGE');
+                break;
+              case 'BLACKLIST_MANAGE':
+                fixed.path = '/access-control-dashboard';
+                fixed.component = 'AccessControlDashboard';
+                fixed.icon = 'user-forbid';
+                fixed.visible = true;
+                console.log('修复BLACKLIST_MANAGE');
+                break;
+              case 'AREA_MANAGE':
+                fixed.path = '/classroom-records';
+                fixed.component = 'ClassroomRecordsManagement';
+                fixed.icon = 'location';
+                fixed.visible = true;
+                console.log('修复AREA_MANAGE');
+                break;
+              case 'BOOKING_CONFIG':
+                fixed.path = '/api-test';
+                fixed.component = 'ApiTest';
+                fixed.icon = 'setting';
+                fixed.visible = true;
+                console.log('修复BOOKING_CONFIG');
+                break;
+              case 'ROOM_MANAGE':
+                fixed.path = '/house-management';
+                fixed.component = 'HouseManagement';
+                fixed.icon = 'office-building';
+                fixed.visible = true;
+                console.log('修复ROOM_MANAGE');
+                break;
+              case 'BOOKING_MANAGE':
+                fixed.path = '/room-booking';
+                fixed.component = 'RoomBooking';
+                fixed.icon = 'calendar';
+                fixed.visible = true;
+                console.log('修复BOOKING_MANAGE');
+                break;
+              default:
+                // 对于其他没有具体路径的MENU类型权限，设置默认值
+                if (!fixed.path) {
+                  console.log(`未找到${node.code}的具体路径配置，跳过`);
+                }
+                break;
+            }
+          }
+          
+          return fixed;
+        });
+        
+        // 更新权限树
+        userData.permissionTree = fixedPermissionTree;
+        const fixedMenus = fixedPermissionTree.filter(n => n.path && n.type === 'MENU');
+        console.log('权限树已修复，有路径的菜单:', fixedMenus.map(n => `${n.code}: ${n.path}`));
+      } else {
+        console.warn('登录时未发现权限树数据');
+      }
 
-      console.log('Token已保存:', localStorage.getItem('userToken'));
+      // 使用Pinia store保存用户信息（包含修复后的权限树）
+      const userStore = useUserStore();
+      userStore.setUserData(userData);
+      console.log('用户信息已保存到store');
+      
+      // 添加动态路由
+      console.log('登录时添加动态路由');
+      addDynamicRoutes();
 
       // 发送登录成功事件给父组件
       this.$emit('loginSuccess', userData);

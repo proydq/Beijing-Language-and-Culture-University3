@@ -6,6 +6,7 @@ import com.proshine.system.dto.*;
 import com.proshine.system.service.BookingPersonnelPermissionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +31,7 @@ public class BookingPersonnelPermissionController {
      * 获取预约人员权限列表
      */
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_VIEW') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<BookingPersonnelPermissionDto>> getPermissionList(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -54,6 +56,7 @@ public class BookingPersonnelPermissionController {
      * 新增预约人员权限配置
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_ADD') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
     public ResponseEntity<Void> createPermission(
             @Valid @RequestBody BookingPersonnelPermissionSaveRequest request) {
         
@@ -70,6 +73,7 @@ public class BookingPersonnelPermissionController {
      * 编辑预约人员权限配置
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_EDIT') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
     public ResponseEntity<Void> updatePermission(
             @PathVariable String id,
             @Valid @RequestBody BookingPersonnelPermissionSaveRequest request) {
@@ -87,6 +91,7 @@ public class BookingPersonnelPermissionController {
      * 删除预约人员权限配置
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_DELETE') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
     public ResponseEntity<Void> deletePermission(
             @PathVariable String id) {
         
@@ -103,6 +108,7 @@ public class BookingPersonnelPermissionController {
      * 导出预约人员权限列表
      */
     @GetMapping("/export")
+    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_VIEW') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
     public void exportPermissions(
             @RequestParam(required = false) String keyword,
             HttpServletResponse response) {
@@ -123,6 +129,7 @@ public class BookingPersonnelPermissionController {
      * 检查用户是否有指定房间的预约权限
      */
     @GetMapping("/check")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Boolean> checkBookingPermission(
             @RequestParam String userId,
             @RequestParam String roomId) {
@@ -140,6 +147,7 @@ public class BookingPersonnelPermissionController {
      * 根据用户ID获取可预约的房间列表
      */
     @GetMapping("/bookable-rooms/{userId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<RoomVo>> getBookableRoomsByUserId(
             @PathVariable String userId) {
         

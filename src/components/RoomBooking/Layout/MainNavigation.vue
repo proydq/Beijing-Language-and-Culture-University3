@@ -18,6 +18,8 @@
 
 <script>
 import { DataLine, Management, DocumentChecked, FolderOpened, Setting } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'MainNavigation',
@@ -36,13 +38,45 @@ export default {
   },
   emits: ['update:modelValue'],
   setup() {
-    const tabs = [
-      { key: 'dashboard', label: '数据看板', icon: 'DataLine' },
-      { key: 'booking', label: '借用管理', icon: 'Management' },
-      { key: 'approval', label: '审批管理', icon: 'DocumentChecked' },
-      { key: 'records', label: '数据记录', icon: 'FolderOpened' },
-      { key: 'settings', label: '设置', icon: 'Setting' }
+    const userStore = useUserStore()
+    
+    // 检查用户是否有特定权限
+    const hasPermission = (permissionCode) => {
+      return userStore.permissions.includes(permissionCode)
+    }
+    
+    // 所有可能的标签
+    const allTabs = [
+      { key: 'dashboard', label: '数据看板', icon: 'DataLine', permission: 'BOOKING_VIEW' },
+      { key: 'booking', label: '借用管理', icon: 'Management', permission: 'BOOKING_MANAGE' },
+      { key: 'approval', label: '审批管理', icon: 'DocumentChecked', permission: 'BOOKING_APPROVE' },
+      { key: 'records', label: '数据记录', icon: 'FolderOpened', permission: 'BOOKING_VIEW' },
+      { key: 'settings', label: '设置', icon: 'Setting', permission: 'BOOKING_CONFIG' }
     ]
+    
+    // 根据权限过滤标签
+    const tabs = computed(() => {
+      return allTabs.filter(tab => {
+        // 数据看板和借用管理对普通用户开放
+        if (tab.key === 'dashboard' || tab.key === 'booking') {
+          return hasPermission('BOOKING_VIEW') || hasPermission('BOOKING_MANAGE')
+        }
+        // 审批管理需要审批权限
+        if (tab.key === 'approval') {
+          return hasPermission('BOOKING_APPROVE')
+        }
+        // 数据记录需要管理权限或特定的记录查看权限
+        if (tab.key === 'records') {
+          return hasPermission('BOOKING_MANAGE') && hasPermission('BOOKING_APPROVE')
+        }
+        // 设置需要配置权限
+        if (tab.key === 'settings') {
+          return hasPermission('BOOKING_CONFIG')
+        }
+        // 其他标签需要特定权限
+        return hasPermission(tab.permission)
+      })
+    })
 
     return {
       tabs

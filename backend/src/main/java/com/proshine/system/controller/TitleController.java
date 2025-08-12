@@ -9,6 +9,7 @@ import com.proshine.system.entity.SysTitle;
 import com.proshine.system.service.TitleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,6 +34,7 @@ public class TitleController {
      * Search titles with pagination.
      */
     @PostMapping("/search")
+    @PreAuthorize("hasAuthority('TITLE_VIEW') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<TitleVo>> search(@RequestBody SearchTitleDTO condition) {
         try {
             log.info("==========/api/title/search=============");
@@ -48,6 +50,7 @@ public class TitleController {
      * Create new title.
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('TITLE_ADD') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<SysTitle> create(@RequestBody SysTitle title) {
         try {
             log.info("==========/api/title [POST]=============");
@@ -63,6 +66,7 @@ public class TitleController {
      * Update title.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('TITLE_EDIT') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<SysTitle> update(@PathVariable String id, @RequestBody SysTitle title) {
         try {
             log.info("==========/api/title/{} [PUT]=============", id);
@@ -78,6 +82,7 @@ public class TitleController {
      * Delete title.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('TITLE_DELETE') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             log.info("==========/api/title/{} [DELETE]=============", id);
@@ -93,6 +98,7 @@ public class TitleController {
      * Export excel.
      */
     @GetMapping("/export")
+    @PreAuthorize("hasAuthority('TITLE_VIEW') or hasAuthority('TITLE_MANAGE')")
     public void export(HttpServletResponse response) {
         titleService.exportExcel(response);
     }
@@ -101,6 +107,7 @@ public class TitleController {
      * Import excel.
      */
     @PostMapping("/import")
+    @PreAuthorize("hasAuthority('TITLE_ADD') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<Void> importData(@RequestParam("file") MultipartFile file) {
         try {
             log.info("==========/api/title/import=============");
@@ -116,6 +123,7 @@ public class TitleController {
      * 职称下拉列表
      */
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('TITLE_VIEW') or hasAuthority('TITLE_MANAGE')")
     public ResponseEntity<List<OptionVO>> all() {
         List<OptionVO> list = titleRepository.findAll().stream()
                 .map(t -> new OptionVO(t.getName(), t.getId()))

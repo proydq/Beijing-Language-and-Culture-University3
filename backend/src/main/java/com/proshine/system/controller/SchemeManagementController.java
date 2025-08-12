@@ -6,6 +6,7 @@ import com.proshine.system.dto.*;
 import com.proshine.system.service.SchemeManagementService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +32,7 @@ public class SchemeManagementController {
      * 获取教室列表
      */
     @PostMapping("/classrooms/list")
+    @PreAuthorize("hasAuthority('SCHEME_VIEW') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<ClassroomVo>> getClassroomList(
             @RequestBody @Valid SearchClassroomCondition condition) {
         try {
@@ -46,6 +48,7 @@ public class SchemeManagementController {
      * 添加教室
      */
     @PostMapping("/classrooms/add")
+    @PreAuthorize("hasAuthority('SCHEME_ADD') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<ClassroomAddResult> addClassroom(
             @RequestBody @Valid ClassroomAddVo classroomAddVo) {
         try {
@@ -61,6 +64,7 @@ public class SchemeManagementController {
      * 根据ID获取教室详情
      */
     @GetMapping("/classrooms/{id}")
+    @PreAuthorize("hasAuthority('SCHEME_VIEW') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<ClassroomVo> getClassroomDetail(@PathVariable String id) {
         try {
             ClassroomVo result = schemeManagementService.getClassroomDetail(id);
@@ -75,6 +79,7 @@ public class SchemeManagementController {
      * 更新教室信息
      */
     @PutMapping("/classrooms/update")
+    @PreAuthorize("hasAuthority('SCHEME_EDIT') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<Void> updateClassroom(
             @RequestBody @Valid ClassroomUpdateVo classroomUpdateVo) {
         try {
@@ -90,6 +95,7 @@ public class SchemeManagementController {
      * 批量删除教室（逻辑删除）
      */
     @PutMapping("/classrooms/batch-delete")
+    @PreAuthorize("hasAuthority('SCHEME_DELETE') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<Void> batchDeleteClassrooms(
             @RequestBody @Valid BatchDeleteClassroomVo batchDeleteVo) {
         try {
@@ -105,6 +111,7 @@ public class SchemeManagementController {
      * 批量设置审批权限
      */
     @PutMapping("/classrooms/batch-approval")
+    @PreAuthorize("hasAuthority('SCHEME_EDIT') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<Void> batchSetApproval(
             @RequestBody @Valid BatchApprovalVo batchApprovalVo) {
         try {
@@ -120,6 +127,7 @@ public class SchemeManagementController {
      * 手动同步教室数据
      */
     @PostMapping("/classrooms/sync")
+    @PreAuthorize("hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<SyncResult> syncClassrooms() {
         try {
             SyncResult result = schemeManagementService.syncClassroomsFromRoom();
@@ -134,6 +142,7 @@ public class SchemeManagementController {
      * 获取人员列表
      */
     @PostMapping("/personnel/list")
+    @PreAuthorize("hasAuthority('SCHEME_VIEW') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<PersonnelVo>> getPersonnelList(
             @RequestBody @Valid SearchPersonnelCondition condition) {
         try {
@@ -149,6 +158,7 @@ public class SchemeManagementController {
      * 导出教室数据
      */
     @PostMapping("/classrooms/export")
+    @PreAuthorize("hasAuthority('SCHEME_VIEW') or hasAuthority('SCHEME_MANAGE')")
     public void exportClassrooms(
             @RequestBody @Valid ExportClassroomVo exportVo,
             HttpServletResponse response) {
@@ -164,6 +174,7 @@ public class SchemeManagementController {
      * 导入教室数据
      */
     @PostMapping("/classrooms/import")
+    @PreAuthorize("hasAuthority('SCHEME_ADD') or hasAuthority('SCHEME_MANAGE')")
     public ResponseEntity<ImportResult> importClassrooms(
             @RequestParam("file") MultipartFile file) {
         try {

@@ -7,6 +7,7 @@ import com.proshine.system.service.OrganizationService;
 import com.proshine.system.repository.SysOrganizationRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class OrganizationController {
      * 获取部门下拉列表
      */
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<List<OptionVO>> all() {
         List<OptionVO> list = organizationRepository.findAll()
                 .stream()
@@ -41,6 +43,7 @@ public class OrganizationController {
      * 获取组织树结构
      */
     @GetMapping("/tree")
+    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<List<SysOrganization>> tree() {
         try {
             log.info("==========/api/organization/tree=============");
@@ -56,6 +59,7 @@ public class OrganizationController {
      * 获取单个组织详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<SysOrganization> findById(@PathVariable String id) {
         try {
             log.info("==========/api/organization/{} [GET]=============", id);
@@ -71,6 +75,7 @@ public class OrganizationController {
      * 新增组织
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('ORG_ADD') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<SysOrganization> create(@RequestBody SysOrganization organization) {
         try {
             log.info("==========/api/organization [POST]=============");
@@ -86,6 +91,7 @@ public class OrganizationController {
      * 编辑组织
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ORG_EDIT') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<SysOrganization> update(@PathVariable String id, @RequestBody SysOrganization organization) {
         try {
             log.info("==========/api/organization/{} [PUT]=============", id);
@@ -101,6 +107,7 @@ public class OrganizationController {
      * 删除组织
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ORG_DELETE') or hasAuthority('ORG_MANAGE')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             log.info("==========/api/organization/{} [DELETE]=============", id);

@@ -7,6 +7,7 @@ import com.proshine.system.dto.SearchBookingTimeRuleCondition;
 import com.proshine.system.service.BookingTimeRuleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class BookingTimeRuleController {
      * @return 分页结果
      */
     @GetMapping("/list")
+    @PreAuthorize("hasAuthority('BOOKING_TIME_RULE_VIEW') or hasAuthority('BOOKING_TIME_RULE_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<BookingTimeRuleDto>> getBookingTimeRuleList(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -59,6 +61,7 @@ public class BookingTimeRuleController {
      * @return 规则详情
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_TIME_RULE_VIEW') or hasAuthority('BOOKING_TIME_RULE_MANAGE')")
     public ResponseEntity<BookingTimeRuleDto> getBookingTimeRuleById(@PathVariable String id) {
         try {
             BookingTimeRuleDto result = bookingTimeRuleService.getBookingTimeRuleById(id);
@@ -76,6 +79,7 @@ public class BookingTimeRuleController {
      * @return 创建的规则
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('BOOKING_TIME_RULE_ADD') or hasAuthority('BOOKING_TIME_RULE_MANAGE')")
     public ResponseEntity<BookingTimeRuleDto> createBookingTimeRule(@RequestBody BookingTimeRuleDto dto) {
         try {
             BookingTimeRuleDto result = bookingTimeRuleService.createBookingTimeRule(dto);
@@ -94,6 +98,7 @@ public class BookingTimeRuleController {
      * @return 更新后的规则
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_TIME_RULE_EDIT') or hasAuthority('BOOKING_TIME_RULE_MANAGE')")
     public ResponseEntity<BookingTimeRuleDto> updateBookingTimeRule(
             @PathVariable String id, 
             @RequestBody BookingTimeRuleDto dto) {
@@ -113,6 +118,7 @@ public class BookingTimeRuleController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_TIME_RULE_DELETE') or hasAuthority('BOOKING_TIME_RULE_MANAGE')")
     public ResponseEntity<String> deleteBookingTimeRule(@PathVariable String id) {
         try {
             bookingTimeRuleService.deleteBookingTimeRule(id);
@@ -130,6 +136,7 @@ public class BookingTimeRuleController {
      * @return 适用的规则列表
      */
     @GetMapping("/user/{userId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<BookingTimeRuleDto>> getBookingTimeRulesByUserId(@PathVariable String userId) {
         try {
             List<BookingTimeRuleDto> result = bookingTimeRuleService.getBookingTimeRulesByUserId(userId);

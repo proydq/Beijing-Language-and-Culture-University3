@@ -20,6 +20,7 @@ import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +50,7 @@ public class RoomBookingController {
      * @return 统计数据
      */
     @GetMapping("/stats")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<BookingStatsDto> getBookingStats(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
@@ -71,6 +73,7 @@ public class RoomBookingController {
      * @return 分布数据
      */
     @GetMapping("/distribution")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<List<BookingDistributionDto>> getBookingDistribution(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
@@ -93,6 +96,7 @@ public class RoomBookingController {
      * @return 趋势数据
      */
     @GetMapping("/trend")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<List<BookingTrendDto>> getBookingTrend(
             @RequestParam(defaultValue = "7") int days) {
         log.info("获取借用趋势数据 - days: {}", days);
@@ -115,6 +119,7 @@ public class RoomBookingController {
      * @return 趋势数据
      */
     @GetMapping("/trend/custom")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<List<BookingTrendDto>> getBookingTrendCustom(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
@@ -137,6 +142,7 @@ public class RoomBookingController {
      * @return 分页预约列表
      */
     @PostMapping("/my-bookings")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponsePageDataEntity<BookingListResponse>> getMyBookings(@RequestBody MyBookingsRequest request) {
         try {
             log.info("==========/api/room-booking/my-bookings [POST]=============request:{}", request);
@@ -156,6 +162,7 @@ public class RoomBookingController {
      * @return 分页预约列表
      */
     @PostMapping("/all-bookings")
+    @PreAuthorize("hasAuthority('BOOKING_SEARCH') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<BookingListResponse>> getAllBookings(@RequestBody AllBookingsRequest request) {
         try {
             log.info("==========/api/room-booking/all-bookings [POST]=============request:{}", request);
@@ -175,6 +182,7 @@ public class RoomBookingController {
      * @return 房间列表
      */
     @PostMapping("/rooms/available")
+    @PreAuthorize("hasAuthority('BOOKING_CREATE') or hasAuthority('ROOM_BOOK') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<List<AvailableRoomResponse>> getAvailableRooms(@RequestBody AvailableRoomsRequest request) {
         try {
             log.info("==========/api/room-booking/rooms/available [POST]=============request:{}", request);
@@ -194,6 +202,7 @@ public class RoomBookingController {
      * @return 创建结果
      */
     @PostMapping("/create")
+    @PreAuthorize("hasAuthority('BOOKING_CREATE') or hasAuthority('ROOM_BOOK') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<CreateBookingResponse> createBooking(@RequestBody CreateBookingRequest request) {
         try {
             log.info("==========/api/room-booking/create [POST]=============request:{}", request);
@@ -213,6 +222,7 @@ public class RoomBookingController {
      * @return 预约详情
      */
     @GetMapping("/detail/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<BookingDetailResponse> getBookingDetail(@PathVariable String id) {
         try {
             log.info("==========/api/room-booking/detail/{} [GET]=============id:{}", id, id);
@@ -233,6 +243,7 @@ public class RoomBookingController {
      * @return 取消结果
      */
     @PostMapping("/cancel/{id}")
+    @PreAuthorize("hasAuthority('BOOKING_CANCEL') or hasAuthority('ROOM_CANCEL_BOOK') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<String> cancelBooking(@PathVariable String id, @RequestBody CancelBookingRequest request) {
         try {
             log.info("==========/api/room-booking/cancel/{} [POST]=============id:{}, request:{}", id, id, request);
@@ -252,6 +263,7 @@ public class RoomBookingController {
      * @return 教室预约统计数据
      */
     @PostMapping("/access-records/booking-stats")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<ResponsePageDataEntity<RoomBookingStatsResponse>> getRoomBookingStats(@RequestBody RoomBookingStatsRequest request) {
         try {
             log.info("==========/api/room-booking/access-records/booking-stats [POST]=============request:{}", request);
@@ -272,6 +284,7 @@ public class RoomBookingController {
      * @return 教室预约详情数据
      */
     @PostMapping("/access-records/room/{roomId}/details")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_VIEW')")
     public ResponseEntity<RoomBookingDetailsResponse> getRoomBookingDetails(@PathVariable String roomId, @RequestBody RoomBookingDetailsRequest request) {
         try {
             log.info("==========/api/room-booking/access-records/room/{}/details [POST]=============roomId:{}, request:{}", roomId, roomId, request);
@@ -290,6 +303,7 @@ public class RoomBookingController {
      * 获取教室借用记录列表
      */
     @PostMapping("/access-records")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<AccessRecordResponse>> getAccessRecords(@RequestBody AccessRecordsRequest request) {
         try {
             ResponsePageDataEntity<AccessRecordResponse> result = roomBookingService.getAccessRecords(request);
@@ -304,6 +318,7 @@ public class RoomBookingController {
      * 导出教室借用记录
      */
     @PostMapping("/access-records/export")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<ExportResponse> exportAccessRecords(@RequestBody ExportAccessRecordsRequest request) {
         try {
             ExportResponse result = roomBookingService.exportAccessRecords(request);
@@ -318,6 +333,7 @@ public class RoomBookingController {
      * 导出教室预约统计数据
      */
     @PostMapping("/access-records/booking-stats/export")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<ExportResponse> exportRoomBookingStats(@RequestBody RoomBookingStatsRequest request) {
         try {
             ExportResponse result = roomBookingService.exportRoomBookingStats(request);
@@ -332,6 +348,7 @@ public class RoomBookingController {
      * 导出指定教室的预约详情
      */
     @PostMapping("/access-records/room/{roomId}/export")
+    @PreAuthorize("hasAuthority('BOOKING_VIEW') or hasAuthority('BOOKING_MANAGE') or hasAuthority('REPORT_EXPORT')")
     public ResponseEntity<ExportResponse> exportRoomBookingDetails(
             @PathVariable String roomId, 
             @RequestBody RoomBookingDetailsRequest request) {

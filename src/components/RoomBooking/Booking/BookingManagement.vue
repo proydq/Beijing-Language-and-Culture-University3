@@ -79,6 +79,7 @@ import Sidebar from '../Layout/Sidebar.vue'
 import MyBookings from './MyBookings.vue'
 import AllBookings from './AllBookings.vue'
 import RoomReservation from './RoomReservation.vue'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'BookingManagement',
@@ -95,11 +96,36 @@ export default {
   },
   emits: ['edit', 'approve', 'book-room'],
   setup(props, { emit }) {
-    const menuItems = ['我的预约', '全部借用', '房间预约']
+    // 引入用户store
+    const userStore = useUserStore()
+    
+    // 检查用户是否有特定权限
+    const hasPermission = (permissionCode) => {
+      return userStore.permissions.includes(permissionCode)
+    }
+    
+    // 根据权限动态生成菜单项
+    const menuItems = computed(() => {
+      const items = []
+      // 普通用户可以看到我的预约
+      if (hasPermission('BOOKING_VIEW') || hasPermission('BOOKING_MANAGE')) {
+        items.push('我的预约')
+      }
+      // 管理员可以看到全部借用
+      if (hasPermission('BOOKING_MANAGE') && hasPermission('BOOKING_APPROVE')) {
+        items.push('全部借用')
+      }
+      // 有预约权限的用户可以看到房间预约
+      if (hasPermission('ROOM_BOOK') || hasPermission('BOOKING_CREATE')) {
+        items.push('房间预约')
+      }
+      return items
+    })
+    
     const buildings = ['达力楼', '明德楼', '博学楼']
     const floors = ['1F', '2F', '3F', '4F', '5F', '6F', 'B1', 'B2']
 
-    const activeMenuItem = ref('我的预约')
+    const activeMenuItem = ref(menuItems.value[0] || '我的预约')
     const activeCategory = ref('全部')
     const activeFloor = ref('')
     const sidebarSearch = ref('')

@@ -37,17 +37,11 @@ CREATE TABLE IF NOT EXISTS sys_file_reference (
     UNIQUE KEY uk_file_entity_field (file_id, entity_type, entity_id, field_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件引用关系表';
 
-INSERT INTO sys_user(id, username, password, status, create_time, update_time, deleted)
-VALUES ('11111111111111111111111111111111', 'admin', '$2a$10$N8VIj/TvXvFqBqXLfMd4xO7DzTfxPGNDrjBdUJzE8W7qCGc7lKw.G', 'NORMAL', NOW(), NOW(), 0)
-ON DUPLICATE KEY UPDATE 
-    password = VALUES(password),
-    status = VALUES(status),
-    update_time = NOW();
+INSERT IGNORE INTO sys_user(id, username, password, status, create_time, update_time, deleted)
+VALUES ('11111111111111111111111111111111', 'admin', '$2a$10$N8VIj/TvXvFqBqXLfMd4xO7DzTfxPGNDrjBdUJzE8W7qCGc7lKw.G', 'NORMAL', NOW(), NOW(), 0);
 
-INSERT INTO sys_role(id, name, code)
-VALUES ('22222222222222222222222222222222', '管理员', 'ROLE_USER')
-ON DUPLICATE KEY UPDATE name = name;
+INSERT IGNORE INTO sys_role(id, name, code)
+VALUES ('22222222222222222222222222222222', '管理员', 'ROLE_USER');
 
-INSERT INTO sys_user_role(id, user_id, role_id)
-VALUES ('33333333333333333333333333333333', '11111111111111111111111111111111', '22222222222222222222222222222222')
-ON DUPLICATE KEY UPDATE user_id = user_id;
+INSERT IGNORE INTO sys_user_role(id, user_id, role_id)
+VALUES ('33333333333333333333333333333333', '11111111111111111111111111111111', '22222222222222222222222222222222');

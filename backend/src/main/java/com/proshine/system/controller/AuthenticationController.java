@@ -8,6 +8,7 @@ import com.proshine.system.dto.LoginResponse;
 import com.proshine.system.service.AuthenticationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,6 +47,7 @@ public class AuthenticationController {
      * @return 响应结果
      */
     @PostMapping("/logout")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
         if (StringUtils.hasText(token)) {
@@ -62,6 +64,7 @@ public class AuthenticationController {
      * @return 新的JWT令牌
      */
     @PostMapping("/token/refresh")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> refreshToken(HttpServletRequest request) {
         String token = getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {

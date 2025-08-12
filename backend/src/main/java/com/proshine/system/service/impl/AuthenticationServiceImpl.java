@@ -5,7 +5,13 @@ import com.proshine.common.enums.ErrorCode;
 import com.proshine.common.exception.BusinessException;
 import com.proshine.system.dto.LoginRequest;
 import com.proshine.system.dto.LoginResponse;
+import com.proshine.system.dto.PermissionDTO;
+import com.proshine.system.dto.PermissionTreeNode;
+import com.proshine.system.entity.SysPermission;
+import com.proshine.system.entity.SysRole;
 import com.proshine.system.entity.SysUser;
+import com.proshine.system.repository.SysPermissionRepository;
+import com.proshine.system.repository.SysRoleRepository;
 import com.proshine.system.repository.SysUserRepository;
 import com.proshine.system.security.JwtUtil;
 import com.proshine.system.service.AuthenticationService;
@@ -20,9 +26,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 认证服务实现类
@@ -43,6 +54,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private SysPermissionRepository permissionRepository;
+    
+    @Autowired
+    private SysRoleRepository roleRepository;
     
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
@@ -81,9 +98,60 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // 生成JWT令牌
             String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getCustomerId());
             
-            log.info("用户 {} 登录成功，生成JWT令牌", user.getUsername());
+            // 获取用户权限信息
+            List<SysPermission> permissions = permissionRepository.findByUserId(user.getId());
             
-            return new LoginResponse(token, user.getId(), user.getUsername(), user.getRealName(), user.getCustomerId());
+            // 调试：打印权限数据
+            log.info("=== 用户权限调试 ===");
+            log.info("用户ID: {}, 权限数量: {}", user.getId(), permissions.size());
+            
+            for (SysPermission perm : permissions) {
+                if (perm.getType() == SysPermission.Type.MENU) {
+                    log.info("菜单权限: {} | path: {} | component: {} | icon: {}", 
+                        perm.getCode(), perm.getPath(), perm.getComponent(), perm.getIcon());
+                }
+            }
+            List<String> permissionCodes = permissions.stream()
+                    .map(SysPermission::getCode)
+                    .collect(Collectors.toList());
+            
+            // 构建权限详情列表
+            List<PermissionDTO> permissionDetails = permissions.stream()
+                    .map(permission -> {
+                        PermissionDTO dto = new PermissionDTO();
+                        dto.setCode(permission.getCode());
+                        dto.setName(permission.getName());
+                        dto.setType(permission.getType() != null ? permission.getType().name() : null);
+                        dto.setParentId(permission.getParentId());
+                        dto.setUrl(permission.getUrl());
+                        dto.setSort(permission.getSort());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+            
+            // 获取用户角色信息
+            List<SysRole> roles = roleRepository.findByUserId(user.getId());
+            List<String> roleCodes = roles.stream()
+                    .map(SysRole::getCode)
+                    .collect(Collectors.toList());
+            
+            log.info("用户 {} 登录成功，生成JWT令牌，拥有 {} 个权限，{} 个角色", 
+                    user.getUsername(), permissionCodes.size(), roleCodes.size());
+            
+            // 构建权限树
+            log.info("开始构建权限树...");
+            List<PermissionTreeNode> permissionTree = buildPermissionTree(permissions);
+            log.info("权限树构建完成，节点数: {}", permissionTree.size());
+            
+            // 构建完整的登录响应
+            LoginResponse response = new LoginResponse(token, user.getId(), user.getUsername(), 
+                    user.getRealName(), user.getCustomerId());
+            response.setPermissions(permissionCodes);
+            response.setPermissionDetails(permissionDetails);
+            response.setRoles(roleCodes);
+            response.setPermissionTree(permissionTree);
+            
+            return response;
             
         } catch (AuthenticationException e) {
             log.error("用户登录失败：{}", e.getMessage());
@@ -121,6 +189,82 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         } catch (Exception e) {
             log.error("刷新JWT令牌异常：", e);
             throw new BusinessException(ErrorCode.AUTH_TOKEN_INVALID);
+        }
+    }
+    
+    /**
+     * 构建权限树
+     * @param permissions 权限列表
+     * @return 权限树
+     */
+    private List<PermissionTreeNode> buildPermissionTree(List<SysPermission> permissions) {
+        // 创建权限映射
+        Map<String, PermissionTreeNode> nodeMap = new HashMap<>();
+        
+        // 先将所有权限转换为树节点
+        for (SysPermission permission : permissions) {
+            // 调试信息：打印关键权限的字段值
+            if (permission.getType() == SysPermission.Type.MENU) {
+                log.info("权限调试: {} - path: {}, component: {}, icon: {}", 
+                    permission.getCode(), permission.getPath(), permission.getComponent(), permission.getIcon());
+            }
+            
+            PermissionTreeNode node = new PermissionTreeNode();
+            node.setId(permission.getId());
+            node.setCode(permission.getCode());
+            node.setName(permission.getName());
+            node.setType(permission.getType() != null ? permission.getType().name() : null);
+            node.setParentId(permission.getParentId());
+            node.setPath(permission.getPath());
+            node.setComponent(permission.getComponent());
+            node.setIcon(permission.getIcon());
+            node.setVisible(permission.getVisible());
+            node.setKeepAlive(permission.getKeepAlive());
+            node.setRedirect(permission.getRedirect());
+            node.setSort(permission.getSort());
+            node.setChildren(new ArrayList<>());
+            
+            nodeMap.put(permission.getId(), node);
+        }
+        
+        // 构建树结构
+        List<PermissionTreeNode> tree = new ArrayList<>();
+        for (PermissionTreeNode node : nodeMap.values()) {
+            if (node.getParentId() == null || node.getParentId().isEmpty()) {
+                // 根节点
+                tree.add(node);
+            } else {
+                // 子节点
+                PermissionTreeNode parent = nodeMap.get(node.getParentId());
+                if (parent != null) {
+                    parent.getChildren().add(node);
+                }
+            }
+        }
+        
+        // 按照sort排序
+        sortTree(tree);
+        
+        return tree;
+    }
+    
+    /**
+     * 递归排序权限树
+     */
+    private void sortTree(List<PermissionTreeNode> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            return;
+        }
+        
+        nodes.sort((a, b) -> {
+            if (a.getSort() == null && b.getSort() == null) return 0;
+            if (a.getSort() == null) return 1;
+            if (b.getSort() == null) return -1;
+            return a.getSort().compareTo(b.getSort());
+        });
+        
+        for (PermissionTreeNode node : nodes) {
+            sortTree(node.getChildren());
         }
     }
     

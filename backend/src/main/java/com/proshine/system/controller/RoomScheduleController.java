@@ -10,6 +10,7 @@ import com.proshine.system.service.RoomScheduleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -37,6 +38,7 @@ public class RoomScheduleController {
      * @return 教室周课表信息
      */
     @PostMapping("/week-detail")
+    @PreAuthorize("hasAuthority('ROOM_SCHEDULE_VIEW') or hasAuthority('ROOM_SCHEDULE_MANAGE')")
     public ResponseEntity<RoomWeeklyScheduleVO> getRoomWeeklyDetail(
             @Valid @RequestBody RoomWeeklyScheduleRequest request) {
         
@@ -61,6 +63,7 @@ public class RoomScheduleController {
      * @return 教学周列表
      */
     @GetMapping("/weeks")
+    @PreAuthorize("hasAuthority('ROOM_SCHEDULE_VIEW') or hasAuthority('ROOM_SCHEDULE_MANAGE')")
     public ResponseEntity<List<SchoolWeekVO>> getAllSchoolWeeks() {
         
         logger.info("接收到获取教学周列表请求");

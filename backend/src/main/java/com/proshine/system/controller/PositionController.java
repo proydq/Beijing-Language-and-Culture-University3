@@ -8,6 +8,7 @@ import com.proshine.system.entity.SysPosition;
 import com.proshine.system.service.PositionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +33,7 @@ public class PositionController {
      * Search positions with pagination.
      */
     @PostMapping("/search")
+    @PreAuthorize("hasAuthority('POSITION_VIEW') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<ResponsePageDataEntity<SysPosition>> search(@RequestBody SearchPositionDTO condition) {
         try {
             log.info("==========/api/position/search=============");
@@ -47,6 +49,7 @@ public class PositionController {
      * 职务下拉列表
      */
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('POSITION_VIEW') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<List<OptionVO>> all() {
         List<OptionVO> list = positionRepository.findAll().stream()
                 .map(p -> new OptionVO(p.getName(), p.getId()))
@@ -58,6 +61,7 @@ public class PositionController {
      * Create new position.
      */
     @PostMapping
+    @PreAuthorize("hasAuthority('POSITION_ADD') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<SysPosition> create(@RequestBody SysPosition position) {
         try {
             log.info("==========/api/position [POST]=============");
@@ -73,6 +77,7 @@ public class PositionController {
      * Update position.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('POSITION_EDIT') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<SysPosition> update(@PathVariable String id, @RequestBody SysPosition position) {
         try {
             log.info("==========/api/position/{} [PUT]=============", id);
@@ -88,6 +93,7 @@ public class PositionController {
      * Delete position.
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('POSITION_DELETE') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             log.info("==========/api/position/{} [DELETE]=============", id);
@@ -103,6 +109,7 @@ public class PositionController {
      * Export position list as Excel.
      */
     @GetMapping("/export")
+    @PreAuthorize("hasAuthority('POSITION_VIEW') or hasAuthority('POSITION_MANAGE')")
     public void export(HttpServletResponse response) {
         positionService.exportExcel(response);
     }
@@ -111,6 +118,7 @@ public class PositionController {
      * Import position data from Excel.
      */
     @PostMapping("/import")
+    @PreAuthorize("hasAuthority('POSITION_ADD') or hasAuthority('POSITION_MANAGE')")
     public ResponseEntity<Void> importData(@RequestParam("file") MultipartFile file) {
         try {
             log.info("==========/api/position/import=============");

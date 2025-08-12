@@ -1,0 +1,396 @@
+登录API响应: {code: 200, message: '成功', data: {…}, timestamp: '2025-08-11T19:36:16.322'}
+Login.vue:160 开始处理登录成功，用户数据: {token: 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImN1c3Rvb…6iNP8V8EJLPphPIfSaXoJqKeH6DArvJrasHLf1xI5QOts6z4w', tokenType: 'Bearer', userId: 'admin001', username: 'admin', realName: '系统管理员', …}
+Login.vue:162 权限列表: (103) ['SYSTEM_MANAGE', 'USER_MANAGE', 'USER_SEARCH', 'USER_ADD', 'USER_EDIT', 'USER_DELETE', 'USER_RESET_PWD', 'USER_ASSIGN_ROLE', 'ROLE_MANAGE', 'ROLE_SEARCH', 'ROLE_ADD', 'ROLE_EDIT', 'ROLE_DELETE', 'ROLE_ASSIGN_PERM', 'PERMISSION_MANAGE', 'PERMISSION_SEARCH', 'PERMISSION_ADD', 'PERMISSION_EDIT', 'PERMISSION_DELETE', 'ROOM_MANAGE', 'ROOM_SEARCH', 'ROOM_VIEW', 'ROOM_ADD', 'ROOM_EDIT', 'ROOM_DELETE', 'ROOM_BOOK', 'ROOM_CANCEL_BOOK', 'ROOM_APPROVE', 'BOOKING_MANAGE', 'BOOKING_SEARCH', 'BOOKING_VIEW', 'BOOKING_CREATE', 'BOOKING_EDIT', 'BOOKING_CANCEL', 'BOOKING_APPROVE', 'BOOKING_REJECT', 'REPORT_VIEW', 'REPORT_EXPORT', 'FILE_MANAGE', 'FILE_UPLOAD', 'BLACKLIST_MANAGE', 'BLACKLIST_VIEW', 'BLACKLIST_ADD', 'BLACKLIST_DELETE', 'VIOLATION_MANAGE', 'SCHEME_MANAGE', 'SCHEME_VIEW', 'SCHEME_ADD', 'SCHEME_EDIT', 'SCHEME_DELETE', 'RECYCLE_VIEW', 'RECYCLE_RESTORE', 'RECYCLE_DELETE', 'AREA_MANAGE', 'AREA_VIEW', 'AREA_ADD', 'AREA_EDIT', 'AREA_DELETE', 'BOOKING_CONFIG', 'BOOKING_PERMISSION_MANAGE', 'TITLE_MANAGE', 'TITLE_VIEW', 'TITLE_ADD', 'TITLE_EDIT', 'TITLE_DELETE', 'POSITION_MANAGE', 'POSITION_VIEW', 'POSITION_ADD', 'POSITION_EDIT', 'POSITION_DELETE', 'ORG_MANAGE', 'ORG_VIEW', 'ORG_ADD', 'ORG_EDIT', 'ORG_DELETE', 'BOOKING_PERSONNEL_MANAGE', 'BOOKING_PERSONNEL_VIEW', 'BOOKING_PERSONNEL_ADD', 'BOOKING_PERSONNEL_EDIT', 'BOOKING_PERSONNEL_DELETE', 'CONTINUOUS_BOOKING_MANAGE', 'CONTINUOUS_BOOKING_VIEW', 'CONTINUOUS_BOOKING_EDIT', 'CONTINUOUS_BOOKING_DELETE', 'USER_BOOKING_LIMIT_MANAGE', 'USER_BOOKING_LIMIT_VIEW', 'USER_BOOKING_LIMIT_EDIT', 'USER_BOOKING_LIMIT_DELETE', 'BOOKING_TIME_RULE_MANAGE', 'BOOKING_TIME_RULE_VIEW', 'BOOKING_TIME_RULE_ADD', 'BOOKING_TIME_RULE_EDIT', 'BOOKING_TIME_RULE_DELETE', 'RECYCLE_BIN_MANAGE', 'RECYCLE_BIN_VIEW', 'RECYCLE_BIN_RESTORE', 'RECYCLE_BIN_DELETE', 'FILE_VIEW', 'ROOM_SCHEDULE_MANAGE', 'ROOM_SCHEDULE_VIEW', …]
+Login.vue:163 权限树: (16) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+Login.vue:164 完整的登录响应数据: {
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImN1c3RvbWVySWQiOiJkZW1vIiwiZXhwIjoxNzU0OTk4NTc2LCJ1c2VySWQiOiJhZG1pbjAwMSIsImlhdCI6MTc1NDkxMjE3Nn0.QkMyx46OO0SEwGZ-iSyxlUkdIJSc1y1YjWd476iNP8V8EJLPphPIfSaXoJqKeH6DArvJrasHLf1xI5QOts6z4w",
+  "tokenType": "Bearer",
+  "userId": "admin001",
+  "username": "admin",
+  "realName": "系统管理员",
+  "customerId": "demo",
+  "permissions": [
+    "SYSTEM_MANAGE",
+    "USER_MANAGE",
+    "USER_SEARCH",
+    "USER_ADD",
+    "USER_EDIT",
+    "USER_DELETE",
+    "USER_RESET_PWD",
+    "USER_ASSIGN_ROLE",
+    "ROLE_MANAGE",
+    "ROLE_SEARCH",
+    "ROLE_ADD",
+    "ROLE_EDIT",
+    "ROLE_DELETE",
+    "ROLE_ASSIGN_PERM",
+    "PERMISSION_MANAGE",
+    "PERMISSION_SEARCH",
+    "PERMISSION_ADD",
+    "PERMISSION_EDIT",
+    "PERMISSION_DELETE",
+    "ROOM_MANAGE",
+    "ROOM_SEARCH",
+    "ROOM_VIEW",
+    "ROOM_ADD",
+    "ROOM_EDIT",
+    "ROOM_DELETE",
+    "ROOM_BOOK",
+    "ROOM_CANCEL_BOOK",
+    "ROOM_APPROVE",
+    "BOOKING_MANAGE",
+    "BOOKING_SEARCH",
+    "BOOKING_VIEW",
+    "BOOKING_CREATE",
+    "BOOKING_EDIT",
+    "BOOKING_CANCEL",
+    "BOOKING_APPROVE",
+    "BOOKING_REJECT",
+    "REPORT_VIEW",
+    "REPORT_EXPORT",
+    "FILE_MANAGE",
+    "FILE_UPLOAD",
+    "BLACKLIST_MANAGE",
+    "BLACKLIST_VIEW",
+    "BLACKLIST_ADD",
+    "BLACKLIST_DELETE",
+    "VIOLATION_MANAGE",
+    "SCHEME_MANAGE",
+    "SCHEME_VIEW",
+    "SCHEME_ADD",
+    "SCHEME_EDIT",
+    "SCHEME_DELETE",
+    "RECYCLE_VIEW",
+    "RECYCLE_RESTORE",
+    "RECYCLE_DELETE",
+    "AREA_MANAGE",
+    "AREA_VIEW",
+    "AREA_ADD",
+    "AREA_EDIT",
+    "AREA_DELETE",
+    "BOOKING_CONFIG",
+    "BOOKING_PERMISSION_MANAGE",
+    "TITLE_MANAGE",
+    "TITLE_VIEW",
+    "TITLE_ADD",
+    "TITLE_EDIT",
+    "TITLE_DELETE",
+    "POSITION_MANAGE",
+    "POSITION_VIEW",
+    "POSITION_ADD",
+    "POSITION_EDIT",
+    "POSITION_DELETE",
+    "ORG_MANAGE",
+    "ORG_VIEW",
+    "ORG_ADD",
+    "ORG_EDIT",
+    "ORG_DELETE",
+    "BOOKING_PERSONNEL_MANAGE",
+    "BOOKING_PERSONNEL_VIEW",
+    "BOOKING_PERSONNEL_ADD",
+    "BOOKING_PERSONNEL_EDIT",
+    "BOOKING_PERSONNEL_DELETE",
+    "CONTINUOUS_BOOKING_MANAGE",
+    "CONTINUOUS_BOOKING_VIEW",
+    "CONTINUOUS_BOOKING_EDIT",
+    "CONTINUOUS_BOOKING_DELETE",
+    "USER_BOOKING_LIMIT_MANAGE",
+    "USER_BOOKING_LIMIT_VIEW",
+    "USER_BOOKING_LIMIT_EDIT",
+    "USER_BOOKING_LIMIT_DELETE",
+    "BOOKING_TIME_RULE_MANAGE",
+    "BOOKING_TIME_RULE_VIEW",
+    "BOOKING_TIME_RULE_ADD",
+    "BOOKING_TIME_RULE_EDIT",
+    "BOOKING_TIME_RULE_DELETE",
+    "RECYCLE_BIN_MANAGE",
+    "RECYCLE_BIN_VIEW",
+    "RECYCLE_BIN_RESTORE",
+    "RECYCLE_BIN_DELETE",
+    "FILE_VIEW",
+    "ROOM_SCHEDULE_MANAGE",
+    "ROOM_SCHEDULE_VIEW",
+    "BOOKING_APPROVAL_MANAGE",
+    "BOOKING_APPROVAL_VIEW",
+    "BOOKING_APPROVAL_APPROVE"
+  ],
+  "permissionDetails": [
+    {
+      "code": "SYSTEM_MANAGE",
+      "name": "系统管理",
+      "type": "MENU",
+      "parentId": null,
+      "url": "/system",
+      "sort": 1
+    },
+    {
+      "code": "USER_MANAGE",
+      "name": "用户管理",
+      "type": "MENU",
+      "parentId": "perm_user_center",
+      "url": "/system/user",
+      "sort": 1
+    },
+    {
+      "code": "USER_SEARCH",
+      "name": "用户查询",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:search",
+      "sort": 1
+    },
+    {
+      "code": "USER_ADD",
+      "name": "用户新增",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:add",
+      "sort": 2
+    },
+    {
+      "code": "USER_EDIT",
+      "name": "用户编辑",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:edit",
+      "sort": 3
+    },
+    {
+      "code": "USER_DELETE",
+      "name": "用户删除",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:delete",
+      "sort": 4
+    },
+    {
+      "code": "USER_RESET_PWD",
+      "name": "重置密码",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:resetPwd",
+      "sort": 5
+    },
+    {
+      "code": "USER_ASSIGN_ROLE",
+      "name": "分配角色",
+      "type": "BUTTON",
+      "parentId": "perm002",
+      "url": "user:assignRole",
+      "sort": 6
+    },
+    {
+      "code": "ROLE_MANAGE",
+      "name": "角色管理",
+      "type": "MENU",
+      "parentId": "perm_system",
+      "url": "/system/role",
+      "sort": 2
+    },
+    {
+      "code": "ROLE_SEARCH",
+      "name": "角色查询",
+      "type": "BUTTON",
+      "parentId": "perm009",
+      "url": "role:search",
+      "sort": 1
+    },
+    {
+      "code": "ROLE_ADD",
+      "name": "角色新增",
+      "type": "BUTTON",
+      "parentId": "perm009",
+      "url": "role:add",
+      "sort": 2
+    },
+    {
+      "code": "ROLE_EDIT",
+      "name": "角色编辑",
+      "type": "BUTTON",
+      "parentId": "perm009",
+      "url": "role:edit",
+      "sort": 3
+    },
+    {
+      "code": "ROLE_DELETE",
+      "name": "角色删除",
+      "type": "BUTTON",
+      "parentId": "perm009",
+      "url": "role:delete",
+      "sort": 4
+    },
+    {
+      "code": "ROLE_ASSIGN_PERM",
+      "name": "分配权限",
+      "type": "BUTTON",
+      "parentId": "perm009",
+      "url": "role:assignPerm",
+      "sor
+Login.vue:168 正在修复权限树数据...
+Login.vue:171 当前权限树代码: (16) ['SYSTEM_MANAGE', 'REPORT_VIEW', 'FILE_MANAGE', 'BLACKLIST_MANAGE', 'VIOLATION_MANAGE', 'SCHEME_MANAGE', 'RECYCLE_VIEW', 'AREA_MANAGE', 'BOOKING_CONFIG', 'BOOKING_PERSONNEL_MANAGE', 'CONTINUOUS_BOOKING_MANAGE', 'USER_BOOKING_LIMIT_MANAGE', 'BOOKING_TIME_RULE_MANAGE', 'RECYCLE_BIN_MANAGE', 'ROOM_SCHEDULE_MANAGE', 'BOOKING_APPROVAL_MANAGE']
+Login.vue:177 正在处理节点: SYSTEM_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: SYSTEM_MANAGE
+Login.vue:245 修复SYSTEM_MANAGE
+Login.vue:177 正在处理节点: REPORT_VIEW, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: REPORT_VIEW
+Login.vue:278 未找到REPORT_VIEW的具体路径配置，跳过
+Login.vue:177 正在处理节点: FILE_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: FILE_MANAGE
+Login.vue:252 修复FILE_MANAGE
+Login.vue:177 正在处理节点: BLACKLIST_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: BLACKLIST_MANAGE
+Login.vue:259 修复BLACKLIST_MANAGE
+Login.vue:177 正在处理节点: VIOLATION_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: VIOLATION_MANAGE
+Login.vue:278 未找到VIOLATION_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: SCHEME_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: SCHEME_MANAGE
+Login.vue:278 未找到SCHEME_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: RECYCLE_VIEW, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: RECYCLE_VIEW
+Login.vue:278 未找到RECYCLE_VIEW的具体路径配置，跳过
+Login.vue:177 正在处理节点: AREA_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: AREA_MANAGE
+Login.vue:266 修复AREA_MANAGE
+Login.vue:177 正在处理节点: BOOKING_CONFIG, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: BOOKING_CONFIG
+Login.vue:273 修复BOOKING_CONFIG
+Login.vue:177 正在处理节点: BOOKING_PERSONNEL_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: BOOKING_PERSONNEL_MANAGE
+Login.vue:278 未找到BOOKING_PERSONNEL_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: CONTINUOUS_BOOKING_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: CONTINUOUS_BOOKING_MANAGE
+Login.vue:278 未找到CONTINUOUS_BOOKING_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: USER_BOOKING_LIMIT_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: USER_BOOKING_LIMIT_MANAGE
+Login.vue:278 未找到USER_BOOKING_LIMIT_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: BOOKING_TIME_RULE_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: BOOKING_TIME_RULE_MANAGE
+Login.vue:278 未找到BOOKING_TIME_RULE_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: RECYCLE_BIN_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: RECYCLE_BIN_MANAGE
+Login.vue:278 未找到RECYCLE_BIN_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: ROOM_SCHEDULE_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: ROOM_SCHEDULE_MANAGE
+Login.vue:278 未找到ROOM_SCHEDULE_MANAGE的具体路径配置，跳过
+Login.vue:177 正在处理节点: BOOKING_APPROVAL_MANAGE, 类型: MENU, 当前path: null
+Login.vue:181 需要修复的菜单: BOOKING_APPROVAL_MANAGE
+Login.vue:278 未找到BOOKING_APPROVAL_MANAGE的具体路径配置，跳过
+Login.vue:290 权限树已修复，有路径的菜单: (5) ['SYSTEM_MANAGE: /admin-management', 'FILE_MANAGE: /access-control-records', 'BLACKLIST_MANAGE: /access-control-dashboard', 'AREA_MANAGE: /classroom-records', 'BOOKING_CONFIG: /api-test']
+Login.vue:298 用户信息已保存到store
+Login.vue:301 登录时添加动态路由
+dynamicRoutes.js:40 处理节点: SYSTEM_MANAGE MENU /admin-management AdminManagement
+dynamicRoutes.js:70 生成路由: /admin-management AdminManagement
+dynamicRoutes.js:40 处理节点: REPORT_VIEW MENU null null
+dynamicRoutes.js:40 处理节点: REPORT_EXPORT BUTTON null null
+dynamicRoutes.js:40 处理节点: FILE_MANAGE MENU /access-control-records AccessControlRecords
+dynamicRoutes.js:70 生成路由: /access-control-records AccessControlRecords
+dynamicRoutes.js:40 处理节点: FILE_UPLOAD BUTTON null null
+dynamicRoutes.js:40 处理节点: FILE_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BLACKLIST_MANAGE MENU /access-control-dashboard AccessControlDashboard
+dynamicRoutes.js:70 生成路由: /access-control-dashboard AccessControlDashboard
+dynamicRoutes.js:40 处理节点: BLACKLIST_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BLACKLIST_ADD BUTTON null null
+dynamicRoutes.js:40 处理节点: BLACKLIST_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: VIOLATION_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: SCHEME_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: SCHEME_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: SCHEME_ADD BUTTON null null
+dynamicRoutes.js:40 处理节点: SCHEME_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: SCHEME_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: RECYCLE_VIEW MENU null null
+dynamicRoutes.js:40 处理节点: RECYCLE_RESTORE BUTTON null null
+dynamicRoutes.js:40 处理节点: RECYCLE_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: AREA_MANAGE MENU /classroom-records ClassroomRecordsManagement
+dynamicRoutes.js:70 生成路由: /classroom-records ClassroomRecordsManagement
+dynamicRoutes.js:40 处理节点: AREA_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: AREA_ADD BUTTON null null
+dynamicRoutes.js:40 处理节点: AREA_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: AREA_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_CONFIG MENU /api-test ApiTest
+dynamicRoutes.js:70 生成路由: /api-test ApiTest
+dynamicRoutes.js:40 处理节点: BOOKING_PERMISSION_MANAGE BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_PERSONNEL_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: BOOKING_PERSONNEL_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_PERSONNEL_ADD BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_PERSONNEL_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_PERSONNEL_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: CONTINUOUS_BOOKING_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: CONTINUOUS_BOOKING_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: CONTINUOUS_BOOKING_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: CONTINUOUS_BOOKING_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: USER_BOOKING_LIMIT_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: USER_BOOKING_LIMIT_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: USER_BOOKING_LIMIT_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: USER_BOOKING_LIMIT_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_TIME_RULE_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: BOOKING_TIME_RULE_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_TIME_RULE_ADD BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_TIME_RULE_EDIT BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_TIME_RULE_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: RECYCLE_BIN_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: RECYCLE_BIN_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: RECYCLE_BIN_RESTORE BUTTON null null
+dynamicRoutes.js:40 处理节点: RECYCLE_BIN_DELETE BUTTON null null
+dynamicRoutes.js:40 处理节点: ROOM_SCHEDULE_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: ROOM_SCHEDULE_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_APPROVAL_MANAGE MENU null null
+dynamicRoutes.js:40 处理节点: BOOKING_APPROVAL_VIEW BUTTON null null
+dynamicRoutes.js:40 处理节点: BOOKING_APPROVAL_APPROVE BUTTON null null
+dynamicRoutes.js:83 生成的动态路由: (5) [{…}, {…}, {…}, {…}, {…}]
+dynamicRoutes.js:84 生成了 5 个动态路由
+index.js:107 生成的动态路由数量: 5
+index.js:114 动态路由添加成功
+Login.vue:309 准备跳转到dashboard
+Dashboard.vue:402  [Vue warn]: Failed to resolve component: graduation-cap
+If this is a native custom element, make sure to exclude it from component resolution via compilerOptions.isCustomElement.
+  at <Dashboard onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< null > >
+  at <RouterView >
+  at <App>
+warn$1 @ runtime-core.esm-bundler.js:51
+resolveAsset @ runtime-core.esm-bundler.js:2899
+resolveComponent @ runtime-core.esm-bundler.js:2861
+_sfc_render @ Dashboard.vue:402
+renderComponentRoot @ runtime-core.esm-bundler.js:6560
+componentUpdateFn @ runtime-core.esm-bundler.js:5351
+run @ reactivity.esm-bundler.js:237
+setupRenderEffect @ runtime-core.esm-bundler.js:5486
+mountComponent @ runtime-core.esm-bundler.js:5260
+processComponent @ runtime-core.esm-bundler.js:5213
+patch @ runtime-core.esm-bundler.js:4729
+componentUpdateFn @ runtime-core.esm-bundler.js:5438
+run @ reactivity.esm-bundler.js:237
+runIfDirty @ reactivity.esm-bundler.js:275
+callWithErrorHandling @ runtime-core.esm-bundler.js:199
+flushJobs @ runtime-core.esm-bundler.js:408
+Promise.then
+queueFlush @ runtime-core.esm-bundler.js:322
+queuePostFlushCb @ runtime-core.esm-bundler.js:336
+queueEffectWithSuspense @ runtime-core.esm-bundler.js:7379
+baseWatchOptions.scheduler @ runtime-core.esm-bundler.js:6255
+effect2.scheduler @ reactivity.esm-bundler.js:1847
+trigger @ reactivity.esm-bundler.js:265
+endBatch @ reactivity.esm-bundler.js:323
+notify @ reactivity.esm-bundler.js:614
+trigger @ reactivity.esm-bundler.js:588
+set value @ reactivity.esm-bundler.js:1465
+finalizeNavigation @ vue-router.mjs:3503
+(匿名) @ vue-router.mjs:3368
+Promise.then
+pushWithRedirect @ vue-router.mjs:3335
+push @ vue-router.mjs:3260
+(匿名) @ Login.vue:310
+Promise.then
+nextTick @ runtime-core.esm-bundler.js:289
+handleLoginSuccess @ Login.vue:308
+handleLogin @ Login.vue:138
+await in handleLogin
+(匿名) @ Login.vue:20
+cache.<computed>.cache.<computed> @ runtime-dom.esm-bundler.js:1713
+callWithErrorHandling @ runtime-core.esm-bundler.js:199
+callWithAsyncErrorHandling @ runtime-core.esm-bundler.js:206
+invoker @ runtime-dom.esm-bundler.js:729
+Dashboard.vue:430 Dashboard挂载，检查权限树
+Dashboard.vue:431 权限树数据: Proxy(Array) {0: {…}, 1: {…}, 2: {…}, 3: {…}, 4: {…}, 5: {…}, 6: {…}, 7: {…}, 8: {…}, 9: {…}, 10: {…}, 11: {…}, 12: {…}, 13: {…}, 14: {…}, 15: {…}}
+Dashboard.vue:468 发现权限树数据，添加动态路由
+Login.vue:311 跳转到首页成功

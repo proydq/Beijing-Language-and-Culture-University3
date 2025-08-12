@@ -43,6 +43,24 @@ public class SysPermission {
     @Column(name = "sort", columnDefinition = "INT COMMENT '排序值'")
     private Integer sort;
     
+    @Column(name = "path", columnDefinition = "VARCHAR(200) COMMENT '前端路由路径'")
+    private String path;
+    
+    @Column(name = "component", columnDefinition = "VARCHAR(200) COMMENT '前端组件名称'")
+    private String component;
+    
+    @Column(name = "icon", columnDefinition = "VARCHAR(50) COMMENT '菜单图标'")
+    private String icon;
+    
+    @Column(name = "visible", columnDefinition = "TINYINT(1) DEFAULT 1 COMMENT '是否在菜单中显示'")
+    private Boolean visible = true;
+    
+    @Column(name = "keep_alive", columnDefinition = "TINYINT(1) DEFAULT 0 COMMENT '是否缓存页面'")
+    private Boolean keepAlive = false;
+    
+    @Column(name = "redirect", columnDefinition = "VARCHAR(200) COMMENT '重定向路径'")
+    private String redirect;
+    
     @Column(name = "customer_id", columnDefinition = "VARCHAR(32) COMMENT '客户域ID'")
     private String customerId;
     

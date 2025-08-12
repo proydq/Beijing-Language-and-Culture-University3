@@ -4,6 +4,7 @@ import com.proshine.common.response.ResponseEntity;
 import com.proshine.system.dto.FileUploadResponse;
 import com.proshine.system.service.FileUploadService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +19,7 @@ public class FileUploadController {
     private FileUploadService fileUploadService;
 
     @PostMapping("/image")
+    @PreAuthorize("hasAuthority('FILE_UPLOAD') or hasAuthority('FILE_MANAGE')")
     public ResponseEntity<FileUploadResponse> uploadImage(@RequestParam MultipartFile file) {
         FileUploadResponse res = fileUploadService.uploadImage(file);
         return ResponseEntity.success(res);

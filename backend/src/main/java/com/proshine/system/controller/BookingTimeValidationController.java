@@ -6,6 +6,7 @@ import com.proshine.system.service.BookingTimeValidationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ public class BookingTimeValidationController {
      * @return 验证结果
      */
     @PostMapping("/check-time")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingTimeValidationDto.CheckTimeResponse> checkBookingTime(
             @RequestBody BookingTimeValidationDto.CheckTimeRequest request) {
         try {
@@ -50,6 +52,7 @@ public class BookingTimeValidationController {
      * @return 可预约时间范围
      */
     @GetMapping("/available-times")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingTimeValidationDto.AvailableTimesResponse> getAvailableBookingTimes(
             @RequestParam String userId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

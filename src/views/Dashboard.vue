@@ -34,6 +34,33 @@
 
     <!-- 主内容区域 -->
     <div class="main-content">
+      <!-- 普通用户界面：只显示房屋借用模块 -->
+      <div v-if="isNormalUser" class="category-section">
+        <h3 class="category-title">房屋借用系统</h3>
+        <div class="card-grid">
+          <div class="function-card" @click="handleCardClick('房屋信息管理')" v-if="showRoomManagement">
+            <div class="card-icon">
+              <el-icon size="24"><office-building /></el-icon>
+            </div>
+            <div class="card-content">
+              <h4>房屋信息管理</h4>
+              <p>查看可用教室信息，包含教室位置、容量、设备等基础信息</p>
+            </div>
+          </div>
+          <div class="function-card active" @click="handleCardClick('房屋借用管理')" v-if="showBookingManagement">
+            <div class="card-icon">
+              <el-icon size="24"><calendar /></el-icon>
+            </div>
+            <div class="card-content">
+              <h4>房屋借用管理</h4>
+              <p>预约教室，查看预约记录，取消预约等操作</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 管理员界面：显示所有模块 -->
+      <template v-else>
       <!-- 基础分类 -->
       <div class="category-section">
         <h3 class="category-title">基础分类</h3>
@@ -409,31 +436,127 @@
           </div>
         </div>
       </div>
+      </template>
     </div>
   </div>
 </template>
 
 <script>
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { addDynamicRoutes, clearDynamicRoutes } from '@/router/index'
+import { onMounted, computed } from 'vue'
 
 export default {
   name: 'Dashboard',
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
+    
+    // 检查用户是否有特定权限
+    const hasPermission = (permissionCode) => {
+      return userStore.permissions.includes(permissionCode)
+    }
+    
+    // 根据权限过滤显示的卡片
+    const showUserManagement = computed(() => hasPermission('USER_MANAGE'))
+    const showRoomManagement = computed(() => hasPermission('ROOM_MANAGE'))
+    const showBookingManagement = computed(() => hasPermission('BOOKING_MANAGE'))
+    const showSystemManagement = computed(() => hasPermission('SYSTEM_MANAGE'))
+    const showRoleManagement = computed(() => hasPermission('ROLE_MANAGE'))
+    const showPermissionManagement = computed(() => hasPermission('PERMISSION_MANAGE'))
+    
+    // 检查是否是普通用户（只有房屋借用权限）
+    const isNormalUser = computed(() => {
+      const permissions = userStore.permissions
+      // 如果用户只有房屋相关权限，则认为是普通用户
+      const hasOnlyRoomPermissions = permissions.some(p => 
+        p.includes('ROOM_') || p.includes('BOOKING_')
+      ) && !permissions.some(p => 
+        p.includes('USER_') || p.includes('ROLE_') || p.includes('SYSTEM_')
+      )
+      return hasOnlyRoomPermissions
+    })
+    
+    // 组件挂载时检查动态路由
+    onMounted(() => {
+      console.log('Dashboard挂载，检查权限树')
+      console.log('权限树数据:', userStore.permissionTree)
+      
+      // 如果没有权限树数据，创建一个临时测试数据
+      if (!userStore.permissionTree || userStore.permissionTree.length === 0) {
+        console.log('没有权限树数据，创建测试数据')
+        const testPermissionTree = [
+          {
+            id: 'test_dashboard',
+            code: 'DASHBOARD',
+            name: '首页',
+            type: 'MENU',
+            path: '/dashboard',
+            component: 'Dashboard',
+            icon: 'home-filled',
+            visible: true,
+            sort: 1
+          },
+          {
+            id: 'test_user',
+            code: 'USER_MANAGE',
+            name: '用户管理',
+            type: 'MENU',
+            path: '/user-management',
+            component: 'UserManagement',
+            icon: 'user',
+            visible: true,
+            sort: 2
+          }
+        ]
+        
+        // 临时设置权限树数据
+        userStore.permissionTree = testPermissionTree
+        console.log('测试权限树已创建:', testPermissionTree)
+      }
+      
+      // 尝试添加动态路由
+      if (userStore.permissionTree && userStore.permissionTree.length > 0) {
+        console.log('发现权限树数据，添加动态路由')
+        addDynamicRoutes()
+      }
+    })
 
     const handleCardClick = (cardName) => {
+      console.log('点击了卡片:', cardName)
+      console.log('当前可用路由:', router.getRoutes().map(r => r.path))
+      
       switch (cardName) {
         case '用户信息管理':
-          router.push('/user-management')
+          console.log('尝试跳转到 /user-management')
+          router.push('/user-management').catch(err => {
+            console.error('跳转失败:', err)
+          })
           break
         case '房屋信息管理':
-          router.push('/house-management')
-          break
-        case '权限管理':
-          router.push('/role-management')
+          console.log('尝试跳转到 /house-management')
+          router.push('/house-management').catch(err => {
+            console.error('跳转失败:', err)
+          })
           break
         case '房屋借用管理':
-          router.push('/room-booking')
+          console.log('尝试跳转到 /room-booking')
+          router.push('/room-booking').catch(err => {
+            console.error('跳转失败:', err)
+          })
+          break
+        case '权限管理':
+          console.log('尝试跳转到 /role-management')
+          router.push('/role-management').catch(err => {
+            console.error('跳转失败:', err)
+          })
+          break
+        case '房屋借用管理':
+          console.log('尝试跳转到 /room-booking')
+          router.push('/room-booking').catch(err => {
+            console.error('跳转失败:', err)
+          })
           break
         default:
           console.log('点击了:', cardName)
@@ -442,14 +565,22 @@ export default {
 
     const handleLogout = () => {
       // 清除登录信息并跳转到登录页
-      localStorage.removeItem('userToken')
-      localStorage.removeItem('userInfo')
+      userStore.clearUserData()
+      clearDynamicRoutes()
       router.replace('/login')
     }
 
     return {
       handleCardClick,
       handleLogout,
+      // 权限相关
+      showUserManagement,
+      showRoomManagement,
+      showBookingManagement,
+      showSystemManagement,
+      showRoleManagement,
+      showPermissionManagement,
+      isNormalUser
     }
   },
 }

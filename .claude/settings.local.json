@@ -14,7 +14,11 @@
       "Bash(start mvn spring-boot:run)",
       "Bash(mysql:*)",
       "Bash(find:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(Sleep 5)",
+      "Bash(tasklist:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }
