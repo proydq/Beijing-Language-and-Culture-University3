@@ -2,6 +2,7 @@ package com.proshine.system.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -95,11 +96,32 @@ public class SecurityUtil {
     public static boolean isAuthenticated() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            return authentication != null && authentication.isAuthenticated() 
+            return authentication != null && authentication.isAuthenticated()
                     && authentication.getPrincipal() instanceof UserPrincipal;
         } catch (Exception e) {
             log.error("检查用户认证状态失败：", e);
             return false;
         }
+    }
+
+    /**
+     * 判断当前用户是否为系统管理员
+     *
+     * @return 是否为系统管理员
+     */
+    public static boolean isSystemAdministrator() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null) {
+                for (GrantedAuthority ga : authentication.getAuthorities()) {
+                    if ("ROLE_ADMIN".equals(ga.getAuthority())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("判断超级管理员失败：", e);
+        }
+        return false;
     }
 }
