@@ -77,7 +77,7 @@ public class SysPermission {
      * 权限类型枚举
      */
     public enum Type {
-        MENU, BUTTON
+        MENU, BUTTON, API
     }
     
     @PrePersist
