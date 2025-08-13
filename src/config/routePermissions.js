@@ -6,88 +6,78 @@
 export const routePermissions = {
   // 用户管理 - 需要用户管理相关权限
   '/user-management': {
-    permissions: ['USER_MANAGE', 'USER_VIEW', 'USER_ADD', 'USER_EDIT', 'USER_DELETE'],
+    permissions: ['system:user:manage', 'system:user:view', 'system:user:create', 'system:user:update', 'system:user:delete'],
     requireAll: false  // 有任意一个权限即可访问
   },
   
   // 房屋信息管理 - 管理员和审批员可以访问
   '/house-management': {
     permissions: [
-      'ROOM_ADD', 
-      'ROOM_EDIT', 
-      'ROOM_DELETE',
+      'building:room:view',
+      'building:room:create', 
+      'building:room:update', 
+      'building:room:delete',
+      'building:room:manage',
+      'building:area:view',
+      'building:area:create',
+      'building:area:update',
+      'building:area:delete',
+      'building:area:manage',
       // 审批员特殊权限 - 如果有审批权限也可以查看房间信息
-      'BOOKING_APPROVAL_MANAGE',
-      'BOOKING_APPROVAL_APPROVE'
+      'approval:approval:manage',
+      'approval:approval:process'
     ],
-    requireAll: false,  // 有任意一个权限即可
-    // 排除只有查看权限但没有审批权限的用户
-    customCheck: (userPermissions) => {
-      // 如果有增删改权限，直接允许
-      const hasEditPermissions = userPermissions.some(p => 
-        ['ROOM_ADD', 'ROOM_EDIT', 'ROOM_DELETE'].includes(p)
-      )
-      if (hasEditPermissions) return true
-      
-      // 如果有审批权限，也允许访问（只读）
-      const hasApprovalPermissions = userPermissions.some(p =>
-        p.includes('BOOKING_APPROVAL_') || p.includes('BOOKING_APPROVE')
-      )
-      if (hasApprovalPermissions) return true
-      
-      // 其他情况不允许
-      return false
-    }
+    requireAll: false  // 有任意一个权限即可
   },
   
   // 房屋借用管理 - 普通用户和审批员可以访问
   '/room-booking': {
     permissions: [
-      'BOOKING_VIEW', 
-      'BOOKING_CREATE', 
-      'ROOM_BOOK', 
-      'BOOKING_MANAGE',
-      'BOOKING_APPROVE',
-      'BOOKING_APPROVAL_MANAGE',
-      'BOOKING_APPROVAL_APPROVE',
-      'BOOKING_APPROVAL_VIEW'
+      'booking:booking:view', 
+      'booking:booking:create', 
+      'building:room:book', 
+      'booking:booking:manage',
+      'booking:booking:approve',
+      'approval:approval:manage',
+      'approval:approval:process',
+      'approval:approval:view'
     ],
     requireAll: false
   },
   
   // 角色权限管理 - 需要管理员权限
   '/role-management': {
-    permissions: ['ROLE_MANAGE', 'PERMISSION_MANAGE', 'SYSTEM_MANAGE'],
+    permissions: ['system:role:manage', 'system:permission:manage', 'system:system:manage'],
     requireAll: false
   },
   
   // 组织管理
   '/organization-management': {
-    permissions: ['ORGANIZATION_MANAGE', 'ORGANIZATION_VIEW'],
+    permissions: ['system:org:manage', 'system:org:view'],
     requireAll: false
   },
   
   // 职位管理
   '/position-management': {
-    permissions: ['POSITION_MANAGE', 'POSITION_VIEW'],
+    permissions: ['system:position:manage', 'system:position:view'],
     requireAll: false
   },
   
   // 职称管理
   '/level-management': {
-    permissions: ['TITLE_MANAGE', 'TITLE_VIEW'],
+    permissions: ['system:title:manage', 'system:title:view'],
     requireAll: false
   },
   
   // 管理员管理
   '/admin-management': {
-    permissions: ['USER_MANAGE', 'SYSTEM_MANAGE'],
+    permissions: ['system:user:manage', 'system:system:manage'],
     requireAll: false
   },
   
   // 添加管理员
   '/add-admin': {
-    permissions: ['USER_ADD', 'USER_MANAGE', 'SYSTEM_MANAGE'],
+    permissions: ['system:user:create', 'system:user:manage', 'system:system:manage'],
     requireAll: false
   }
 }
@@ -116,8 +106,11 @@ export function checkRoutePermission(path, userPermissions) {
   // 如果配置了排除规则，检查用户是否只有被排除的权限
   if (excludeIfOnly && excludeIfOnly.length > 0) {
     // 获取用户在该模块的所有权限
-    const modulePrefix = permissions[0].split('_')[0]  // 如 ROOM, USER 等
-    const userModulePermissions = userPermissions.filter(p => p.startsWith(modulePrefix + '_'))
+    const modulePrefix = permissions[0].includes(':') ? 
+      permissions[0].split(':')[0] + ':' + permissions[0].split(':')[1] :  // 新格式：domain:resource
+      permissions[0].split('_')[0] + '_'  // 旧格式：MODULE_
+    
+    const userModulePermissions = userPermissions.filter(p => p.startsWith(modulePrefix))
     
     // 如果用户只有被排除的权限，则无权访问
     const hasOnlyExcludedPermissions = userModulePermissions.length > 0 && 

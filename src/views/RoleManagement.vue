@@ -6,7 +6,7 @@
         <div class="logo" @click="goToHome" style="cursor: pointer;">
           <el-icon size="24"><home-filled /></el-icon>
         </div>
-        <span class="title">功能模块</span>
+        <span class="title">权限管理</span>
       </div>
       <div class="header-right">
         <div class="avatar">
@@ -44,12 +44,16 @@
         </div>
 
         <!-- 标签页 -->
-        <el-tabs v-model="activeTab" class="tabs">
-          <el-tab-pane label="权限管理" name="role"></el-tab-pane>
+        <el-tabs v-model="activeTab" class="tabs" @tab-click="handleTabClick">
+          <el-tab-pane label="角色管理" name="role"></el-tab-pane>
+          <el-tab-pane label="权限别名" name="alias" v-permission="'system:permission:view'"></el-tab-pane>
+          <el-tab-pane label="URL映射" name="url" v-permission="'system:permission:view'"></el-tab-pane>
+          <el-tab-pane label="审计日志" name="audit" v-permission="'system:log:view'"></el-tab-pane>
+          <el-tab-pane label="系统演示" name="demo"></el-tab-pane>
         </el-tabs>
 
         <!-- 角色管理内容 -->
-        <div class="role-content">
+        <div class="role-content" v-show="activeTab === 'role'">
           <div class="content-header">
             <h3 class="content-title">角色管理</h3>
             <el-button type="primary" @click="handleAddRole">添加角色</el-button>
@@ -91,6 +95,26 @@
               @current-change="handleCurrentChange"
             />
           </div>
+        </div>
+
+        <!-- 权限别名管理 -->
+        <div class="permission-content" v-show="activeTab === 'alias'">
+          <permission-alias />
+        </div>
+
+        <!-- URL权限映射 -->
+        <div class="permission-content" v-show="activeTab === 'url'">
+          <permission-url />
+        </div>
+
+        <!-- 审计日志 -->
+        <div class="permission-content" v-show="activeTab === 'audit'">
+          <audit-log />
+        </div>
+
+        <!-- 系统演示 -->
+        <div class="permission-content" v-show="activeTab === 'demo'">
+          <permission-demo />
         </div>
       </div>
     </div>
@@ -153,6 +177,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
+import PermissionAlias from '@/components/system/PermissionAlias.vue'
+import PermissionUrl from '@/components/system/PermissionUrl.vue'
+import AuditLog from '@/components/system/AuditLog.vue'
+import PermissionDemo from '@/views/system/PermissionDemo.vue'
 
 const router = useRouter()
 const activeTab = ref('role')
@@ -353,6 +381,10 @@ const handleDialogClose = () => {
 
 const handleSubmit = () => {
   saveRole()
+}
+
+const handleTabClick = (tab) => {
+  console.log('切换到标签页:', tab.props.name)
 }
 
 onMounted(() => {

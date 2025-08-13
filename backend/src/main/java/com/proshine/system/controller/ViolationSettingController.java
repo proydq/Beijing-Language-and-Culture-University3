@@ -29,7 +29,7 @@ public class ViolationSettingController {
      * 分页查询违规设置
      */
     @PostMapping("search")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<ResponsePageDataEntity<ViolationSettingDto>> searchViolationSettings(
             @Valid @RequestBody SearchViolationCondition condition) {
         ResponsePageDataEntity<ViolationSettingDto> result = violationSettingService.searchViolationSettings(condition);
@@ -40,7 +40,7 @@ public class ViolationSettingController {
      * 获取单个教室违规设置详情
      */
     @GetMapping("{roomId}")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<ViolationSettingDto> getViolationSettingByRoomId(@PathVariable String roomId) {
         ViolationSettingDto result = violationSettingService.getViolationSettingByRoomId(roomId);
         return ResponseEntity.success(result);
@@ -50,7 +50,7 @@ public class ViolationSettingController {
      * 更新单个教室违规设置
      */
     @PutMapping("{roomId}")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Void> updateViolationSetting(
             @PathVariable String roomId,
             @Valid @RequestBody ViolationSettingUpdateRequest request) {
@@ -62,7 +62,7 @@ public class ViolationSettingController {
      * 批量更新教室违规设置
      */
     @PutMapping("batch")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Map<String, Object>> batchUpdateViolationSettings(
             @Valid @RequestBody ViolationSettingBatchUpdateRequest request) {
         Map<String, Object> result = violationSettingService.batchUpdateViolationSettings(request);
@@ -73,7 +73,7 @@ public class ViolationSettingController {
      * 创建或更新违规设置
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Void> createOrUpdateViolationSetting(
             @RequestParam String roomId,
             @RequestParam Integer startTime,
@@ -86,7 +86,7 @@ public class ViolationSettingController {
      * 删除违规设置
      */
     @DeleteMapping("{roomId}")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Void> deleteViolationSetting(@PathVariable String roomId) {
         violationSettingService.deleteViolationSetting(roomId);
         return ResponseEntity.success();
@@ -96,7 +96,7 @@ public class ViolationSettingController {
      * 批量删除违规设置
      */
     @DeleteMapping("batch")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Void> batchDeleteViolationSettings(@RequestBody List<String> roomIds) {
         violationSettingService.batchDeleteViolationSettings(roomIds);
         return ResponseEntity.success();
@@ -106,7 +106,7 @@ public class ViolationSettingController {
      * 检查用户是否应该加入黑名单
      */
     @GetMapping("check-blacklist")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Boolean> shouldAddToBlacklist(
             @RequestParam String userId,
             @RequestParam String roomId) {
@@ -118,7 +118,7 @@ public class ViolationSettingController {
      * 处理用户违规
      */
     @PostMapping("process-violation")
-    @PreAuthorize("hasAuthority('VIOLATION_MANAGE') or hasAuthority('SYSTEM_CONFIG')")
+    @PreAuthorize("hasAuthority('system:violation:manage') or hasAuthority('system:config:manage')")
     public ResponseEntity<Void> processUserViolation(
             @RequestParam String userId,
             @RequestParam String roomId,

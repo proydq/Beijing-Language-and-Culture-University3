@@ -108,15 +108,15 @@ export default {
     const menuItems = computed(() => {
       const items = []
       // 普通用户可以看到我的预约
-      if (hasPermission('BOOKING_VIEW') || hasPermission('BOOKING_MANAGE')) {
+      if (hasPermission('booking:booking:view') || hasPermission('booking:booking:manage')) {
         items.push('我的预约')
       }
       // 管理员可以看到全部借用
-      if (hasPermission('BOOKING_MANAGE') && hasPermission('BOOKING_APPROVE')) {
+      if (hasPermission('booking:booking:manage') && hasPermission('booking:booking:approve')) {
         items.push('全部借用')
       }
       // 有预约权限的用户可以看到房间预约
-      if (hasPermission('ROOM_BOOK') || hasPermission('BOOKING_CREATE')) {
+      if (hasPermission('building:room:book') || hasPermission('booking:booking:create')) {
         items.push('房间预约')
       }
       return items
@@ -125,7 +125,7 @@ export default {
     const buildings = ['达力楼', '明德楼', '博学楼']
     const floors = ['1F', '2F', '3F', '4F', '5F', '6F', 'B1', 'B2']
 
-    const activeMenuItem = ref(menuItems.value[0] || '我的预约')
+    const activeMenuItem = ref('')
     const activeCategory = ref('全部')
     const activeFloor = ref('')
     const sidebarSearch = ref('')
@@ -444,8 +444,14 @@ export default {
 
     // 页面初始化
     onMounted(async () => {
+      // 初始化activeMenuItem为第一个可用的菜单项
+      if (menuItems.value.length > 0 && !activeMenuItem.value) {
+        activeMenuItem.value = menuItems.value[0]
+      }
       await loadBuildingTree()
-      await loadDataForMenuItem(activeMenuItem.value)
+      if (activeMenuItem.value) {
+        await loadDataForMenuItem(activeMenuItem.value)
+      }
     })
 
     return {

@@ -43,7 +43,7 @@ public class RoomController {
      * @return 分页结果
      */
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('ROOM_SEARCH') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:search') or hasAuthority('building:room:manage')")
     public ResponseEntity<ResponsePageDataEntity<RoomVo>> searchRooms(@RequestBody SearchRoomCondition condition) {
         log.info("查询房间列表 - roomName: {}, roomNo: {}, roomTypeName: {}, page: {}/{}", 
                 condition.getRoomName(), condition.getRoomNo(), condition.getRoomTypeName(), 
@@ -59,7 +59,7 @@ public class RoomController {
      * @return 房间详情
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROOM_VIEW') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:view') or hasAuthority('building:room:manage')")
     public ResponseEntity<RoomVo> getRoomById(@PathVariable String id) {
         log.info("查询房间详情 - id: {}", id);
         RoomVo result = roomService.getRoomById(id);
@@ -73,7 +73,7 @@ public class RoomController {
      * @return 保存后的房间信息
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('ROOM_ADD') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:create') or hasAuthority('building:room:manage')")
     public ResponseEntity<RoomVo> saveRoom(@Valid @RequestBody RoomSaveVo roomSaveVo) {
         log.info("保存房间 - roomName: {}, roomNo: {}, roomTypeName: {}", 
                 roomSaveVo.getRoomName(), roomSaveVo.getRoomNo(), roomSaveVo.getRoomTypeName());
@@ -89,7 +89,7 @@ public class RoomController {
      * @return 编辑后的房间信息
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROOM_EDIT') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:update') or hasAuthority('building:room:manage')")
     public ResponseEntity<RoomVo> updateRoom(@PathVariable String id, @Valid @RequestBody RoomSaveVo roomSaveVo) {
         try {
             log.info("==========/api/room/{} [PUT]=============id:{}, roomName:{}, roomNo:{}", 
@@ -110,7 +110,7 @@ public class RoomController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROOM_DELETE') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:delete') or hasAuthority('building:room:manage')")
     public ResponseEntity<Void> deleteRoom(@PathVariable String id) {
         try {
             log.info("==========/api/room/{} [DELETE]=============id:{}", id, id);
@@ -129,7 +129,7 @@ public class RoomController {
      * @return 删除结果
      */
     @DeleteMapping("/batch")
-    @PreAuthorize("hasAuthority('ROOM_DELETE') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:delete') or hasAuthority('building:room:manage')")
     public ResponseEntity<Void> batchDeleteRooms(@RequestBody List<String> ids) {
         try {
             log.info("==========/api/room/batch [DELETE]=============ids:{}", ids);
@@ -147,7 +147,7 @@ public class RoomController {
      * @return 房屋类型列表
      */
     @GetMapping("/types")
-    @PreAuthorize("hasAuthority('ROOM_SEARCH') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:search') or hasAuthority('building:room:manage')")
     public ResponseEntity<List<RoomTypeVo>> getRoomTypes() {
         try {
             log.info("==========/api/room/types [GET]=============");
@@ -168,7 +168,7 @@ public class RoomController {
      * @return 是否唯一
      */
     @GetMapping("/check-uniqueness")
-    @PreAuthorize("hasAuthority('ROOM_ADD') or hasAuthority('ROOM_EDIT') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:create') or hasAuthority('building:room:update') or hasAuthority('building:room:manage')")
     public ResponseEntity<Boolean> checkRoomUniqueness(
             @RequestParam String roomName,
             @RequestParam String roomNo,
@@ -191,7 +191,7 @@ public class RoomController {
      * @return 导入结果
      */
     @PostMapping("/import")
-    @PreAuthorize("hasAuthority('ROOM_ADD') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:create') or hasAuthority('building:room:manage')")
     public ResponseEntity<String> importRooms(@RequestParam("file") MultipartFile file) {
         try {
             log.info("==========/api/room/import [POST]=============fileName:{}", file.getOriginalFilename());
@@ -210,7 +210,7 @@ public class RoomController {
      * @param response HTTP响应
      */
     @PostMapping("/export")
-    @PreAuthorize("hasAuthority('ROOM_SEARCH') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:search') or hasAuthority('building:room:manage')")
     public void exportRooms(@RequestBody SearchRoomCondition condition, HttpServletResponse response) {
         try {
             log.info("==========/api/room/export [POST]=============roomName:{}, roomNo:{}", 
@@ -226,7 +226,7 @@ public class RoomController {
      * 获取可选择的房间列表
      */
     @GetMapping("/available")
-    @PreAuthorize("hasAuthority('ROOM_BOOK') or hasAuthority('BOOKING_CREATE') or hasAuthority('ROOM_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:book') or hasAuthority('booking:booking:create') or hasAuthority('building:room:manage')")
     public ResponseEntity<ResponsePageDataEntity<RoomVo>> getAvailableRooms(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,

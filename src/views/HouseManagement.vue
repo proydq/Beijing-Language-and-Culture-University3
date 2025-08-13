@@ -40,7 +40,7 @@
 
         <!-- 标签页 -->
         <el-tabs v-model="activeTab" class="management-tabs">
-          <el-tab-pane label="房屋列表" name="house">
+          <el-tab-pane v-if="canViewRoom" label="房屋列表" name="house">
             <div class="house-page-wrapper">
               <div class="building-panel">
                 <h3 class="panel-title">楼栋架构</h3>
@@ -85,9 +85,9 @@
                 <!-- 操作按钮区域 -->
                 <div class="action-area">
                   <div class="left-actions">
-                    <el-button type="primary" @click="handleAddRoom">添加房间</el-button>
-                    <el-button @click="handleImport">导入房间</el-button>
-                    <el-button @click="handleExport">导出房间</el-button>
+                    <el-button v-if="canCreateRoom" type="primary" @click="handleAddRoom">添加房间</el-button>
+                    <el-button v-if="canImportRoom" @click="handleImport">导入房间</el-button>
+                    <el-button v-if="canExportRoom" @click="handleExport">导出房间</el-button>
                   </div>
                 </div>
 
@@ -107,10 +107,10 @@
                     <el-table-column prop="roomArea" label="房间面积(㎡)" width="120" />
                     <el-table-column prop="capacity" label="容纳人数" width="100" />
                     <el-table-column prop="lastUpdateTime" label="更新时间" width="150" />
-                    <el-table-column label="操作" width="180" fixed="right">
+                    <el-table-column label="操作" width="180" fixed="right" v-if="canUpdateRoom || canDeleteRoom">
                       <template #default="scope">
-                        <el-button type="primary" size="small" @click="handleEditRoom(scope.row)">编辑</el-button>
-                        <el-button type="danger" size="small" @click="handleDeleteRoom(scope.row)">删除</el-button>
+                        <el-button v-if="canUpdateRoom" type="primary" size="small" @click="handleEditRoom(scope.row)">编辑</el-button>
+                        <el-button v-if="canDeleteRoom" type="danger" size="small" @click="handleDeleteRoom(scope.row)">删除</el-button>
                       </template>
                     </el-table-column>
                   </el-table>
@@ -132,12 +132,12 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="楼宇管理" name="building">
+          <el-tab-pane v-if="canViewArea" label="楼宇管理" name="building">
             <!-- 操作按钮区域 -->
             <div class="action-area">
-              <el-button type="primary" @click="handleAddParent" :disabled="!selectedNode">主题</el-button>
-              <el-button type="primary" @click="handleAddChild" :disabled="!selectedNode">子主题</el-button>
-              <el-button type="danger" @click="handleDelete" :disabled="!selectedNode || selectedNode.id === 1">删除</el-button>
+              <el-button v-if="canCreateArea" type="primary" @click="handleAddParent" :disabled="!selectedNode">主题</el-button>
+              <el-button v-if="canCreateArea" type="primary" @click="handleAddChild" :disabled="!selectedNode">子主题</el-button>
+              <el-button v-if="canDeleteArea" type="danger" @click="handleDelete" :disabled="!selectedNode || selectedNode.id === 1">删除</el-button>
             </div>
 
             <!-- 楼宇树形结构 -->
@@ -172,29 +172,50 @@
     <!-- 房屋信息编辑弹窗 -->
     <el-dialog
       v-model="roomDialogVisible"
-      :title="isEditMode ? '编辑房间' : '添加房间'"
+      :title="isEditMode ? '编辑房间' : '添加房屋信息'"
       width="800px"
       @close="handleRoomDialogClose"
     >
       <el-form ref="roomFormRef" :model="roomForm" :rules="roomRules" label-width="100px">
+        <!-- 基本信息部分 -->
+        <div style="font-weight: bold; margin-bottom: 15px;">基本信息</div>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="房间编码:" prop="roomCode">
-              <el-input v-model="roomForm.roomCode" placeholder="请输入房间编码" />
+            <el-form-item label="房屋编号:" prop="roomCode">
+              <el-input v-model="roomForm.roomCode" placeholder="系统自动生成，无需填写" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="房屋名称:" prop="roomName">
-              <el-input v-model="roomForm.roomName" placeholder="请输入房屋名称" />
+            <el-form-item label="*房屋名称:" prop="roomName">
+              <el-input v-model="roomForm.roomName" placeholder="请输入实验室名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="房间号码:" prop="roomNo">
-              <el-input v-model="roomForm.roomNo" placeholder="请输入房间号码" />
+            <el-form-item label="*房间号:" prop="roomNo">
+              <el-input v-model="roomForm.roomNo" placeholder="请输入房间号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="房屋类型:" prop="roomTypeName">
+            <el-form-item label="房屋面积 (㎡) :" prop="roomArea">
+              <el-input v-model="roomForm.roomArea" placeholder="请输入纯数字" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="可容纳人数:" prop="capacity">
+              <el-input v-model="roomForm.capacity" placeholder="请输入纯数字" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
+        <!-- 房屋类型部分 -->
+        <div style="font-weight: bold; margin-top: 20px; margin-bottom: 15px;">房屋类型</div>
+        <!-- 红色提示文字 -->
+        <div style="color: red; margin-bottom: 15px; font-weight: bold;">
+          房屋类型目前仅支持：教室、会议室、实验室、办公室；四种类型；如果需要增加类型请联系开发
+        </div>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="*房屋类型:" prop="roomTypeName">
               <el-select v-model="roomForm.roomTypeName" placeholder="请选择房屋类型" @change="handleRoomTypeChange">
                 <el-option 
                   v-for="roomType in roomTypeOptions" 
@@ -205,31 +226,45 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="房间面积:" prop="roomArea">
-              <el-input v-model="roomForm.roomArea" placeholder="请输入房间面积(㎡)" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="容纳人数:" prop="capacity">
-              <el-input v-model="roomForm.capacity" placeholder="请输入容纳人数" />
-            </el-form-item>
-          </el-col>
         </el-row>
 
-        <!-- 注意事项 -->
-        <div class="notice-section">
-          <h4>重要提示</h4>
-          <div class="notice-content">
-            <p><strong>一、房屋信息录入规范</strong></p>
-            <p>1. <strong>核心字段必填：</strong>添加房间时，"房屋类型" 为关键必选字段，请确保准确填写。</p>
-            <p>2. <strong>唯一性要求：</strong>房屋名称与房间号的组合必须具有唯一性，重复信息将无法成录入。</p>
-
-            <p><strong>二、业务关联与数据同步</strong></p>
-            <p>1. <strong>跨系统数据同步：</strong>房屋添加成功后，如用于工会议预约、实验室预约、教室借用等业务，会在对应业务系统中生成同步房屋信息。</p>
-
-            <p><strong>三、房屋删除须知</strong></p>
-            <p style="color: red;"><strong>若在房屋管理系统中删除房屋操作，所有关联业务系统中的该房屋信息将同步删除，请谨慎操作。</strong></p>
+        <!-- 房屋规则须知 -->
+        <div style="margin-top: 20px;">
+          <div style="font-weight: bold; margin-bottom: 15px;">房屋规则须知</div>
+          
+          <div style="margin-bottom: 10px;">
+            <el-icon style="vertical-align: middle;"><minus /></el-icon>
+            <span style="font-weight: bold;">信息录入规范</span>
+          </div>
+          
+          <div style="margin-left: 20px; margin-bottom: 5px;">
+            1. 核心字段必填：添加房屋时，"房屋类型"为关键必填字段，请确保准确填写。
+          </div>
+          
+          <div style="margin-left: 20px; margin-bottom: 15px;">
+            2. 唯一性要求：房屋名称与房间号的组合必须具有唯一性，重复信息将无法完成录入。
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <el-icon style="vertical-align: middle;"><minus /></el-icon>
+            <span style="font-weight: bold;">业务关联与数据同步</span>
+          </div>
+          
+          <div style="margin-left: 20px; margin-bottom: 5px;">
+            1. 跨系统数据同步：房屋添加成功后，如需用于会议预约、实验室预约、教室借用等业务，需在对应业务系统中手动同步房屋信息。同时支持在业务系统新建房屋后，自动同步至房屋管理系统。
+          </div>
+          
+          <div style="margin-left: 20px; margin-bottom: 15px;">
+            2. 类型变更影响：当房屋类型发生变更（如从"实验室"调整为"会议室"），对应原类型业务系统（如实验室预约）中的基础配置信息将自动清除，但已产生的历史业务数据将予以保留。
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <el-icon style="vertical-align: middle;"><minus /></el-icon>
+            <span style="font-weight: bold;">房屋删除规则</span>
+          </div>
+          
+          <div style="margin-left: 20px; color: red; font-weight: bold;">
+            若在房屋管理系统中执行删除操作，所有关联业务系统中的该房屋信息将同步删除，请谨慎操作。
           </div>
         </div>
       </el-form>
@@ -275,6 +310,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
+import { hasPermission } from '@/utils/permission'
 import {
   getAreaTree,
   getAreaById,
@@ -852,6 +888,24 @@ export default {
       loadRoomList()
     })
 
+    // 权限控制
+    const canViewRoom = computed(() => hasPermission('building:room:view'))
+    const canCreateRoom = computed(() => hasPermission('building:room:create'))
+    const canUpdateRoom = computed(() => hasPermission('building:room:update'))
+    const canDeleteRoom = computed(() => hasPermission('building:room:delete'))
+    const canImportRoom = computed(() => hasPermission('building:room:import'))
+    const canExportRoom = computed(() => hasPermission('building:room:export'))
+    
+    const canViewArea = computed(() => hasPermission('building:area:view'))
+    const canCreateArea = computed(() => hasPermission('building:area:create'))
+    const canUpdateArea = computed(() => hasPermission('building:area:update'))
+    const canDeleteArea = computed(() => hasPermission('building:area:delete'))
+
+    // 根据权限设置默认标签页
+    if (!canViewRoom.value && canViewArea.value) {
+      activeTab.value = 'building'
+    }
+
     return {
       activeTab,
       treeRef,
@@ -908,7 +962,18 @@ export default {
       AREA_TYPES,
       AREA_TYPE_LABELS,
       ROOM_TYPES,
-      ROOM_TYPE_LABELS
+      ROOM_TYPE_LABELS,
+      // 权限
+      canViewRoom,
+      canCreateRoom,
+      canUpdateRoom,
+      canDeleteRoom,
+      canImportRoom,
+      canExportRoom,
+      canViewArea,
+      canCreateArea,
+      canUpdateArea,
+      canDeleteArea
     }
   }
 }

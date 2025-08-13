@@ -1,0 +1,151 @@
+package com.proshine.system;
+
+import com.proshine.common.security.CustomPermissionEvaluator;
+import com.proshine.system.entity.SysPermissionAlias;
+import com.proshine.system.repository.SysPermissionAliasRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * 权限系统测试
+ */
+@SpringBootTest
+public class PermissionSystemTest {
+    
+    @Autowired
+    private CustomPermissionEvaluator permissionEvaluator;
+    
+    @Autowired
+    private SysPermissionAliasRepository aliasRepository;
+    
+    @BeforeEach
+    public void setup() {
+        // 确保测试数据
+        createTestAliases();
+    }
+    
+    /**
+     * 测试直接权限检查
+     */
+    @Test
+    public void testDirectPermission() {
+        Authentication auth = createAuthentication("system:user:view");
+        
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:view"));
+        assertFalse(permissionEvaluator.hasPermission(auth, null, "system:user:create"));
+    }
+    
+    /**
+     * 测试旧权限码兼容
+     */
+    @Test
+    public void testOldPermissionCode() {
+        Authentication auth = createAuthentication("system:user:view");
+        
+        // 检查旧权限码是否能通过新权限码验证
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_VIEW"));
+    }
+    
+    /**
+     * 测试manage权限推理
+     */
+    @Test
+    public void testManagePermissionInference() {
+        Authentication auth = createAuthentication("system:user:manage");
+        
+        // 拥有manage权限应该自动拥有所有子权限
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:view"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:create"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:update"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:delete"));
+    }
+    
+    /**
+     * 测试域级manage权限
+     */
+    @Test
+    public void testDomainManagePermission() {
+        Authentication auth = createAuthentication("system:manage");
+        
+        // 拥有域级manage权限应该拥有该域下所有权限
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:view"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:role:create"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:organization:delete"));
+    }
+    
+    /**
+     * 测试批量权限检查
+     */
+    @Test
+    public void testBatchPermissionCheck() {
+        Authentication auth = createAuthentication("system:user:view", "system:role:view");
+        
+        // 测试任意权限满足
+        assertTrue(permissionEvaluator.hasAnyPermission(auth, 
+            "system:user:view", "system:user:create"));
+        
+        // 测试所有权限满足
+        assertTrue(permissionEvaluator.hasAllPermissions(auth, 
+            "system:user:view", "system:role:view"));
+        assertFalse(permissionEvaluator.hasAllPermissions(auth, 
+            "system:user:view", "system:user:create"));
+    }
+    
+    /**
+     * 测试混合权限码
+     */
+    @Test
+    public void testMixedPermissionCodes() {
+        // 用户同时拥有新旧权限码
+        Authentication auth = createAuthentication("USER_MANAGE", "system:role:view");
+        
+        // 应该能通过所有相关权限检查
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_MANAGE"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:manage"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:create"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:role:view"));
+    }
+    
+    /**
+     * 创建测试用的认证对象
+     */
+    private Authentication createAuthentication(String... permissions) {
+        return new UsernamePasswordAuthenticationToken(
+            "testuser", 
+            "password",
+            Arrays.stream(permissions)
+                .map(SimpleGrantedAuthority::new)
+                .collect(java.util.stream.Collectors.toList())
+        );
+    }
+    
+    /**
+     * 创建测试别名数据
+     */
+    private void createTestAliases() {
+        // 只创建测试需要的别名
+        saveAliasIfNotExists("USER_VIEW", "system:user:view");
+        saveAliasIfNotExists("USER_MANAGE", "system:user:manage");
+    }
+    
+    private void saveAliasIfNotExists(String oldCode, String newCode) {
+        if (!aliasRepository.existsByOldCode(oldCode)) {
+            SysPermissionAlias alias = new SysPermissionAlias();
+            alias.setOldCode(oldCode);
+            alias.setNewCode(newCode);
+            alias.setDescription("Test alias");
+            alias.setCreateBy("test");
+            aliasRepository.save(alias);
+        }
+    }
+}

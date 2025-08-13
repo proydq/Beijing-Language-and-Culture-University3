@@ -30,7 +30,7 @@ public class OrganizationController {
      * 获取部门下拉列表
      */
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:view') or hasAuthority('system:org:manage')")
     public ResponseEntity<List<OptionVO>> all() {
         List<OptionVO> list = organizationRepository.findAll()
                 .stream()
@@ -43,7 +43,7 @@ public class OrganizationController {
      * 获取组织树结构
      */
     @GetMapping("/tree")
-    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:view') or hasAuthority('system:org:manage')")
     public ResponseEntity<List<SysOrganization>> tree() {
         try {
             log.info("==========/api/organization/tree=============");
@@ -59,7 +59,7 @@ public class OrganizationController {
      * 获取单个组织详情
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_VIEW') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:view') or hasAuthority('system:org:manage')")
     public ResponseEntity<SysOrganization> findById(@PathVariable String id) {
         try {
             log.info("==========/api/organization/{} [GET]=============", id);
@@ -75,7 +75,7 @@ public class OrganizationController {
      * 新增组织
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('ORG_ADD') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:create') or hasAuthority('system:org:manage')")
     public ResponseEntity<SysOrganization> create(@RequestBody SysOrganization organization) {
         try {
             log.info("==========/api/organization [POST]=============");
@@ -91,7 +91,7 @@ public class OrganizationController {
      * 编辑组织
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_EDIT') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:update') or hasAuthority('system:org:manage')")
     public ResponseEntity<SysOrganization> update(@PathVariable String id, @RequestBody SysOrganization organization) {
         try {
             log.info("==========/api/organization/{} [PUT]=============", id);
@@ -107,7 +107,7 @@ public class OrganizationController {
      * 删除组织
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ORG_DELETE') or hasAuthority('ORG_MANAGE')")
+    @PreAuthorize("hasAuthority('system:org:delete') or hasAuthority('system:org:manage')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             log.info("==========/api/organization/{} [DELETE]=============", id);

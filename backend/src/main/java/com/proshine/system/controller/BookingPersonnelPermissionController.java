@@ -31,7 +31,7 @@ public class BookingPersonnelPermissionController {
      * 获取预约人员权限列表
      */
     @GetMapping("/list")
-    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_VIEW') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:personnel:view') or hasAuthority('booking:personnel:manage')")
     public ResponseEntity<ResponsePageDataEntity<BookingPersonnelPermissionDto>> getPermissionList(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
@@ -56,7 +56,7 @@ public class BookingPersonnelPermissionController {
      * 新增预约人员权限配置
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_ADD') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:personnel:create') or hasAuthority('booking:personnel:manage')")
     public ResponseEntity<Void> createPermission(
             @Valid @RequestBody BookingPersonnelPermissionSaveRequest request) {
         
@@ -73,7 +73,7 @@ public class BookingPersonnelPermissionController {
      * 编辑预约人员权限配置
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_EDIT') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:personnel:update') or hasAuthority('booking:personnel:manage')")
     public ResponseEntity<Void> updatePermission(
             @PathVariable String id,
             @Valid @RequestBody BookingPersonnelPermissionSaveRequest request) {
@@ -91,7 +91,7 @@ public class BookingPersonnelPermissionController {
      * 删除预约人员权限配置
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_DELETE') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:personnel:delete') or hasAuthority('booking:personnel:manage')")
     public ResponseEntity<Void> deletePermission(
             @PathVariable String id) {
         
@@ -108,7 +108,7 @@ public class BookingPersonnelPermissionController {
      * 导出预约人员权限列表
      */
     @GetMapping("/export")
-    @PreAuthorize("hasAuthority('BOOKING_PERSONNEL_VIEW') or hasAuthority('BOOKING_PERSONNEL_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:personnel:view') or hasAuthority('booking:personnel:manage')")
     public void exportPermissions(
             @RequestParam(required = false) String keyword,
             HttpServletResponse response) {

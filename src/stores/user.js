@@ -32,12 +32,37 @@ export const useUserStore = defineStore('user', () => {
   const hasPermission = (permissionCode) => {
     if (!permissionCode) return true
     
-    // 如果有对应的MANAGE权限，则拥有该模块的所有权限
-    const module = permissionCode.split('_')[0]
-    const managePermission = `${module}_MANAGE`
+    // 直接检查权限
+    if (permissions.value.includes(permissionCode)) {
+      return true
+    }
     
-    return permissions.value.includes(permissionCode) || 
-           permissions.value.includes(managePermission)
+    // 对于新权限格式 domain:resource:action，检查对应的manage权限
+    if (permissionCode.includes(':')) {
+      const parts = permissionCode.split(':')
+      if (parts.length === 3 && parts[2] !== 'manage') {
+        // 检查资源级别的manage权限
+        const resourceManagePermission = `${parts[0]}:${parts[1]}:manage`
+        if (permissions.value.includes(resourceManagePermission)) {
+          return true
+        }
+        
+        // 检查域级别的manage权限（如果存在的话）
+        const domainManagePermission = `${parts[0]}:*:manage`
+        if (permissions.value.includes(domainManagePermission)) {
+          return true
+        }
+      }
+    } else {
+      // 兼容旧权限格式（使用下划线）
+      const module = permissionCode.split('_')[0]
+      const managePermission = `${module}_MANAGE`
+      if (permissions.value.includes(managePermission)) {
+        return true
+      }
+    }
+    
+    return false
   }
 
   // 是否有任意一个权限
@@ -162,7 +187,8 @@ export const useUserStore = defineStore('user', () => {
 
   // 是否是管理员
   const isAdmin = computed(() => {
-    return hasRole('admin') || hasRole('role001') || hasPermission('SYSTEM_MANAGE')
+    return hasRole('SUPER_ADMIN') || hasRole('admin') || hasRole('role001') || 
+           hasPermission('system:system:manage') || hasPermission('SYSTEM_MANAGE')
   })
 
   // 初始化时从localStorage加载

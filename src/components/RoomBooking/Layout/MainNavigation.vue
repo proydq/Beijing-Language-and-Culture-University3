@@ -45,18 +45,42 @@ export default {
       return userStore.permissions.includes(permissionCode)
     }
     
-    // 所有可能的标签及其对应的权限
-    const allTabs = [
-      { key: 'dashboard', label: '数据看板', icon: 'DataLine', permission: 'BOOKING_VIEW' },
-      { key: 'booking', label: '借用管理', icon: 'Management', permission: 'BOOKING_MANAGE' },
-      { key: 'approval', label: '审批管理', icon: 'DocumentChecked', permission: 'BOOKING_APPROVE' },
-      { key: 'records', label: '数据记录', icon: 'FolderOpened', permission: 'BOOKING_RECORDS_VIEW' },
-      { key: 'settings', label: '设置', icon: 'Setting', permission: 'BOOKING_CONFIG' }
-    ]
-    
-    // 根据权限过滤标签 - 完全基于权限配置
+    // 根据权限动态生成标签
     const tabs = computed(() => {
-      return allTabs.filter(tab => hasPermission(tab.permission))
+      const tabList = []
+      
+      // 数据看板 - 有任何预约查看权限就显示
+      if (hasPermission('booking:booking:view') || hasPermission('booking:records:view')) {
+        tabList.push({ key: 'dashboard', label: '数据看板', icon: 'DataLine' })
+      }
+      
+      // 借用管理 - 有预约查看、创建、管理等权限就显示
+      if (hasPermission('booking:booking:view') || 
+          hasPermission('booking:booking:create') || 
+          hasPermission('booking:booking:manage') ||
+          hasPermission('building:room:book')) {
+        tabList.push({ key: 'booking', label: '借用管理', icon: 'Management' })
+      }
+      
+      // 审批管理 - 有审批权限才显示
+      if (hasPermission('booking:booking:approve') || 
+          hasPermission('booking:booking:reject') ||
+          hasPermission('approval:approval:manage')) {
+        tabList.push({ key: 'approval', label: '审批管理', icon: 'DocumentChecked' })
+      }
+      
+      // 数据记录 - 有记录查看权限才显示
+      if (hasPermission('booking:records:view')) {
+        tabList.push({ key: 'records', label: '数据记录', icon: 'FolderOpened' })
+      }
+      
+      // 设置 - 有配置管理权限才显示
+      if (hasPermission('booking:config:manage') || 
+          hasPermission('system:system:manage')) {
+        tabList.push({ key: 'settings', label: '设置', icon: 'Setting' })
+      }
+      
+      return tabList
     })
 
     return {

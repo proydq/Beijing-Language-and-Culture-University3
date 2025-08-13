@@ -89,6 +89,15 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     
     @Autowired
     private RoomAccessRecordRepository roomAccessRecordRepository;
+    
+    @Autowired
+    private CoursePlanningRepository coursePlanningRepository;
+    
+    @Autowired
+    private TbAttendanceAdministrativeCourseTimeConfigRepository courseTimeConfigRepository;
+    
+    @Autowired
+    private SchoolCalendar2Repository schoolCalendar2Repository;
 
     @Override
     @Transactional(readOnly = true)
@@ -387,15 +396,29 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     public CreateBookingResponse createBooking(CreateBookingRequest request) {
         String customerId = SecurityUtil.getCustomerId();
         String userId = SecurityUtil.getCurrentUserId();
+        
+        try {
+            log.info("开始创建预约，用户ID: {}, 客户域: {}, borrowTime: [{}]", 
+                userId, customerId, request.getBorrowTime());
 
-        validateBookingRules(userId, request);
+            validateBookingRules(userId, request);
 
-        RoomBooking booking = buildBookingEntity(request, customerId, userId);
+            RoomBooking booking = buildBookingEntity(request, customerId, userId);
+            log.info("预约实体构建完成，预约ID: {}, bookingPeriod: [{}]", 
+                booking.getId(), booking.getBookingPeriod());
 
-        processApprovalFlow(booking, request);
+            processApprovalFlow(booking, request);
+            log.info("审批流程处理完成，审批状态: {}", booking.getApprovalStatus());
 
-        roomBookingRepository.save(booking);
-        return buildCreateResponse(booking);
+            roomBookingRepository.save(booking);
+            log.info("预约保存成功，最终预约ID: {}", booking.getId());
+            
+            return buildCreateResponse(booking);
+            
+        } catch (Exception e) {
+            log.error("创建预约失败，borrowTime: [{}]", request.getBorrowTime(), e);
+            throw e;
+        }
     }
 
     /**
@@ -563,6 +586,13 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         if (!configOpt.isPresent() || !configOpt.get().getNeedApproval()) {
             // 无需审批，直接通过
             booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+            
+            // 先保存预约记录以获取ID
+            booking = roomBookingRepository.save(booking);
+            log.debug("无需审批预约已保存，获得ID: {}", booking.getId());
+            
+            // 直接通过时也创建课程排课记录
+            createCoursePlanningFromBooking(booking);
             return;
         }
         
@@ -576,11 +606,19 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         if (approvalLevels.isEmpty()) {
             // 没有配置审批级别，直接通过
             booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+            
+            // 先保存预约记录以获取ID
+            booking = roomBookingRepository.save(booking);
+            log.debug("无审批级别预约已保存，获得ID: {}", booking.getId());
+            
+            // 直接通过时也创建课程排课记录
+            createCoursePlanningFromBooking(booking);
             return;
         }
         
         // 保存预约记录以获取ID
-        roomBookingRepository.save(booking);
+        booking = roomBookingRepository.save(booking);
+        log.debug("预约记录已保存，获得ID: {}", booking.getId());
         
         // 创建审批记录
         int maxLevel = approvalLevels.stream().mapToInt(ClassroomApprovalLevel::getLevelNumber).max().orElse(1);
@@ -665,6 +703,13 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                 .anyMatch(level -> level.getLevelNumber() >= 2);
             if (!hasSecondLevelOrAbove) {
                 booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+                
+                // 更新保存预约记录
+                booking = roomBookingRepository.save(booking);
+                log.debug("单级审批预约状态已更新，预约ID: {}", booking.getId());
+                
+                // 直接通过时也创建课程排课记录
+                createCoursePlanningFromBooking(booking);
             }
         }
     }
@@ -918,6 +963,9 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             } else {
                 // 所有审批级别都已完成，设为通过
                 booking.setApprovalStatus(RoomBooking.ApprovalStatus.APPROVED);
+                
+                // 审批完全通过后，自动创建课程排课记录
+                createCoursePlanningFromBooking(booking);
             }
         } else {
             throw new RuntimeException("无效的审批动作");
@@ -2171,6 +2219,420 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             .deviceName(record.getDeviceName())
             .createTime(record.getCreateTime())
             .build();
+    }
+
+    /**
+     * 从预约信息创建课程排课记录
+     * 当预约审批通过后，自动向CoursePlanning添加对应的数据
+     * 支持多时间段的预约，为每个时间段创建单独的排课记录
+     */
+    private void createCoursePlanningFromBooking(RoomBooking booking) {
+        try {
+            if (booking == null) {
+                log.error("booking对象为null，无法创建课程排课记录");
+                return;
+            }
+            
+            log.info("开始为预约创建课程排课记录，预约ID: {}, 预约名称: {}", 
+                booking.getId(), booking.getBookingName());
+            
+            // 解析多个时间段
+            List<BookingTimeSlot> timeSlots = parseBookingTimeSlots(booking);
+            
+            if (timeSlots.isEmpty()) {
+                log.warn("未能解析到有效的预约时间段，预约ID: {}", booking.getId());
+                return;
+            }
+            
+            int successCount = 0;
+            // 为每个时间段创建单独的排课记录
+            for (int i = 0; i < timeSlots.size(); i++) {
+                BookingTimeSlot timeSlot = timeSlots.get(i);
+                try {
+                    log.info("开始创建第{}个时间段的排课记录: {}", i + 1, timeSlot);
+                    
+                    CoursePlanning coursePlanning = convertBookingToCoursePlanning(booking, timeSlot);
+                    
+                    log.info("转换完成，准备保存排课记录: ID={}, 课程名={}, 开始时间={}, 结束时间={}, 日期={}", 
+                        coursePlanning.getId(), coursePlanning.getCourseName(), 
+                        coursePlanning.getCourseStartTime(), coursePlanning.getCourseEndTime(),
+                        coursePlanning.getCourseDate());
+                    
+                    CoursePlanning saved = coursePlanningRepository.save(coursePlanning);
+                    coursePlanningRepository.flush(); // 强制立即提交到数据库
+                    successCount++;
+                    
+                    // 验证保存是否成功
+                    CoursePlanning verified = coursePlanningRepository.findById(saved.getId()).orElse(null);
+                    if (verified != null) {
+                        log.info("✅ 成功创建并验证第{}个课程排课记录，排课ID: {}, 预约ID: {}, 时间段: {}", 
+                            i + 1, saved.getId(), booking.getId(), timeSlot);
+                    } else {
+                        log.error("⚠️ 排课记录保存后无法查询到，可能保存失败: ID={}", saved.getId());
+                    }
+                        
+                } catch (Exception e) {
+                    log.error("❌ 创建第{}个时间段的排课记录失败，预约ID: {}, 时间段: {}", 
+                        i + 1, booking.getId(), timeSlot, e);
+                }
+            }
+            
+            log.info("预约排课记录创建完成，预约ID: {}, 总时间段: {}, 成功创建: {}", 
+                booking.getId(), timeSlots.size(), successCount);
+            
+            if (successCount != timeSlots.size()) {
+                log.error("⚠️ 警告：期望创建{}条记录，实际成功创建{}条记录，可能存在保存失败", 
+                    timeSlots.size(), successCount);
+            }
+                
+        } catch (Exception e) {
+            log.error("创建课程排课记录失败，预约ID: {}", booking.getId(), e);
+            // 这里可以选择抛出异常或者仅记录日志
+            // 建议仅记录日志，避免影响主要的审批流程
+        }
+    }
+    
+    /**
+     * 预约时间段内部类
+     */
+    private static class BookingTimeSlot {
+        public final LocalDateTime startTime;
+        public final LocalDateTime endTime;
+        public final LocalDate date;
+        
+        public BookingTimeSlot(LocalDateTime startTime, LocalDateTime endTime) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.date = startTime.toLocalDate();
+        }
+        
+        @Override
+        public String toString() {
+            return String.format("TimeSlot[%s -> %s, 日期=%s, 星期=%d]", 
+                startTime, endTime, date, startTime.getDayOfWeek().getValue());
+        }
+    }
+    
+    /**
+     * 解析预约的多个时间段
+     * 支持格式: "2025-03-06 08:55:00-09:40:00;2025-03-05 08:55:00-09:40:00"
+     * 使用严格的正则表达式验证，支持全角分隔符和跨天处理
+     */
+    private List<BookingTimeSlot> parseBookingTimeSlots(RoomBooking booking) {
+        List<BookingTimeSlot> timeSlots = new ArrayList<>();
+        
+        try {
+            log.debug("解析预约时间段 - 预约ID: {}, bookingPeriod: [{}]", 
+                booking.getId(), booking.getBookingPeriod());
+            
+            // 首先尝试从bookingPeriod字段解析（如果包含多时间段信息）
+            if (StringUtils.hasText(booking.getBookingPeriod()) && 
+                booking.getBookingPeriod().contains(";")) {
+                
+                log.info("从bookingPeriod解析多时间段: [{}]", booking.getBookingPeriod());
+                timeSlots = parseTimeRangeString(booking.getBookingPeriod());
+                log.info("bookingPeriod解析结果: {}个时间段", timeSlots.size());
+                return timeSlots;
+            }
+            
+            // 默认使用单个时间段（bookingStartTime和bookingEndTime）
+            if (booking.getBookingStartTime() != null && booking.getBookingEndTime() != null) {
+                timeSlots.add(new BookingTimeSlot(booking.getBookingStartTime(), booking.getBookingEndTime()));
+                log.info("使用单个时间段: {}-{}", booking.getBookingStartTime(), booking.getBookingEndTime());
+            }
+            
+        } catch (Exception e) {
+            log.error("解析预约时间段失败，预约ID: {}", booking.getId(), e);
+            
+            // 兜底：使用bookingStartTime和bookingEndTime
+            if (booking.getBookingStartTime() != null && booking.getBookingEndTime() != null) {
+                timeSlots.add(new BookingTimeSlot(booking.getBookingStartTime(), booking.getBookingEndTime()));
+            }
+        }
+        
+        return timeSlots;
+    }
+    
+    /**
+     * 解析分号分隔的时间段字符串，使用严格的正则表达式验证
+     * 支持格式: "yyyy-MM-dd HH:mm:ss-HH:mm:ss;yyyy-MM-dd HH:mm:ss-HH:mm:ss;..."
+     * 支持全角分隔符和跨天处理
+     */
+    private List<BookingTimeSlot> parseTimeRangeString(String raw) {
+        List<BookingTimeSlot> timeSlots = new ArrayList<>();
+        
+        try {
+            log.debug("开始解析时间段字符串: [{}]", raw);
+            
+            // 归一化处理：全角→半角，清理空格
+            String normalized = normalizeTimeString(raw);
+            log.debug("归一化后的字符串: [{}]", normalized);
+            
+            // 分割时间段
+            List<String> segments = splitSegments(normalized);
+            log.debug("分割得到{}个时间段: {}", segments.size(), segments);
+            
+            // 解析每个时间段
+            for (int i = 0; i < segments.size(); i++) {
+                String segment = segments.get(i);
+                try {
+                    log.info("📍 开始解析第{}个时间段: [{}]", i + 1, segment);
+                    BookingTimeSlot timeSlot = parseTimeSegment(segment);
+                    timeSlots.add(timeSlot);
+                    log.info("✅ 成功解析第{}个时间段: {}", i + 1, timeSlot);
+                } catch (Exception e) {
+                    log.error("❌ 解析第{}个时间段失败: [{}]", i + 1, segment, e);
+                    throw new IllegalArgumentException("时间段格式错误: " + segment, e);
+                }
+            }
+            
+            log.info("时间段字符串解析完成，总共解析出{}个时间段", timeSlots.size());
+            
+        } catch (Exception e) {
+            log.error("解析时间段字符串失败: [{}]", raw, e);
+            throw e;
+        }
+        
+        return timeSlots;
+    }
+    
+    /**
+     * 归一化时间字符串：全角→半角，清理空格
+     */
+    private String normalizeTimeString(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return raw;
+        }
+        
+        // 1. 替换全角分隔符为半角分号
+        String result = raw.replace("；", ";")    // 全角分号
+                          .replace("，", ";")    // 全角逗号  
+                          .replace("、", ";");   // 顿号
+        
+        // 2. 规范分号空格
+        result = result.replaceAll("\\s*;\\s*", ";");
+        
+        // 3. 规范连字符空格
+        result = result.replaceAll("\\s*-\\s*", "-");
+        
+        // 4. 整体trim
+        result = result.trim();
+        
+        return result;
+    }
+    
+    /**
+     * 分割时间段，返回非空段列表
+     */
+    private List<String> splitSegments(String normalized) {
+        List<String> segments = new ArrayList<>();
+        
+        if (normalized == null || normalized.isEmpty()) {
+            return segments;
+        }
+        
+        String[] parts = normalized.split(";");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                segments.add(trimmed);
+            }
+        }
+        
+        return segments;
+    }
+    
+    /**
+     * 解析单个时间段，严格按照 yyyy-MM-dd HH:mm:ss-HH:mm:ss 格式
+     */
+    private BookingTimeSlot parseTimeSegment(String segment) {
+        // 严格的正则表达式模式
+        String pattern = "^(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2})-(\\d{2}:\\d{2}:\\d{2})$";
+        java.util.regex.Pattern timePattern = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher matcher = timePattern.matcher(segment);
+        
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("时间段格式不匹配，期望格式: yyyy-MM-dd HH:mm:ss-HH:mm:ss，实际: " + segment);
+        }
+        
+        // 提取匹配组
+        String dateStr = matcher.group(1);      // yyyy-MM-dd
+        String startTimeStr = matcher.group(2); // HH:mm:ss  
+        String endTimeStr = matcher.group(3);   // HH:mm:ss
+        
+        try {
+            // 使用标准格式解析
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            
+            // 解析开始时间
+            LocalDateTime startTime = LocalDateTime.parse(dateStr + " " + startTimeStr, formatter);
+            
+            // 解析结束时间（同日期）
+            LocalDateTime endTime = LocalDateTime.parse(dateStr + " " + endTimeStr, formatter);
+            
+            // 跨天处理：如果结束时间早于开始时间，认为跨天了
+            if (endTime.isBefore(startTime)) {
+                endTime = endTime.plusDays(1);
+                log.info("检测到跨天时间段，自动调整结束时间: {} -> {}", startTime, endTime);
+            }
+            
+            return new BookingTimeSlot(startTime, endTime);
+            
+        } catch (Exception e) {
+            throw new IllegalArgumentException("时间解析失败: " + segment, e);
+        }
+    }
+    
+    
+    /**
+     * 将RoomBooking实体转换为CoursePlanning实体（支持指定时间段）
+     */
+    private CoursePlanning convertBookingToCoursePlanning(RoomBooking booking, BookingTimeSlot timeSlot) {
+        CoursePlanning coursePlanning = new CoursePlanning();
+        
+        // 生成UUID作为主键
+        coursePlanning.setId(java.util.UUID.randomUUID().toString());
+        
+        // 基本信息
+        coursePlanning.setCstmId(booking.getCstmId());
+        coursePlanning.setCourseName(booking.getBookingName()); // 使用预约名称作为课程名称
+        coursePlanning.setTeacherName(booking.getApplicantName()); // 使用申请人作为教师名称
+        
+        // 教室信息
+        coursePlanning.setClassRoomId(booking.getRoomId());
+        coursePlanning.setClassRoomName(booking.getRoomName());
+        
+        // 时间信息 - 使用指定时间段的时间
+        // 将LocalDateTime转换为Date
+        java.util.Date startTime = java.sql.Timestamp.valueOf(timeSlot.startTime);
+        java.util.Date endTime = java.sql.Timestamp.valueOf(timeSlot.endTime);
+        java.util.Date courseDate = java.sql.Date.valueOf(timeSlot.date);
+        
+        coursePlanning.setCourseStartTime(startTime);
+        coursePlanning.setCourseEndTime(endTime);
+        coursePlanning.setCourseDate(courseDate);
+        
+        // 计算星期几 (1=周一, 7=周日) - 使用具体时间段的日期
+        int dayOfWeek = timeSlot.startTime.getDayOfWeek().getValue();
+        coursePlanning.setWeekDay((long) dayOfWeek);
+        
+        // 设置课程节次 (根据课程时间配置计算) - 使用具体时间段的开始时间
+        coursePlanning.setCourseSection(calculateCourseSection(timeSlot.startTime, booking.getCstmId()));
+        
+        // 设置时间戳
+        java.util.Date now = new java.util.Date();
+        coursePlanning.setCreateTime(now);
+        coursePlanning.setLastUpdateTime(now);
+        
+        // 教学周信息 (根据SchoolCalendar2查询真实教学周) - 使用具体时间段的开始时间
+        coursePlanning.setWeekNumber(calculateWeekNumber(timeSlot.startTime, booking.getCstmId()));
+        
+        return coursePlanning;
+    }
+    
+    /**
+     * 根据开始时间和课程时间配置计算课程节次
+     * 使用TbAttendanceAdministrativeCourseTimeConfig进行精确匹配
+     */
+    private Long calculateCourseSection(LocalDateTime startTime, String customerId) {
+        try {
+            // 查询该客户域的课程时间配置
+            List<TbAttendanceAdministrativeCourseTimeConfig> timeConfigs = 
+                courseTimeConfigRepository.findByCstmIdOrderByCourseSort(customerId);
+            
+            if (timeConfigs.isEmpty()) {
+                log.warn("未找到课程时间配置，使用默认计算，客户ID: {}", customerId);
+                return getDefaultCourseSection(startTime);
+            }
+            
+            // 格式化开始时间为HH:mm格式进行匹配
+            String timeStr = startTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+            
+            // 找到最匹配的课程节次
+            for (TbAttendanceAdministrativeCourseTimeConfig config : timeConfigs) {
+                String configStartTime = config.getCourseStartTime();
+                String configEndTime = config.getCourseEndTime();
+                
+                if (configStartTime != null && configEndTime != null) {
+                    // 判断预约时间是否在课程时间段内
+                    if (isTimeInRange(timeStr, configStartTime, configEndTime)) {
+                        log.info("匹配到课程节次: {}, 时间段: {}-{}, 预约时间: {}", 
+                            config.getCourseSort(), configStartTime, configEndTime, timeStr);
+                        return config.getCourseSort().longValue();
+                    }
+                }
+            }
+            
+            log.warn("未匹配到具体课程节次，使用默认计算，预约时间: {}", timeStr);
+            return getDefaultCourseSection(startTime);
+            
+        } catch (Exception e) {
+            log.error("计算课程节次失败，使用默认计算", e);
+            return getDefaultCourseSection(startTime);
+        }
+    }
+    
+    /**
+     * 判断时间是否在指定范围内
+     */
+    private boolean isTimeInRange(String timeStr, String startTime, String endTime) {
+        try {
+            // 简单的时间比较（HH:mm格式）
+            return timeStr.compareTo(startTime) >= 0 && timeStr.compareTo(endTime) <= 0;
+        } catch (Exception e) {
+            log.error("时间范围比较失败: {} vs {}-{}", timeStr, startTime, endTime, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 默认的课程节次计算逻辑
+     */
+    private Long getDefaultCourseSection(LocalDateTime startTime) {
+        int hour = startTime.getHour();
+        
+        // 默认的节次计算逻辑
+        if (hour < 8) return 1L;          // 第1节 (8:00前)
+        else if (hour < 10) return 2L;    // 第2节 (8:00-10:00)
+        else if (hour < 12) return 3L;    // 第3节 (10:00-12:00)
+        else if (hour < 14) return 4L;    // 第4节 (12:00-14:00)
+        else if (hour < 16) return 5L;    // 第5节 (14:00-16:00)
+        else if (hour < 18) return 6L;    // 第6节 (16:00-18:00)
+        else return 7L;                   // 第7节 (18:00后)
+    }
+    
+    /**
+     * 根据预约时间和客户域查询教学周信息
+     * 使用SchoolCalendar2进行精确查询
+     */
+    private String calculateWeekNumber(LocalDateTime bookingTime, String customerId) {
+        try {
+            // 将LocalDateTime转换为Date
+            java.util.Date targetDate = java.sql.Timestamp.valueOf(bookingTime);
+            
+            // 查询该日期所属的教学周
+            Optional<SchoolCalendar2> schoolCalendarOpt = schoolCalendar2Repository
+                .findFirstByStartDateLessThanEqualAndEndDateGreaterThanEqualAndCustomerId(
+                    targetDate, targetDate, customerId);
+            
+            if (schoolCalendarOpt.isPresent()) {
+                SchoolCalendar2 schoolCalendar = schoolCalendarOpt.get();
+                String weekInfo = String.format("%s-%s学期第%d周", 
+                    schoolCalendar.getXn(),                    // 学年 
+                    schoolCalendar.getXq() == 1 ? "上" : "下",  // 学期
+                    schoolCalendar.getWeek());                 // 教学周
+                
+                log.info("查询到教学周信息: {}, 日期: {}", weekInfo, targetDate);
+                return weekInfo;
+            } else {
+                log.warn("未找到对应的教学周信息，客户ID: {}, 日期: {}", customerId, targetDate);
+                return "非教学周";
+            }
+            
+        } catch (Exception e) {
+            log.error("查询教学周信息失败，客户ID: {}", customerId, e);
+            return "临时预约";
+        }
     }
 
     // ==================== 远程开门记录相关方法实现 ====================

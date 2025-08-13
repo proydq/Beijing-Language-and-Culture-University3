@@ -31,7 +31,7 @@ public class UserBookingLimitController {
      * @return 预约限制设置
      */
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAuthority('USER_BOOKING_LIMIT_VIEW') or hasAuthority('USER_BOOKING_LIMIT_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:user-limit:view') or hasAuthority('booking:user-limit:manage')")
     public ResponseEntity<UserBookingLimitDto> getUserBookingLimit(@PathVariable String userId) {
         try {
             UserBookingLimitDto result = userBookingLimitService.getUserBookingLimit(userId);
@@ -49,7 +49,7 @@ public class UserBookingLimitController {
      * @return 设置后的预约限制
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('USER_BOOKING_LIMIT_EDIT') or hasAuthority('USER_BOOKING_LIMIT_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:user-limit:update') or hasAuthority('booking:user-limit:manage')")
     public ResponseEntity<UserBookingLimitDto> setUserBookingLimit(@RequestBody UserBookingLimitDto dto) {
         try {
             UserBookingLimitDto result = userBookingLimitService.setUserBookingLimit(dto);
@@ -67,7 +67,7 @@ public class UserBookingLimitController {
      * @return 设置后的预约限制列表
      */
     @PostMapping("/batch")
-    @PreAuthorize("hasAuthority('USER_BOOKING_LIMIT_EDIT') or hasAuthority('USER_BOOKING_LIMIT_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:user-limit:update') or hasAuthority('booking:user-limit:manage')")
     public ResponseEntity<List<UserBookingLimitDto>> batchSetUserBookingLimits(@RequestBody List<UserBookingLimitDto> dtoList) {
         try {
             List<UserBookingLimitDto> result = userBookingLimitService.batchSetUserBookingLimits(dtoList);
@@ -85,7 +85,7 @@ public class UserBookingLimitController {
      * @return 删除结果
      */
     @DeleteMapping("/{userId}")
-    @PreAuthorize("hasAuthority('USER_BOOKING_LIMIT_DELETE') or hasAuthority('USER_BOOKING_LIMIT_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:user-limit:delete') or hasAuthority('booking:user-limit:manage')")
     public ResponseEntity<String> deleteUserBookingLimit(@PathVariable String userId) {
         try {
             userBookingLimitService.deleteUserBookingLimit(userId);
@@ -102,7 +102,7 @@ public class UserBookingLimitController {
      * @return 所有用户的预约限制设置
      */
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('USER_BOOKING_LIMIT_VIEW') or hasAuthority('USER_BOOKING_LIMIT_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:user-limit:view') or hasAuthority('booking:user-limit:manage')")
     public ResponseEntity<List<UserBookingLimitDto>> getAllUserBookingLimits() {
         try {
             List<UserBookingLimitDto> result = userBookingLimitService.getAllUserBookingLimits();

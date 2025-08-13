@@ -19,61 +19,61 @@ export const menuConfig = [
   {
     title: '用户管理',
     icon: 'user',
-    permissions: [PERMISSIONS.USER.VIEW, PERMISSIONS.USER.MANAGE],
+    permissions: [PERMISSIONS.SYSTEM.USER.VIEW, PERMISSIONS.SYSTEM.USER.MANAGE],
     children: [
       {
         title: '用户列表',
         path: '/user-management',
-        permissions: [PERMISSIONS.USER.VIEW, PERMISSIONS.USER.MANAGE]
+        permissions: [PERMISSIONS.SYSTEM.USER.VIEW, PERMISSIONS.SYSTEM.USER.MANAGE]
       },
       {
         title: '组织机构',
         path: '/organization-management',
-        permissions: [PERMISSIONS.ORG.VIEW, PERMISSIONS.ORG.MANAGE]
+        permissions: [PERMISSIONS.SYSTEM.ORGANIZATION.VIEW, PERMISSIONS.SYSTEM.ORGANIZATION.MANAGE]
       },
       {
         title: '职位管理',
         path: '/position-management',
-        permissions: [PERMISSIONS.POSITION.VIEW, PERMISSIONS.POSITION.MANAGE]
+        permissions: [PERMISSIONS.SYSTEM.POSITION.VIEW, PERMISSIONS.SYSTEM.POSITION.MANAGE]
       },
       {
         title: '职称管理',
         path: '/level-management',
-        permissions: [PERMISSIONS.TITLE.VIEW, PERMISSIONS.TITLE.MANAGE]
+        permissions: [PERMISSIONS.SYSTEM.TITLE.VIEW, PERMISSIONS.SYSTEM.TITLE.MANAGE]
       }
     ]
   },
   {
     title: '教室管理',
     icon: 'office-building',
-    permissions: [PERMISSIONS.ROOM.VIEW, PERMISSIONS.ROOM.MANAGE],
+    permissions: [PERMISSIONS.BUILDING.ROOM.VIEW, PERMISSIONS.BUILDING.ROOM.MANAGE],
     children: [
       {
         title: '教室信息',
         path: '/house-management',
-        permissions: [PERMISSIONS.ROOM.VIEW, PERMISSIONS.ROOM.MANAGE]
+        permissions: [PERMISSIONS.BUILDING.ROOM.VIEW, PERMISSIONS.BUILDING.ROOM.MANAGE]
       },
       {
         title: '教室预订',
         path: '/room-booking',
-        permissions: [PERMISSIONS.ROOM.VIEW, PERMISSIONS.ROOM.BOOK, PERMISSIONS.BOOKING.VIEW]
+        permissions: [PERMISSIONS.BUILDING.ROOM.VIEW, PERMISSIONS.BOOKING.RESERVATION.VIEW]
       }
     ]
   },
   {
     title: '系统管理',
     icon: 'setting',
-    permissions: [PERMISSIONS.SYSTEM.MANAGE, PERMISSIONS.ROLE.MANAGE],
+    permissions: [PERMISSIONS.SYSTEM.ROLE.MANAGE, PERMISSIONS.SYSTEM.USER.MANAGE],
     children: [
       {
         title: '角色管理',
         path: '/role-management',
-        permissions: [PERMISSIONS.ROLE.MANAGE, PERMISSIONS.ROLE.SEARCH]
+        permissions: [PERMISSIONS.SYSTEM.ROLE.MANAGE, PERMISSIONS.SYSTEM.ROLE.VIEW]
       },
       {
         title: '管理员管理',
         path: '/admin-management',
-        permissions: [PERMISSIONS.USER.MANAGE, PERMISSIONS.SYSTEM.MANAGE]
+        permissions: [PERMISSIONS.SYSTEM.USER.MANAGE]
       }
     ]
   },

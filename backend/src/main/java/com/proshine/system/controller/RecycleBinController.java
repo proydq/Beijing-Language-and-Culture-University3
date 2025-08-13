@@ -31,7 +31,7 @@ public class RecycleBinController {
      * 搜索已删除的教室列表
      */
     @PostMapping("/classrooms/search")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_VIEW') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:view') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<ResponsePageDataEntity<ClassroomVo>> searchDeletedClassrooms(
             @RequestBody @Valid SearchClassroomCondition condition) {
         try {
@@ -47,7 +47,7 @@ public class RecycleBinController {
      * 恢复单个教室
      */
     @PutMapping("/classrooms/{id}/restore")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_RESTORE') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:restore') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Void> restoreClassroom(@PathVariable String id) {
         try {
             recycleBinService.restoreClassroom(id);
@@ -62,7 +62,7 @@ public class RecycleBinController {
      * 批量恢复教室
      */
     @PutMapping("/classrooms/batch-restore")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_RESTORE') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:restore') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Void> batchRestoreClassrooms(
             @RequestBody @Valid BatchDeleteClassroomVo batchRestoreVo) {
         try {
@@ -78,7 +78,7 @@ public class RecycleBinController {
      * 永久删除单个教室
      */
     @DeleteMapping("/classrooms/{id}")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_DELETE') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:delete') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Void> permanentDeleteClassroom(@PathVariable String id) {
         try {
             recycleBinService.permanentDeleteClassroom(id);
@@ -93,7 +93,7 @@ public class RecycleBinController {
      * 批量永久删除教室
      */
     @DeleteMapping("/classrooms/batch-delete")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_DELETE') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:delete') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Void> batchPermanentDeleteClassrooms(
             @RequestBody @Valid BatchDeleteClassroomVo batchDeleteVo) {
         try {
@@ -109,7 +109,7 @@ public class RecycleBinController {
      * 清空回收站
      */
     @DeleteMapping("/clear")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_DELETE') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:delete') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Void> clearRecycleBin() {
         try {
             recycleBinService.clearRecycleBin();
@@ -124,7 +124,7 @@ public class RecycleBinController {
      * 获取回收站统计信息
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasAuthority('RECYCLE_BIN_VIEW') or hasAuthority('RECYCLE_BIN_MANAGE')")
+    @PreAuthorize("hasAuthority('system:recycle-bin:view') or hasAuthority('system:recycle-bin:manage')")
     public ResponseEntity<Map<String, Object>> getRecycleBinStats() {
         try {
             Map<String, Object> stats = recycleBinService.getRecycleBinStats();

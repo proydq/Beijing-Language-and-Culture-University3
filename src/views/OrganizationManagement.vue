@@ -158,36 +158,6 @@
           </el-form>
         </div>
 
-        <!-- 组织成员列表 -->
-        <div class="members-area">
-          <div class="members-header">
-            <h3>组织成员</h3>
-            <el-button type="primary" @click="handleAddMember">添加成员</el-button>
-          </div>
-          
-          <div class="members-table">
-            <el-table :data="membersData" style="width: 100%" stripe>
-              <el-table-column prop="name" label="姓名" />
-              <el-table-column prop="username" label="用户名" />
-              <el-table-column prop="position" label="职位" />
-              <el-table-column prop="phone" label="电话" />
-              <el-table-column prop="email" label="邮箱" />
-              <el-table-column label="状态">
-                <template #default="scope">
-                  <el-tag :type="scope.row.status === '1' ? 'success' : 'danger'">
-                    {{ scope.row.status === '1' ? '在职' : '离职' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="150">
-                <template #default="scope">
-                  <el-button type="primary" size="small" @click="handleEditMember(scope.row)">编辑</el-button>
-                  <el-button type="danger" size="small" @click="handleRemoveMember(scope.row)">移除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -357,36 +327,6 @@ export default {
       label: 'label'
     }
 
-    // 组织成员数据
-    const membersData = ref([
-      {
-        id: 1,
-        name: '张三',
-        username: 'zhangsan',
-        position: '技术总监',
-        phone: '13800138001',
-        email: 'zhangsan@example.com',
-        status: '1'
-      },
-      {
-        id: 2,
-        name: '李四',
-        username: 'lisi',
-        position: '产品经理',
-        phone: '13800138002',
-        email: 'lisi@example.com',
-        status: '1'
-      },
-      {
-        id: 3,
-        name: '王五',
-        username: 'wangwu',
-        position: '前端工程师',
-        phone: '13800138003',
-        email: 'wangwu@example.com',
-        status: '0'
-      }
-    ])
 
     // 计算属性
     const orgDialogTitle = computed(() => {
@@ -459,24 +399,6 @@ export default {
       })
     }
 
-    // 组织成员相关方法
-    const handleAddMember = () => {
-      console.log('添加成员')
-    }
-
-    const handleEditMember = (row) => {
-      console.log('编辑成员:', row)
-    }
-
-    const handleRemoveMember = (row) => {
-      ElMessageBox.confirm(`确定要移除成员"${row.name}"吗？`, '确认移除', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        ElMessage.success('移除成功')
-      })
-    }
 
     // 弹窗相关方法
     const handleOrgDialogClose = () => {
@@ -518,7 +440,6 @@ export default {
       orgRules,
       treeData,
       treeProps,
-      membersData,
       orgDialogTitle,
       goToHome,  // 新增返回首页方法
       goToPersonalCenter,
@@ -531,9 +452,6 @@ export default {
       handleCancel,
       handleSave,
       handleDelete,
-      handleAddMember,
-      handleEditMember,
-      handleRemoveMember,
       handleOrgDialogClose,
       handleOrgDialogSubmit
     }
@@ -747,7 +665,6 @@ export default {
   background: white;
   padding: 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -758,31 +675,6 @@ export default {
   margin-top: 30px;
   padding-top: 20px;
   border-top: 1px solid #eee;
-}
-
-.members-area {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.members-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.members-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.members-table {
-  margin-top: 20px;
 }
 
 .dialog-footer {

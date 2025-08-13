@@ -2,7 +2,9 @@ import { useUserStore } from '@/stores/user'
 
 /**
  * 权限判断工具函数
+ * 使用新版权限码格式：domain:resource:action
  */
+
 
 /**
  * 检查是否有指定权限
@@ -11,7 +13,31 @@ import { useUserStore } from '@/stores/user'
  */
 export function hasPermission(permission) {
   const userStore = useUserStore()
-  return userStore.hasPermission(permission)
+  
+  // 直接检查权限（新权限码）
+  if (userStore.hasPermission(permission)) {
+    return true
+  }
+  
+  // 检查是否有对应的manage权限（权限层级推理）
+  if (permission.includes(':')) {
+    const parts = permission.split(':')
+    if (parts.length === 3 && parts[2] !== 'manage') {
+      // 检查资源级别的manage权限
+      const resourceManagePermission = `${parts[0]}:${parts[1]}:manage`
+      if (userStore.hasPermission(resourceManagePermission)) {
+        return true
+      }
+      
+      // 检查域级别的manage权限
+      const domainManagePermission = `${parts[0]}:*:manage`
+      if (userStore.hasPermission(domainManagePermission)) {
+        return true
+      }
+    }
+  }
+  
+  return false
 }
 
 /**
@@ -20,8 +46,7 @@ export function hasPermission(permission) {
  * @returns {boolean}
  */
 export function hasAnyPermission(...permissions) {
-  const userStore = useUserStore()
-  return userStore.hasAnyPermission(...permissions)
+  return permissions.some(permission => hasPermission(permission))
 }
 
 /**
@@ -30,8 +55,7 @@ export function hasAnyPermission(...permissions) {
  * @returns {boolean}
  */
 export function hasAllPermissions(...permissions) {
-  const userStore = useUserStore()
-  return userStore.hasAllPermissions(...permissions)
+  return permissions.every(permission => hasPermission(permission))
 }
 
 /**
@@ -45,199 +69,161 @@ export function hasRole(role) {
 }
 
 /**
- * 权限常量定义（与后端保持一致）
+ * 新版权限码常量定义
  */
 export const PERMISSIONS = {
-  // 用户管理权限
-  USER: {
-    MANAGE: 'USER_MANAGE',
-    SEARCH: 'USER_SEARCH',
-    VIEW: 'USER_VIEW',
-    ADD: 'USER_ADD',
-    EDIT: 'USER_EDIT',
-    DELETE: 'USER_DELETE',
-    RESET_PWD: 'USER_RESET_PWD',
-    ASSIGN_ROLE: 'USER_ASSIGN_ROLE',
-    EXPORT: 'USER_EXPORT',
-    IMPORT: 'USER_IMPORT'
-  },
-  
-  // 角色管理权限
-  ROLE: {
-    MANAGE: 'ROLE_MANAGE',
-    SEARCH: 'ROLE_SEARCH',
-    ADD: 'ROLE_ADD',
-    EDIT: 'ROLE_EDIT',
-    DELETE: 'ROLE_DELETE',
-    ASSIGN_PERM: 'ROLE_ASSIGN_PERM'
-  },
-  
-  // 权限管理权限
-  PERMISSION: {
-    MANAGE: 'PERMISSION_MANAGE',
-    SEARCH: 'PERMISSION_SEARCH',
-    ADD: 'PERMISSION_ADD',
-    EDIT: 'PERMISSION_EDIT',
-    DELETE: 'PERMISSION_DELETE'
-  },
-  
-  // 教室管理权限
-  ROOM: {
-    MANAGE: 'ROOM_MANAGE',
-    SEARCH: 'ROOM_SEARCH',
-    VIEW: 'ROOM_VIEW',
-    ADD: 'ROOM_ADD',
-    EDIT: 'ROOM_EDIT',
-    DELETE: 'ROOM_DELETE',
-    BOOK: 'ROOM_BOOK',
-    CANCEL_BOOK: 'ROOM_CANCEL_BOOK',
-    APPROVE: 'ROOM_APPROVE'
-  },
-  
-  // 预订管理权限
-  BOOKING: {
-    MANAGE: 'BOOKING_MANAGE',
-    SEARCH: 'BOOKING_SEARCH',
-    VIEW: 'BOOKING_VIEW',
-    CREATE: 'BOOKING_CREATE',
-    EDIT: 'BOOKING_EDIT',
-    CANCEL: 'BOOKING_CANCEL',
-    APPROVE: 'BOOKING_APPROVE',
-    REJECT: 'BOOKING_REJECT'
-  },
-  
-  // 系统设置权限
+  // 系统管理域
   SYSTEM: {
-    MANAGE: 'SYSTEM_MANAGE',
-    CONFIG: 'SYSTEM_CONFIG',
-    LOG_VIEW: 'SYSTEM_LOG_VIEW',
-    BACKUP: 'SYSTEM_BACKUP'
+    USER: {
+      MANAGE: 'system:user:manage',
+      VIEW: 'system:user:view',
+      CREATE: 'system:user:create',
+      UPDATE: 'system:user:update',
+      DELETE: 'system:user:delete',
+      RESET_PASSWORD: 'system:user:resetPassword',
+      ASSIGN_ROLES: 'system:user:assignRoles',
+      EXPORT: 'system:user:export',
+      IMPORT: 'system:user:import'
+    },
+    ROLE: {
+      MANAGE: 'system:role:manage',
+      VIEW: 'system:role:view',
+      CREATE: 'system:role:create',
+      UPDATE: 'system:role:update',
+      DELETE: 'system:role:delete',
+      ASSIGN: 'system:role:assign'
+    },
+    PERMISSION: {
+      MANAGE: 'system:permission:manage',
+      VIEW: 'system:permission:view',
+      REFRESH: 'system:permission:refresh'
+    },
+    ORGANIZATION: {
+      MANAGE: 'system:org:manage',
+      VIEW: 'system:org:view',
+      CREATE: 'system:org:create',
+      UPDATE: 'system:org:update',
+      DELETE: 'system:org:delete'
+    },
+    POSITION: {
+      MANAGE: 'system:position:manage',
+      VIEW: 'system:position:view',
+      CREATE: 'system:position:create',
+      UPDATE: 'system:position:update',
+      DELETE: 'system:position:delete'
+    },
+    TITLE: {
+      MANAGE: 'system:title:manage',
+      VIEW: 'system:title:view',
+      CREATE: 'system:title:create',
+      UPDATE: 'system:title:update',
+      DELETE: 'system:title:delete'
+    },
+    SETTING: {
+      MANAGE: 'system:config:manage',
+      CONFIG: 'system:config:update'
+    },
+    FILE: {
+      MANAGE: 'system:file:manage',
+      UPLOAD: 'system:file:upload',
+      VIEW: 'system:file:view',
+      DELETE: 'system:file:delete'
+    },
+    RECYCLE: {
+      MANAGE: 'system:recycle:manage',
+      VIEW: 'system:recycle:view',
+      RESTORE: 'system:recycle:restore',
+      DELETE: 'system:recycle:delete'
+    }
   },
   
-  // 报表统计权限
-  REPORT: {
-    VIEW: 'REPORT_VIEW',
-    EXPORT: 'REPORT_EXPORT'
+  // 建筑管理域
+  BUILDING: {
+    AREA: {
+      MANAGE: 'building:area:manage',
+      VIEW: 'building:area:view',
+      CREATE: 'building:area:create',
+      UPDATE: 'building:area:update',
+      DELETE: 'building:area:delete'
+    },
+    ROOM: {
+      MANAGE: 'building:room:manage',
+      VIEW: 'building:room:view',
+      CREATE: 'building:room:create',
+      UPDATE: 'building:room:update',
+      DELETE: 'building:room:delete',
+      IMPORT: 'building:room:import',
+      EXPORT: 'building:room:export',
+      BATCH_DELETE: 'building:room:batchDelete',
+      BATCH_UPDATE: 'building:room:batchUpdate'
+    },
+    SCHEDULE: {
+      MANAGE: 'building:schedule:manage',
+      VIEW: 'building:schedule:view',
+      CREATE: 'building:schedule:create',
+      UPDATE: 'building:schedule:update',
+      DELETE: 'building:schedule:delete'
+    }
   },
   
-  // 文件管理权限
-  FILE: {
-    MANAGE: 'FILE_MANAGE',
-    UPLOAD: 'FILE_UPLOAD',
-    VIEW: 'FILE_VIEW'
-  },
-  
-  // 组织机构权限
-  ORG: {
-    MANAGE: 'ORG_MANAGE',
-    VIEW: 'ORG_VIEW',
-    ADD: 'ORG_ADD',
-    EDIT: 'ORG_EDIT',
-    DELETE: 'ORG_DELETE'
-  },
-  
-  // 职位管理权限
-  POSITION: {
-    MANAGE: 'POSITION_MANAGE',
-    VIEW: 'POSITION_VIEW',
-    ADD: 'POSITION_ADD',
-    EDIT: 'POSITION_EDIT',
-    DELETE: 'POSITION_DELETE'
-  },
-  
-  // 职称管理权限
-  TITLE: {
-    MANAGE: 'TITLE_MANAGE',
-    VIEW: 'TITLE_VIEW',
-    ADD: 'TITLE_ADD',
-    EDIT: 'TITLE_EDIT',
-    DELETE: 'TITLE_DELETE'
-  },
-  
-  // 黑名单管理权限
-  BLACKLIST: {
-    MANAGE: 'BLACKLIST_MANAGE',
-    VIEW: 'BLACKLIST_VIEW',
-    ADD: 'BLACKLIST_ADD',
-    DELETE: 'BLACKLIST_DELETE'
-  },
-  
-  // 违规管理权限
-  VIOLATION: {
-    MANAGE: 'VIOLATION_MANAGE'
-  },
-  
-  // 区域管理权限
-  AREA: {
-    MANAGE: 'AREA_MANAGE',
-    VIEW: 'AREA_VIEW',
-    ADD: 'AREA_ADD',
-    EDIT: 'AREA_EDIT',
-    DELETE: 'AREA_DELETE'
-  },
-  
-  // 预订人员权限管理
-  BOOKING_PERSONNEL: {
-    MANAGE: 'BOOKING_PERSONNEL_MANAGE',
-    VIEW: 'BOOKING_PERSONNEL_VIEW',
-    ADD: 'BOOKING_PERSONNEL_ADD',
-    EDIT: 'BOOKING_PERSONNEL_EDIT',
-    DELETE: 'BOOKING_PERSONNEL_DELETE'
-  },
-  
-  // 连续预订设置权限
-  CONTINUOUS_BOOKING: {
-    MANAGE: 'CONTINUOUS_BOOKING_MANAGE',
-    VIEW: 'CONTINUOUS_BOOKING_VIEW',
-    EDIT: 'CONTINUOUS_BOOKING_EDIT',
-    DELETE: 'CONTINUOUS_BOOKING_DELETE'
-  },
-  
-  // 用户预订限制权限
-  USER_BOOKING_LIMIT: {
-    MANAGE: 'USER_BOOKING_LIMIT_MANAGE',
-    VIEW: 'USER_BOOKING_LIMIT_VIEW',
-    EDIT: 'USER_BOOKING_LIMIT_EDIT',
-    DELETE: 'USER_BOOKING_LIMIT_DELETE'
-  },
-  
-  // 预订时间规则权限
-  BOOKING_TIME_RULE: {
-    MANAGE: 'BOOKING_TIME_RULE_MANAGE',
-    VIEW: 'BOOKING_TIME_RULE_VIEW',
-    ADD: 'BOOKING_TIME_RULE_ADD',
-    EDIT: 'BOOKING_TIME_RULE_EDIT',
-    DELETE: 'BOOKING_TIME_RULE_DELETE'
-  },
-  
-  // 回收站管理权限
-  RECYCLE_BIN: {
-    MANAGE: 'RECYCLE_BIN_MANAGE',
-    VIEW: 'RECYCLE_BIN_VIEW',
-    RESTORE: 'RECYCLE_BIN_RESTORE',
-    DELETE: 'RECYCLE_BIN_DELETE'
-  },
-  
-  // 方案管理权限
-  SCHEME: {
-    MANAGE: 'SCHEME_MANAGE',
-    VIEW: 'SCHEME_VIEW',
-    ADD: 'SCHEME_ADD',
-    EDIT: 'SCHEME_EDIT',
-    DELETE: 'SCHEME_DELETE'
-  },
-  
-  // 教室日程权限
-  ROOM_SCHEDULE: {
-    MANAGE: 'ROOM_SCHEDULE_MANAGE',
-    VIEW: 'ROOM_SCHEDULE_VIEW'
-  },
-  
-  // 预订审批权限
-  BOOKING_APPROVAL: {
-    MANAGE: 'BOOKING_APPROVAL_MANAGE',
-    VIEW: 'BOOKING_APPROVAL_VIEW',
-    APPROVE: 'BOOKING_APPROVAL_APPROVE'
+  // 预订管理域
+  BOOKING: {
+    RESERVATION: {
+      MANAGE: 'booking:reservation:manage',
+      VIEW: 'booking:reservation:view',
+      CREATE: 'booking:reservation:create',
+      UPDATE: 'booking:reservation:update',
+      DELETE: 'booking:reservation:delete',
+      CANCEL: 'booking:reservation:cancel',
+      AUDIT: 'booking:reservation:audit',
+      EXPORT: 'booking:reservation:export',
+      MY_VIEW: 'booking:reservation:myView',
+      MY_CREATE: 'booking:reservation:myCreate',
+      MY_CANCEL: 'booking:reservation:myCancel'
+    },
+    APPROVAL: {
+      MANAGE: 'booking:approval:manage',
+      VIEW: 'booking:approval:view',
+      PROCESS: 'booking:approval:process',
+      BATCH: 'booking:approval:batch'
+    },
+    SETTING: {
+      MANAGE: 'booking:setting:manage',
+      TIME_RULE: 'booking:setting:timeRule',
+      PERSONNEL: 'booking:setting:personnel',
+      CONTINUOUS: 'booking:setting:continuous',
+      LIMIT: 'booking:setting:limit'
+    },
+    VIOLATION: {
+      MANAGE: 'booking:violation:manage',
+      VIEW: 'booking:violation:view',
+      CREATE: 'booking:violation:create',
+      UPDATE: 'booking:violation:update',
+      DELETE: 'booking:violation:delete'
+    },
+    BLACKLIST: {
+      MANAGE: 'booking:blacklist:manage',
+      VIEW: 'booking:blacklist:view',
+      CREATE: 'booking:blacklist:create',
+      DELETE: 'booking:blacklist:delete'
+    },
+    REMOTE: {
+      OPEN_DOOR: 'booking:remote:openDoor',
+      VIEW: 'booking:remote:view',
+      EXPORT: 'booking:remote:export'
+    },
+    SCHEME: {
+      MANAGE: 'booking:scheme:manage',
+      VIEW: 'booking:scheme:view',
+      CREATE: 'booking:scheme:create',
+      UPDATE: 'booking:scheme:update',
+      DELETE: 'booking:scheme:delete',
+      APPLY: 'booking:scheme:apply'
+    },
+    REPORT: {
+      VIEW: 'booking:report:view',
+      EXPORT: 'booking:report:export'
+    }
   }
 }
 

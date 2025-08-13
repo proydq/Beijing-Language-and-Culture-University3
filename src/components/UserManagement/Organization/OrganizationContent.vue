@@ -101,35 +101,6 @@
           </div>
         </div>
 
-        <!-- 组织成员 -->
-        <div v-if="selectedOrgNode" class="org-members-area">
-          <div class="members-header">
-            <h3>组织成员</h3>
-            <el-button type="primary" size="small" @click="handleAddOrgMember">
-              添加成员
-            </el-button>
-          </div>
-          <div class="members-table">
-            <el-table :data="orgMembersData" style="width: 100%;" border>
-              <el-table-column prop="realName" label="姓名" width="120" />
-              <el-table-column prop="jobNumber" label="工号" width="120" />
-              <el-table-column prop="position" label="职务" width="150" />
-              <el-table-column prop="phone" label="手机号" width="130" />
-              <el-table-column label="操作" width="100">
-                <template #default="{ row }">
-                  <el-button 
-                    type="text" 
-                    size="small" 
-                    @click="handleRemoveOrgMember(row)"
-                    style="color: #f56c6c;"
-                  >
-                    移除
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -256,23 +227,6 @@ export default {
       description: ''
     })
 
-    // 组织成员数据
-    const orgMembersData = ref([
-      {
-        id: 1,
-        realName: '张三',
-        jobNumber: 'JS001',
-        position: '前端开发工程师',
-        phone: '13800138001'
-      },
-      {
-        id: 2,
-        realName: '李四',
-        jobNumber: 'JS002',
-        position: '后端开发工程师',
-        phone: '13800138002'
-      }
-    ])
 
     // 表单验证规则
     const orgFormRules = {
@@ -389,23 +343,6 @@ export default {
       }
     }
 
-    const handleAddOrgMember = () => {
-      console.log('添加组织成员')
-    }
-
-    const handleRemoveOrgMember = (row) => {
-      ElMessageBox.confirm(`确定要移除成员"${row.realName}"吗？`, '确认移除', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        const index = orgMembersData.value.findIndex(item => item.id === row.id)
-        if (index !== -1) {
-          orgMembersData.value.splice(index, 1)
-        }
-        ElMessage.success('移除成功')
-      })
-    }
 
     const handleOrgDialogClose = () => {
       orgDialogVisible.value = false
@@ -439,7 +376,6 @@ export default {
       orgTreeData,
       orgFormData,
       orgDialogFormData,
-      orgMembersData,
       orgFormRules,
       orgDialogFormRules,
       flatOrgList,
@@ -451,8 +387,6 @@ export default {
       handleDeleteOrg,
       handleCancelOrgEdit,
       handleSaveOrg,
-      handleAddOrgMember,
-      handleRemoveOrgMember,
       handleOrgDialogClose,
       handleOrgDialogSubmit
     }
@@ -508,7 +442,6 @@ export default {
   border: 1px solid #e8e8e8;
   border-radius: 6px;
   padding: 20px;
-  margin-bottom: 20px;
 }
 
 .detail-header {
@@ -544,33 +477,6 @@ export default {
 
 .empty-state p {
   margin: 10px 0 0 0;
-}
-
-.org-members-area {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 20px;
-}
-
-.members-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.members-header h3 {
-  margin: 0;
-  color: #333;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.members-table {
-  margin-top: 15px;
 }
 
 :deep(.el-tree-node__content) {

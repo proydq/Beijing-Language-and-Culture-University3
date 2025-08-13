@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员接口测试</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            background: #fee;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+            background: #efe;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .warning {
+            color: orange;
+            background: #fff5e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <h1>管理员接口错误诊断</h1>
+            
+            <h2>1. 测试后端接口</h2>
+            <button @click="testBackendAPI">测试管理员查询接口</button>
+            <button @click="testRolesAPI">测试角色查询接口</button>
+            
+            <div v-if="loading">加载中...</div>
+            
+            <div v-if="error" class="error">
+                <h3>错误信息：</h3>
+                <pre>{{ error }}</pre>
+            </div>
+            
+            <div v-if="apiResponse" class="success">
+                <h3>接口响应：</h3>
+                <pre>{{ JSON.stringify(apiResponse, null, 2) }}</pre>
+            </div>
+            
+            <div v-if="dataIssues.length > 0" class="warning">
+                <h3>数据问题：</h3>
+                <ul>
+                    <li v-for="issue in dataIssues" :key="issue">{{ issue }}</li>
+                </ul>
+            </div>
+            
+            <h2>2. 数据显示测试</h2>
+            <div v-if="adminData.length > 0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>姓名</th>
+                            <th>用户名</th>
+                            <th>手机号</th>
+                            <th>部门</th>
+                            <th>状态</th>
+                            <th>微信昵称</th>
+                            <th>微信手机号</th>
+                            <th>角色</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="admin in adminData" :key="admin.id">
+                            <td>{{ admin.id }}</td>
+                            <td>{{ admin.realName }}</td>
+                            <td>{{ admin.username }}</td>
+                            <td>{{ admin.phone }}</td>
+                            <td>{{ admin.departmentName }}</td>
+                            <td>{{ admin.accountStatus }}</td>
+                            <td>{{ formatWechatField(admin.wechatNickname) }}</td>
+                            <td>{{ formatWechatField(admin.wechatPhone) }}</td>
+                            <td>{{ admin.roles.length }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <h2>3. 问题诊断</h2>
+            <div v-if="diagnostics.length > 0">
+                <ul>
+                    <li v-for="diag in diagnostics" :key="diag">{{ diag }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    error: null,
+                    apiResponse: null,
+                    adminData: [],
+                    dataIssues: [],
+                    diagnostics: [],
+                    token: localStorage.getItem('token') || ''
+                };
+            },
+            methods: {
+                async testBackendAPI() {
+                    this.loading = true;
+                    this.error = null;
+                    this.apiResponse = null;
+                    this.dataIssues = [];
+                    this.diagnostics = [];
+
+                    try {
+                        const response = await axios.post('/api/admin-management/admins/search', {
+                            pageNumber: 1,
+                            pageSize: 10
+                        }, {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        this.apiResponse = response.data;
+                        
+                        // 检查响应格式
+                        if (response.data.code !== '0') {
+                            this.dataIssues.push(`响应代码不是 '0': ${response.data.code}`);
+                        }
+                        
+                        if (response.data.data && response.data.data.rows) {
+                            this.adminData = response.data.data.rows;
+                            this.analyzeData();
+                        } else {
+                            this.dataIssues.push('响应数据结构不正确，缺少 data.rows');
+                        }
+
+                    } catch (error) {
+                        this.error = error.message;
+                        if (error.response) {
+                            this.error += '\n响应状态: ' + error.response.status;
+                            this.error += '\n响应数据: ' + JSON.stringify(error.response.data, null, 2);
+                        }
+                        
+                        // 诊断错误原因
+                        this.diagnoseError(error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async testRolesAPI() {
+                    this.loading = true;
+                    this.error = null;
+                    this.apiResponse = null;
+
+                    try {
+                        const response = await axios.get('/api/admin-management/roles/available', {
+                            headers: {
+                                'Authorization': `Bearer ${this.token}`
+                            }
+                        });
+
+                        this.apiResponse = response.data;
+                        
+                    } catch (error) {
+                        this.error = error.message;
+                        if (error.response) {
+                            this.error += '\n响应状态: ' + error.response.status;
+                            this.error += '\n响应数据: ' + JSON.stringify(error.response.data, null, 2);
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                analyzeData() {
+                    // 分析数据问题
+                    this.adminData.forEach((admin, index) => {
+                        if (admin.wechatNickname === '/') {
+                            this.dataIssues.push(`第 ${index + 1} 条数据的微信昵称为 '/'`);
+                        }
+                        if (admin.wechatPhone === '/') {
+                            this.dataIssues.push(`第 ${index + 1} 条数据的微信手机号为 '/'`);
+                        }
+                        if (!admin.id) {
+                            this.dataIssues.push(`第 ${index + 1} 条数据缺少 ID`);
+                        }
+                    });
+                },
+
+                diagnoseError(error) {
+                    if (error.response) {
+                        if (error.response.status === 401) {
+                            this.diagnostics.push('认证失败：请检查 token 是否有效');
+                        } else if (error.response.status === 403) {
+                            this.diagnostics.push('权限不足：当前用户可能没有访问该接口的权限');
+                        } else if (error.response.status === 404) {
+                            this.diagnostics.push('接口不存在：请检查接口路径是否正确');
+                        } else if (error.response.status === 500) {
+                            this.diagnostics.push('服务器错误：后端可能存在异常');
+                        }
+                    } else if (error.request) {
+                        this.diagnostics.push('网络错误：无法连接到后端服务器');
+                    } else {
+                        this.diagnostics.push('请求配置错误：' + error.message);
+                    }
+                },
+
+                formatWechatField(value) {
+                    return (value === '/' || !value) ? '-' : value;
+                }
+            },
+            mounted() {
+                console.log('Token:', this.token ? '存在' : '不存在');
+                if (!this.token) {
+                    this.error = '未找到登录 token，请先登录系统';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

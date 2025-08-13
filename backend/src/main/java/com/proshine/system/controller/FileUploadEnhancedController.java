@@ -35,7 +35,7 @@ public class FileUploadEnhancedController {
      * @return 文件检查响应
      */
     @PostMapping("/check")
-    @PreAuthorize("hasAuthority('FILE_UPLOAD') or hasAuthority('FILE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:file:upload') or hasAuthority('system:file:manage')")
     public ResponseEntity<FileCheckResponse> checkFile(@Valid @RequestBody FileCheckRequest request) {
         log.info("检查文件是否存在: fileName={}, fileSize={}, hash={}", 
                 request.getFileName(), request.getFileSize(), request.getFileHash());
@@ -54,7 +54,7 @@ public class FileUploadEnhancedController {
      * @return 上传响应
      */
     @PostMapping("/upload")
-    @PreAuthorize("hasAuthority('FILE_UPLOAD') or hasAuthority('FILE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:file:upload') or hasAuthority('system:file:manage')")
     public ResponseEntity<FileUploadEnhancedResponse> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "hash", required = false) String fileHash,
@@ -89,7 +89,7 @@ public class FileUploadEnhancedController {
      * @return 操作结果
      */
     @PostMapping("/reference")
-    @PreAuthorize("hasAuthority('FILE_UPLOAD') or hasAuthority('FILE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:file:upload') or hasAuthority('system:file:manage')")
     public ResponseEntity<Void> updateFileReference(
             @RequestParam("fileId") String fileId,
             @RequestParam("entityType") String entityType,
@@ -112,7 +112,7 @@ public class FileUploadEnhancedController {
      * @return 统计信息
      */
     @GetMapping("/statistics")
-    @PreAuthorize("hasAuthority('FILE_VIEW') or hasAuthority('FILE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:file:view') or hasAuthority('system:file:manage')")
     public ResponseEntity<?> getFileStatistics() {
         return ResponseEntity.success(fileUploadService.getFileStatistics());
     }

@@ -19,7 +19,7 @@ public class FileUploadController {
     private FileUploadService fileUploadService;
 
     @PostMapping("/image")
-    @PreAuthorize("hasAuthority('FILE_UPLOAD') or hasAuthority('FILE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:file:upload') or hasAuthority('system:file:manage')")
     public ResponseEntity<FileUploadResponse> uploadImage(@RequestParam MultipartFile file) {
         FileUploadResponse res = fileUploadService.uploadImage(file);
         return ResponseEntity.success(res);

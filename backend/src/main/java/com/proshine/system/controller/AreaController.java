@@ -32,7 +32,7 @@ public class AreaController {
      * @return 区域树形结构
      */
     @GetMapping("/tree")
-    @PreAuthorize("hasAuthority('AREA_VIEW') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:view') or hasAuthority('building:area:manage')")
     public ResponseEntity<List<Area>> getAreaTree(
             @RequestParam(required = false) String cstmId,
             @RequestParam(required = false) String type) {
@@ -53,7 +53,7 @@ public class AreaController {
      * @return 区域详情
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('AREA_VIEW') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:view') or hasAuthority('building:area:manage')")
     public ResponseEntity<Area> findById(@PathVariable String id) {
         try {
             log.info("==========/area/{} [GET]=============id:{}", id, id);
@@ -72,7 +72,7 @@ public class AreaController {
      * @return 保存后的区域信息
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('AREA_ADD') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:create') or hasAuthority('building:area:manage')")
     public ResponseEntity<Area> save(@RequestBody Area area) {
         try {
             log.info("==========/area [POST]=============areaName:{}, type:{}", 
@@ -93,7 +93,7 @@ public class AreaController {
      * @return 更新后的区域信息
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('AREA_EDIT') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:update') or hasAuthority('building:area:manage')")
     public ResponseEntity<Area> update(@PathVariable String id, @RequestBody Area area) {
         try {
             log.info("==========/area/{} [PUT]=============id:{}, areaName:{}", 
@@ -113,7 +113,7 @@ public class AreaController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('AREA_DELETE') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:delete') or hasAuthority('building:area:manage')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             log.info("==========/area/{} [DELETE]=============id:{}", id, id);
@@ -132,7 +132,7 @@ public class AreaController {
      * @return 删除结果
      */
     @DeleteMapping("/{id}/cascade")
-    @PreAuthorize("hasAuthority('AREA_DELETE') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:delete') or hasAuthority('building:area:manage')")
     public ResponseEntity<Void> deleteCascade(@PathVariable String id) {
         try {
             log.info("==========/area/{}/cascade [DELETE]=============id:{}", id, id);
@@ -151,7 +151,7 @@ public class AreaController {
      * @return 分页结果
      */
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('AREA_VIEW') or hasAuthority('AREA_MANAGE')")
+    @PreAuthorize("hasAuthority('building:area:view') or hasAuthority('building:area:manage')")
     public ResponseEntity<ResponsePageDataEntity<AreaVo>> searchArea(@RequestBody SearchAreaCondition condition) {
         try {
             log.info("==========/area/search [POST]=============areaName:{}, type:{}, pageNumber:{}, pageSize:{}", 

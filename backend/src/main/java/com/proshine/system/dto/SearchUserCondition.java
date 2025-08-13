@@ -22,6 +22,6 @@ public class SearchUserCondition extends SearchBaseCondition {
     private String positionName;
     private String titleId;
     private String titleName;
-    private SysUser.Status status = SysUser.Status.NORMAL;
+    private SysUser.Status status;
     private String gender;
 }

@@ -18,7 +18,17 @@
       "Bash(grep:*)",
       "Bash(Sleep 5)",
       "Bash(tasklist:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(ren:*)",
+      "Bash(npm install:*)",
+      "Bash(python:*)",
+      "Bash(cp:*)",
+      "Bash(powershell:*)",
+      "Bash(mkdir:*)",
+      "Bash(pip install:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

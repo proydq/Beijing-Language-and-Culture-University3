@@ -34,425 +34,48 @@
 
     <!-- 主内容区域 -->
     <div class="main-content">
-      <!-- 普通用户界面：只显示房屋借用模块 -->
-      <div v-if="isNormalUser" class="category-section">
-        <h3 class="category-title">房屋借用系统</h3>
-        <div class="card-grid">
-          <div class="function-card active" @click="handleCardClick('房屋借用管理')" v-if="showBookingManagement">
-            <div class="card-icon">
-              <el-icon size="24"><calendar /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋借用管理</h4>
-              <p>预约教室，查看预约记录，取消预约等操作</p>
-            </div>
+      <!-- 卡片网格布局 -->
+      <div class="card-grid">
+        <!-- 原有系统 -->
+        <div v-if="showBookingManagement" class="function-card" @click="handleCardClick('房屋借用管理')">
+          <div class="card-icon">
+            <el-icon size="40"><calendar /></el-icon>
           </div>
+          <h4>房屋借用管理</h4>
+          <p>预约教室，查看预约记录</p>
+        </div>
+        
+        <div v-if="showRoomManagement" class="function-card" @click="handleCardClick('房屋信息管理')">
+          <div class="card-icon">
+            <el-icon size="40"><office-building /></el-icon>
+          </div>
+          <h4>房屋信息管理</h4>
+          <p>管理教室、会议室等场地</p>
+        </div>
+        
+        <div v-if="showUserManagement" class="function-card" @click="handleCardClick('用户管理')">
+          <div class="card-icon">
+            <el-icon size="40"><user /></el-icon>
+          </div>
+          <h4>用户管理</h4>
+          <p>管理系统用户信息</p>
+        </div>
+        
+        <div v-if="showRoleManagement" class="function-card" @click="handleCardClick('权限管理')">
+          <div class="card-icon">
+            <el-icon size="40"><key /></el-icon>
+          </div>
+          <h4>权限管理</h4>
+          <p>管理系统角色和权限</p>
         </div>
       </div>
       
-      <!-- 审批员界面：显示房屋信息管理和房屋借用管理 -->
-      <div v-else-if="isApprover" class="category-section">
-        <h3 class="category-title">房屋借用系统</h3>
-        <div class="card-grid">
-          <div class="function-card" @click="handleCardClick('房屋信息管理')">
-            <div class="card-icon">
-              <el-icon size="24"><office-building /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋信息管理</h4>
-              <p>查看教室信息，包含教室位置、容量、设备等基础信息</p>
-            </div>
-          </div>
-          <div class="function-card active" @click="handleCardClick('房屋借用管理')">
-            <div class="card-icon">
-              <el-icon size="24"><calendar /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋借用管理</h4>
-              <p>预约教室，审批预约申请，管理所有预约记录</p>
-            </div>
-          </div>
-        </div>
+      <!-- 如果没有任何权限，显示提示 -->
+      <div v-if="!hasAnyPermission" class="no-permission-hint">
+        <el-empty description="您暂时没有访问任何功能模块的权限，请联系管理员">
+          <el-button type="primary" @click="handleLogout">重新登录</el-button>
+        </el-empty>
       </div>
-      
-      <!-- 管理员界面：显示所有模块 -->
-      <template v-else-if="isAdmin">
-      <!-- 基础分类 -->
-      <div class="category-section">
-        <h3 class="category-title">基础分类</h3>
-        <div class="card-grid">
-          <div class="function-card active">
-            <div class="card-icon">
-              <el-icon size="24"><setting /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>主题管理</h4>
-              <p>主要用于主题配置界面的设计方案，实现其自主功能，说明作者及具体工作</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><message /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>信息发布管理</h4>
-              <p>主要用于各类播出式的信息，提供模块信息及其发布的功能</p>
-            </div>
-          </div>
-          <div class="function-card" @click="handleCardClick('用户信息管理')">
-            <div class="card-icon">
-              <el-icon size="24"><user /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>用户信息管理</h4>
-              <p>包含用户信息、新开户信息等基础信息配置与储存功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><picture /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>媒体资源管理</h4>
-              <p>用于管理文档、图片、录像音频文件及存储管理</p>
-            </div>
-          </div>
-          <div class="function-card" @click="handleCardClick('房屋信息管理')">
-            <div class="card-icon">
-              <el-icon size="24"><office-building /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋信息管理</h4>
-              <p>包含房间信息管理基础配置及的管理</p>
-            </div>
-          </div>
-          <!-- 新增房屋(教室)借用模块 -->
-          <div class="function-card" @click="handleCardClick('房屋借用管理')">
-            <div class="card-icon">
-              <el-icon size="24"><school /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋借用管理</h4>
-              <p>主要用于房屋（教室）的借用申请、审批和统计管理</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 控制分类 -->
-      <div class="category-section">
-        <h3 class="category-title">控制分类</h3>
-        <div class="card-grid">
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><monitor /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>终端管理</h4>
-              <p>对于终端的管理，包含计载、运件计划、基础设备及管理与监控</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><key /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>门禁管理</h4>
-              <p>对门锁的教师管理，支持通过各级授权人员进场管理及网关门控</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><video-camera /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>摄像头管理</h4>
-              <p>主要用于管理摄像头的添加设置</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><user /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>可视对讲管理</h4>
-              <p>主要需要远程开启视频的对讲功能管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><cpu /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>中控管理</h4>
-              <p>主要用于管理可控制领域的管理中枢的应答开发</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 业务分类 -->
-      <div class="category-section">
-        <h3 class="category-title">业务分类</h3>
-        <div class="card-grid">
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><calendar /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>会议管理</h4>
-              <p>主要用于会议室的预约，会议管理功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><user /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>访客管理</h4>
-              <p>主要用于来访人员的访问管理、提交登记功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>图书馆管理</h4>
-              <p>主要用于管理书籍的预约情况下、库存管理、订购管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><odometer /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>实验室管理</h4>
-              <p>主要用于实验室的预约，设备、安全检查及实验器管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><graduation-cap /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>行政效管理</h4>
-              <p>主要用于管理效果的应达到情况、学生能效对象、调整松紧达到功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><document /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>标识管理</h4>
-              <p>主要用于宾客道路场大队的管理及宾客信息下发</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><position /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>人员去向管理</h4>
-              <p>能在提出人员友商模块设备行开标实施管理，系统会以出席人员去向</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><user /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>家校互通管理</h4>
-              <p>主要用于家长和学校的沟通管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><timer /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>电子时钟管理</h4>
-              <p>主要用于主持时钟功能。升杯、音频主动功能的管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><edit /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>考务管理</h4>
-              <p>主要用于考试信息及考场安排</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><school /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>空间教室维保</h4>
-              <p>主要用于管理分析室内设备的内部保养及的各类管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><office-building /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>房屋信用管理</h4>
-              <p></p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><tools /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>报修管理</h4>
-              <p>包含已维修管理、数案等各项设备及工单中意见</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><operation /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>保洁管理</h4>
-              <p>主要用于清洁卫生列目标的实际安全管理</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 统计分类 -->
-      <div class="category-section">
-        <h3 class="category-title">统计分类</h3>
-        <div class="card-grid">
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>终端统计</h4>
-              <p>实施监控后对于终端的数据性进行总监，支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>环境统计</h4>
-              <p>对环境监控的定时上报数据进行统计概览的支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>预约统计</h4>
-              <p>定对监控的定时上报数据进行的统计概览、支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>用户画像统计</h4>
-              <p>对监控的定时上报数据进行统计概览、支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>访客统计</h4>
-              <p>实施监控后对于终端的数据性进行总监，支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>门禁统计</h4>
-              <p>记录对于的定时上报数据进行的行为访问、支持导出功能</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><data-line /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>日志统计</h4>
-              <p>记录日志的管理</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 权限分类 -->
-      <div class="category-section">
-        <h3 class="category-title">权限分类</h3>
-        <div class="card-grid">
-          <div class="function-card" @click="handleCardClick('权限管理')">
-            <div class="card-icon">
-              <el-icon size="24"><user /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>权限管理</h4>
-              <p>主要是对用户的权限、角色案列的管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><grid /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>控件管理</h4>
-              <p>控件、软件器管理，系列等进行模块配置管理</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><connection /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>系统流活管理</h4>
-              <p>系统流活的功能配置</p>
-            </div>
-          </div>
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><grid /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>体验管理</h4>
-              <p>主办体验使用管理数据、客进线数据的、对干操作检管</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 部署实施运维分类 -->
-      <div class="category-section">
-        <h3 class="category-title">部署实施运维分类</h3>
-        <div class="card-grid">
-          <div class="function-card">
-            <div class="card-icon">
-              <el-icon size="24"><connection /></el-icon>
-            </div>
-            <div class="card-content">
-              <h4>终端网络配置</h4>
-              <p>主要用于对各设备网络控制的配置</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      </template>
     </div>
   </div>
 </template>
@@ -460,6 +83,7 @@
 <script>
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import { addDynamicRoutes, clearDynamicRoutes } from '@/router/index'
 import { onMounted, computed } from 'vue'
 
@@ -474,44 +98,98 @@ export default {
       return userStore.permissions.includes(permissionCode)
     }
     
-    // 根据权限过滤显示的卡片
-    const showUserManagement = computed(() => hasPermission('USER_MANAGE'))
-    const showRoomManagement = computed(() => hasPermission('ROOM_MANAGE'))
-    const showBookingManagement = computed(() => hasPermission('BOOKING_MANAGE'))
-    const showSystemManagement = computed(() => hasPermission('SYSTEM_MANAGE'))
-    const showRoleManagement = computed(() => hasPermission('ROLE_MANAGE'))
-    const showPermissionManagement = computed(() => hasPermission('PERMISSION_MANAGE'))
+    // 基于后端接口权限判断前端页面显示
+    // 有任何用户相关接口权限就显示用户管理
+    const showUserManagement = computed(() => 
+      hasPermission('system:user:view') || 
+      hasPermission('system:user:create') || 
+      hasPermission('system:user:update') || 
+      hasPermission('system:user:delete') ||
+      hasPermission('system:user:manage')
+    )
+    
+    // 有任何房间或区域相关接口权限就显示房屋信息管理
+    const showRoomManagement = computed(() => 
+      hasPermission('building:room:view') || 
+      hasPermission('building:room:create') || 
+      hasPermission('building:room:update') || 
+      hasPermission('building:room:delete') ||
+      hasPermission('building:room:search') ||
+      hasPermission('building:room:manage') ||
+      hasPermission('building:area:view') ||
+      hasPermission('building:area:create') ||
+      hasPermission('building:area:update') ||
+      hasPermission('building:area:delete') ||
+      hasPermission('building:area:manage')
+    )
+    
+    // 有任何预订相关接口权限就显示房屋借用管理
+    const showBookingManagement = computed(() => 
+      hasPermission('booking:booking:view') || 
+      hasPermission('booking:booking:create') || 
+      hasPermission('booking:booking:update') || 
+      hasPermission('booking:booking:cancel') ||
+      hasPermission('booking:booking:approve') ||
+      hasPermission('booking:booking:reject') ||
+      hasPermission('booking:booking:manage')
+    )
+    
+    // 有系统管理相关权限就显示系统管理
+    const showSystemManagement = computed(() => hasPermission('system:system:manage'))
+    
+    // 有角色相关接口权限就显示角色管理
+    const showRoleManagement = computed(() => 
+      hasPermission('system:role:view') || 
+      hasPermission('system:role:create') || 
+      hasPermission('system:role:update') || 
+      hasPermission('system:role:delete') ||
+      hasPermission('system:role:manage')
+    )
+    
+    // 有权限相关接口权限就显示权限管理
+    const showPermissionManagement = computed(() => hasPermission('system:permission:manage'))
+    
+    // 检查是否有任何权限
+    const hasAnyPermission = computed(() => {
+      return showUserManagement.value || 
+             showRoomManagement.value || 
+             showBookingManagement.value || 
+             showSystemManagement.value || 
+             showRoleManagement.value || 
+             showPermissionManagement.value
+    })
     
     // 检查用户类型
     const userType = computed(() => {
       const permissions = userStore.permissions
       
-      // 检查是否有系统管理权限
+      // 检查是否有系统管理权限（使用新权限格式）
       const hasSystemPermissions = permissions.some(p => 
-        p.includes('USER_MANAGE') || 
-        p.includes('ROLE_MANAGE') || 
-        p.includes('SYSTEM_MANAGE') ||
-        p.includes('PERMISSION_MANAGE')
+        p === 'system:user:manage' || 
+        p === 'system:role:manage' || 
+        p === 'system:system:manage' ||
+        p === 'system:permission:manage'
       )
       
       // 检查是否有其他高级管理权限（这些权限普通审批员不应该有）
       const hasAdvancedPermissions = permissions.some(p =>
-        p.includes('AREA_MANAGE') ||
-        p.includes('SCHEME_MANAGE') ||
-        p.includes('BLACKLIST_MANAGE') ||
-        p.includes('VIOLATION_MANAGE') ||
-        p.includes('RECYCLE_BIN_MANAGE') ||
-        p.includes('ROOM_ADD') ||
-        p.includes('ROOM_EDIT') ||
-        p.includes('ROOM_DELETE')
+        p === 'building:area:manage' ||  // 精确匹配，避免误判
+        p === 'scheme:scheme:manage' ||
+        p === 'system:blacklist:manage' ||
+        p === 'system:violation:manage' ||
+        p === 'system:recycle-bin:manage' ||
+        p === 'building:room:create' ||
+        p === 'building:room:update' ||
+        p === 'building:room:delete' ||
+        p === 'building:room:manage'
       )
       
       // 检查是否有审批权限
       const hasApprovalPermissions = permissions.some(p => 
-        p.includes('BOOKING_APPROVE') || 
-        p.includes('BOOKING_REJECT') ||
-        p.includes('BOOKING_APPROVAL_APPROVE') ||
-        p.includes('BOOKING_APPROVAL_MANAGE')
+        p === 'booking:booking:approve' || 
+        p === 'booking:booking:reject' ||
+        p === 'approval:approval:process' ||
+        p === 'approval:approval:manage'
       )
       
       // 判断用户类型
@@ -602,10 +280,22 @@ export default {
           })
           break
         case '权限管理':
+        case '角色管理':
           console.log('尝试跳转到 /role-management')
           router.push('/role-management').catch(err => {
             console.error('跳转失败:', err)
           })
+          break
+        case '用户管理':
+          console.log('尝试跳转到 /user-management')
+          router.push('/user-management').catch(err => {
+            console.error('跳转失败:', err)
+          })
+          break
+        case '区域管理':
+          console.log('尝试跳转到区域管理页面')
+          // 这里需要根据实际的区域管理路由来跳转
+          ElMessage.info('区域管理功能开发中')
           break
         case '房屋借用管理':
           console.log('尝试跳转到 /room-booking')
@@ -635,6 +325,7 @@ export default {
       showSystemManagement,
       showRoleManagement,
       showPermissionManagement,
+      hasAnyPermission,
       // 用户类型
       userType,
       isNormalUser,
@@ -648,17 +339,18 @@ export default {
 <style scoped>
 .dashboard {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f4f6f9;
 }
 
 .header {
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-  color: white;
+  background: white;
+  color: #333;
   padding: 15px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid #e8e8e8;
 }
 
 .header-left {
@@ -671,8 +363,8 @@ export default {
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: white;
-  color: #4a90e2;
+  background: #4a90e2;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -681,6 +373,7 @@ export default {
 .title {
   font-size: 20px;
   font-weight: 600;
+  color: #333;
 }
 
 .header-right {
@@ -693,16 +386,23 @@ export default {
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: #f0f0f0;
+  color: #666;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.avatar:hover {
+  background: #e0e0e0;
 }
 
 .username {
   font-size: 16px;
   font-weight: 500;
+  color: #333;
 }
 
 .dropdown-link {
@@ -720,94 +420,72 @@ export default {
 }
 
 .main-content {
-  padding: 30px;
+  padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.category-section {
-  margin-bottom: 40px;
-}
-
-.category-title {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 20px;
-  padding-left: 10px;
-  border-left: 4px solid #4a90e2;
-  font-weight: 600;
-}
-
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
 .function-card {
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 1px solid #e8e8e8;
+  position: relative;
+  text-align: center;
+  min-height: 180px;
   display: flex;
-  align-items: flex-start;
-  gap: 15px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .function-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  border-color: #4a90e2;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.function-card.active {
-  background: #ff8c42;
-  color: white;
-}
-
-.function-card.active .card-icon {
-  color: white;
+.status-tag {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f5f5f5;
+  color: #999;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .card-icon {
-  flex-shrink: 0;
-  width: 50px;
-  height: 50px;
-  background: #f8f9ff;
-  border-radius: 10px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #4a90e2;
 }
 
-.function-card.active .card-icon {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.card-content h4 {
+.function-card h4 {
   margin: 0 0 8px 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #333;
 }
 
-.function-card.active .card-content h4 {
-  color: white;
-}
-
-.card-content p {
+.function-card p {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
   line-height: 1.5;
-}
-
-.function-card.active .card-content p {
-  color: rgba(255, 255, 255, 0.9);
 }
 
 @media (max-width: 768px) {

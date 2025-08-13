@@ -90,10 +90,27 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             
             SysUser user = userOptional.get();
             
+            // 调试日志：打印用户状态信息
+            log.info("用户登录状态检查 - 用户名: {}, 状态: {}, 用户ID: {}", 
+                    user.getUsername(), user.getStatus(), user.getId());
+            
             // 检查用户状态
-            if (user.getStatus() == SysUser.Status.DISABLED) {
+            if (user.getStatus() == null) {
+                log.warn("用户状态为null，用户名: {}, 将视为INACTIVE状态", user.getUsername());
                 throw new BusinessException(ErrorCode.AUTH_USER_DISABLED);
             }
+            
+            if (user.getStatus() == SysUser.Status.INACTIVE) {
+                log.warn("用户状态为INACTIVE，登录被拒绝，用户名: {}", user.getUsername());
+                throw new BusinessException(ErrorCode.AUTH_USER_DISABLED);
+            }
+            
+            if (user.getStatus() != SysUser.Status.ACTIVE) {
+                log.warn("用户状态不是ACTIVE，当前状态: {}, 用户名: {}", user.getStatus(), user.getUsername());
+                throw new BusinessException(ErrorCode.AUTH_USER_DISABLED);
+            }
+            
+            log.info("用户状态检查通过，用户名: {}, 状态: ACTIVE", user.getUsername());
             
             // 生成JWT令牌
             String token = jwtUtil.generateToken(user.getUsername(), user.getId(), user.getCustomerId());

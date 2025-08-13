@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>管理员角色接口测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .success { background: #e8f5e9; border-left: 4px solid #4caf50; }
+        .error { background: #ffebee; border-left: 4px solid #f44336; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>管理员角色接口调试</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试角色列表接口</h3>
+        <button onclick="testRolesAPI()">调用 /admin-management/roles/available</button>
+        <div id="roles-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 测试管理员列表接口</h3>
+        <button onclick="testAdminsAPI()">调用 /admin-management/admins/search</button>
+        <div id="admins-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 网络请求详情</h3>
+        <div id="network-info" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5173'; // Vite开发服务器
+        
+        async function testRolesAPI() {
+            const resultDiv = document.getElementById('roles-result');
+            resultDiv.innerHTML = '🔄 正在请求角色列表...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin-management/roles/available`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 注意：实际使用时需要JWT token
+                        // 'Authorization': 'Bearer your-jwt-token'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <h4>响应状态: ${response.status}</h4>
+                    <h4>响应数据:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                updateNetworkInfo('角色列表', response.status, data);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h4>请求失败:</h4>
+                    <p>${error.message}</p>
+                `;
+                
+                updateNetworkInfo('角色列表', '网络错误', error.message);
+            }
+        }
+        
+        async function testAdminsAPI() {
+            const resultDiv = document.getElementById('admins-result');
+            resultDiv.innerHTML = '🔄 正在请求管理员列表...';
+            
+            try {
+                const requestBody = {
+                    pageNumber: 1,
+                    pageSize: 10
+                };
+                
+                const response = await fetch(`${API_BASE}/admin-management/admins/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // 注意：实际使用时需要JWT token
+                        // 'Authorization': 'Bearer your-jwt-token'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.className = 'result ' + (response.ok ? 'success' : 'error');
+                resultDiv.innerHTML = `
+                    <h4>响应状态: ${response.status}</h4>
+                    <h4>响应数据:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                updateNetworkInfo('管理员列表', response.status, data);
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h4>请求失败:</h4>
+                    <p>${error.message}</p>
+                `;
+                
+                updateNetworkInfo('管理员列表', '网络错误', error.message);
+            }
+        }
+        
+        function updateNetworkInfo(apiName, status, data) {
+            const infoDiv = document.getElementById('network-info');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            infoDiv.innerHTML += `
+                <div style="margin: 10px 0; padding: 10px; border-left: 3px solid #2196F3;">
+                    <strong>${timestamp} - ${apiName}</strong><br>
+                    状态: ${status}<br>
+                    ${typeof data === 'object' ? `数据: ${JSON.stringify(data, null, 2)}` : `信息: ${data}`}
+                </div>
+            `;
+        }
+        
+        // 页面加载时显示说明
+        document.getElementById('network-info').innerHTML = `
+            <p><strong>使用说明:</strong></p>
+            <ul>
+                <li>确保后端服务已启动 (localhost:10087)</li>
+                <li>确保前端开发服务器已启动 (localhost:5173)</li>
+                <li>检查网络代理配置是否正确</li>
+                <li>实际使用时需要有效的JWT令牌</li>
+            </ul>
+        `;
+    </script>
+</body>
+</html>

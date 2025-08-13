@@ -73,8 +73,8 @@ public class SysUser {
     private String attendanceNumber;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", columnDefinition = "VARCHAR(10) COMMENT '状态（NORMAL / DISABLED）'")
-    private Status status = Status.NORMAL;
+    @Column(name = "status", columnDefinition = "VARCHAR(20) COMMENT '状态（ACTIVE / INACTIVE）'")
+    private Status status = Status.ACTIVE;
     
     @Column(name = "customer_id", columnDefinition = "VARCHAR(32) COMMENT '客户域ID，多租户支持'")
     private String customerId;
@@ -88,11 +88,26 @@ public class SysUser {
     @Column(name = "deleted", columnDefinition = "TINYINT(1) DEFAULT 0 COMMENT '是否逻辑删除（0否，1是）'")
     private Boolean deleted = false;
     
+    @Column(name = "last_login_time", columnDefinition = "DATETIME COMMENT '最后登录时间'")
+    private LocalDateTime lastLoginTime;
+    
+    @Column(name = "email", columnDefinition = "VARCHAR(100) COMMENT '邮箱'")
+    private String email;
+    
+    @Column(name = "wechat_nickname", columnDefinition = "VARCHAR(100) COMMENT '微信昵称'")
+    private String wechatNickname;
+    
+    @Column(name = "wechat_phone", columnDefinition = "VARCHAR(20) COMMENT '微信绑定手机号'")
+    private String wechatPhone;
+    
+    @Column(name = "wechat_bind_time", columnDefinition = "DATETIME COMMENT '微信绑定时间'")
+    private LocalDateTime wechatBindTime;
+    
     /**
      * 用户状态枚举
      */
     public enum Status {
-        NORMAL, DISABLED
+        ACTIVE, INACTIVE
     }
     
     @PrePersist

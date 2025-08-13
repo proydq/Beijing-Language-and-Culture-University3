@@ -30,6 +30,9 @@ public class SysUserRole {
     @Column(name = "role_id", columnDefinition = "VARCHAR(32) COMMENT '角色ID'")
     private String roleId;
     
+    @Column(name = "customer_id", columnDefinition = "VARCHAR(32) COMMENT '客户域ID'")
+    private String customerId;
+    
     @Column(name = "create_time", columnDefinition = "DATETIME COMMENT '创建时间'")
     private LocalDateTime createTime;
     

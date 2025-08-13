@@ -94,6 +94,11 @@ export default defineConfig(({ mode }) => {
       '/system': {
         target: env.VITE_API_BASE_URL || 'http://localhost:10087',
         changeOrigin: true,
+      },
+      // 管理员管理接口代理
+      '/admin-management': {
+        target: env.VITE_API_BASE_URL || 'http://localhost:10087',
+        changeOrigin: true,
       }
     }
   }

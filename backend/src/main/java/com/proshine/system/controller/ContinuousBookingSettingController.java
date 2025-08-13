@@ -33,7 +33,7 @@ public class ContinuousBookingSettingController {
      * @return 连续预约设置列表
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_VIEW') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:view') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<List<ContinuousBookingSetting>> getAllSettings() {
         try {
             log.info("==========/continuous-booking-settings [GET]=============");
@@ -52,7 +52,7 @@ public class ContinuousBookingSettingController {
      * @return 分页结果
      */
     @PostMapping("/list")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_VIEW') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:view') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<ResponsePageDataEntity<ContinuousBookingSettingWithRoomDto>> searchContinuousBookingSettings(
             @RequestBody SearchContinuousBookingSettingCondition condition) {
         try {
@@ -74,7 +74,7 @@ public class ContinuousBookingSettingController {
      * @return 连续预约设置
      */
     @GetMapping("/{roomId}")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_VIEW') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:view') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<ContinuousBookingSetting> getByRoomId(@PathVariable String roomId) {
         try {
             log.info("==========/continuous-booking-settings/{} [GET]=============roomId:{}", roomId, roomId);
@@ -94,7 +94,7 @@ public class ContinuousBookingSettingController {
      * @return 更新结果
      */
     @PutMapping("/{roomId}")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_EDIT') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:update') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<Void> updateSetting(@PathVariable String roomId, @RequestBody ContinuousBookingSettingDto dto) {
         try {
             log.info("==========/continuous-booking-settings/{} [PUT]=============roomId:{}, continuousDays:{}", 
@@ -114,7 +114,7 @@ public class ContinuousBookingSettingController {
      * @return 更新结果
      */
     @PostMapping("/batch-update")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_EDIT') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:update') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<Void> batchUpdateSettings(@RequestBody BatchUpdateContinuousBookingRequest request) {
         try {
             log.info("==========/continuous-booking-settings/batch-update [POST]=============roomIds:{}, continuousDays:{}", 
@@ -133,7 +133,7 @@ public class ContinuousBookingSettingController {
      * @return 楼层选项列表
      */
     @GetMapping("/floor-options")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_VIEW') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:view') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<List<Area>> getFloorOptions() {
         try {
             log.info("==========/continuous-booking-settings/floor-options [GET]=============");
@@ -152,7 +152,7 @@ public class ContinuousBookingSettingController {
      * @return 删除结果
      */
     @DeleteMapping("/{roomId}")
-    @PreAuthorize("hasAuthority('CONTINUOUS_BOOKING_DELETE') or hasAuthority('CONTINUOUS_BOOKING_MANAGE')")
+    @PreAuthorize("hasAuthority('booking:continuous:delete') or hasAuthority('booking:continuous:manage')")
     public ResponseEntity<Void> deleteByRoomId(@PathVariable String roomId) {
         try {
             log.info("==========/continuous-booking-settings/{} [DELETE]=============roomId:{}", roomId, roomId);

@@ -237,13 +237,7 @@ public class RoomServiceImpl implements RoomService {
                 RoomTypeVo.of("CLASSROOM", "教室"),
                 RoomTypeVo.of("MEETING_ROOM", "会议室"),
                 RoomTypeVo.of("LABORATORY", "实验室"),
-                RoomTypeVo.of("OFFICE", "办公室"),
-                RoomTypeVo.of("DORMITORY", "宿舍"),
-                RoomTypeVo.of("LIBRARY", "图书馆"),
-                RoomTypeVo.of("CANTEEN", "食堂"),
-                RoomTypeVo.of("GYMNASIUM", "体育馆"),
-                RoomTypeVo.of("AUDITORIUM", "礼堂"),
-                RoomTypeVo.of("OTHER", "其他")
+                RoomTypeVo.of("OFFICE", "办公室")
         );
     }
 

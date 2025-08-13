@@ -32,7 +32,7 @@ public class SysUserController {
      * @return 分页用户信息
      */
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('USER_SEARCH') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:view') or hasAuthority('system:user:manage')")
     public ResponseEntity<ResponsePageDataEntity<UserVo>> searchUsers(@RequestBody SearchUserCondition condition) {
         try {
             log.info("==========/system/user/search=============");
@@ -58,7 +58,7 @@ public class SysUserController {
      * @return 用户信息
      */
     @GetMapping("/findById")
-    @PreAuthorize("hasAuthority('USER_VIEW') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:view') or hasAuthority('system:user:manage')")
     public ResponseEntity<UserVo> findById(@RequestParam String id) {
         try {
             log.info("==========/system/user/findById=============");
@@ -82,7 +82,7 @@ public class SysUserController {
      * @return 保存结果
      */
     @PostMapping("/save")
-    @PreAuthorize("hasAuthority('USER_ADD') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:create') or hasAuthority('system:user:manage')")
     public ResponseEntity<Void> save(@RequestBody SysUser user) {
         try {
             log.info("==========/system/user/save=============");
@@ -109,7 +109,7 @@ public class SysUserController {
      * @return 更新结果
      */
     @PostMapping("/update")
-    @PreAuthorize("hasAuthority('USER_EDIT') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:update') or hasAuthority('system:user:manage')")
     public ResponseEntity<Void> update(@RequestBody SysUser user) {
         try {
             log.info("==========/system/user/update=============");
@@ -133,7 +133,7 @@ public class SysUserController {
      * @return 删除结果
      */
     @PostMapping("/delete")
-    @PreAuthorize("hasAuthority('USER_DELETE') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:delete') or hasAuthority('system:user:manage')")
     public ResponseEntity<Void> delete(@RequestBody List<String> ids) {
         try {
             log.info("==========/system/user/delete=============");
@@ -208,7 +208,7 @@ public class SysUserController {
      * @return 处理结果
      */
     @PostMapping("/resetPassword")
-    @PreAuthorize("hasAuthority('USER_RESET_PWD') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:reset-password') or hasAuthority('system:user:manage')")
     public ResponseEntity<Void> resetPassword(
             @RequestParam String userId,
             @RequestParam(required = false) String newPassword) {
@@ -235,7 +235,7 @@ public class SysUserController {
      * @return 处理结果
      */
     @PostMapping("/assignRoles")
-    @PreAuthorize("hasAuthority('USER_ASSIGN_ROLE') or hasAuthority('USER_MANAGE')")
+    @PreAuthorize("hasAuthority('system:user:assign-roles') or hasAuthority('system:user:manage')")
     public ResponseEntity<Void> assignRoles(
             @RequestParam String userId,
             @RequestBody List<String> roleIds) {

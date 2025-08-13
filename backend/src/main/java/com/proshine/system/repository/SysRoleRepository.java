@@ -50,4 +50,30 @@ public interface SysRoleRepository extends JpaRepository<SysRole, String>, JpaSp
      */
     @Query("SELECT r FROM SysRole r JOIN SysUserRole ur ON r.id = ur.roleId WHERE ur.userId = :userId AND r.deleted = false")
     List<SysRole> findByUserId(@Param("userId") String userId);
+    
+    /**
+     * 根据角色ID和客户域ID查询角色
+     *
+     * @param id 角色ID
+     * @param customerId 客户域ID
+     * @return 角色信息
+     */
+    Optional<SysRole> findByIdAndCustomerId(String id, String customerId);
+    
+    /**
+     * 根据客户域ID和状态查询角色列表
+     *
+     * @param customerId 客户域ID
+     * @param status 状态
+     * @return 角色列表
+     */
+    List<SysRole> findByCustomerIdAndStatus(String customerId, String status);
+    
+    /**
+     * 根据状态统计角色数量
+     *
+     * @param status 状态
+     * @return 角色数量
+     */
+    long countByStatus(String status);
 }

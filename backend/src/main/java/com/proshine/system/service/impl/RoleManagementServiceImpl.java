@@ -82,8 +82,8 @@ public class RoleManagementServiceImpl implements RoleManagementService {
             List<RoleVo> roleVos = page.getContent().stream().map(role -> {
                 RoleVo vo = new RoleVo();
                 vo.setId(role.getId());
-                vo.setRoleName(role.getName());
-                vo.setRoleDesc(role.getRemark());
+                vo.setRoleName(role.getRoleName());
+                vo.setRoleDesc(role.getRoleDescription());
 
                 List<SysPermission> permissions = permissionRepository.findByRoleId(role.getId());
                 String moduleNames = permissions.stream()
@@ -122,8 +122,8 @@ public class RoleManagementServiceImpl implements RoleManagementService {
 
             RoleDto dto = new RoleDto();
             dto.setId(role.getId());
-            dto.setRoleName(role.getName());
-            dto.setRoleDesc(role.getRemark());
+            dto.setRoleName(role.getRoleName());
+            dto.setRoleDesc(role.getRoleDescription());
 
             List<SysRolePermission> rolePermissions = rolePermissionRepository.findByRoleId(id);
             List<String> permissionIds = rolePermissions.stream()
@@ -160,8 +160,8 @@ public class RoleManagementServiceImpl implements RoleManagementService {
                 }
             }
 
-            role.setName(roleDto.getRoleName());
-            role.setRemark(roleDto.getRoleDesc());
+            role.setRoleName(roleDto.getRoleName());
+            role.setRoleDescription(roleDto.getRoleDesc());
             role.setUpdateTime(LocalDateTime.now());
             roleRepository.save(role);
 

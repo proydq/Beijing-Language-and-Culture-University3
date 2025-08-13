@@ -99,10 +99,10 @@ public class UserServiceImpl implements UserService {
      * 将中文状态值转换为枚举
      */
     private SysUser.Status convertStatusFromChinese(String chineseStatus) {
-        if ("正常".equals(chineseStatus) || "NORMAL".equals(chineseStatus)) {
-            return SysUser.Status.NORMAL;
-        } else if ("禁用".equals(chineseStatus) || "DISABLED".equals(chineseStatus)) {
-            return SysUser.Status.DISABLED;
+        if ("正常".equals(chineseStatus) || "NORMAL".equals(chineseStatus) || "ACTIVE".equals(chineseStatus)) {
+            return SysUser.Status.ACTIVE;
+        } else if ("禁用".equals(chineseStatus) || "DISABLED".equals(chineseStatus) || "INACTIVE".equals(chineseStatus)) {
+            return SysUser.Status.INACTIVE;
         }
         return null;
     }
@@ -146,7 +146,7 @@ public class UserServiceImpl implements UserService {
         user.setPositionName(positionRepository.findById(request.getPositionId()).get().getName());
         user.setTitleName(titleRepository.findById(request.getTitleId()).get().getName());
         user.setDepartmentName(organizationRepository.findById(request.getDepartmentId()).get().getName());
-        user.setStatus(SysUser.Status.NORMAL);
+        user.setStatus(SysUser.Status.ACTIVE);
         user.setDeleted(false);
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
@@ -268,7 +268,7 @@ public class UserServiceImpl implements UserService {
                 user.setDepartmentName(row.getCell(4) != null ? row.getCell(4).getStringCellValue() : null);
                 user.setPositionName(row.getCell(5) != null ? row.getCell(5).getStringCellValue() : null);
                 user.setTitleName(row.getCell(6) != null ? row.getCell(6).getStringCellValue() : null);
-                user.setStatus(SysUser.Status.NORMAL);
+                user.setStatus(SysUser.Status.ACTIVE);
                 user.setDeleted(false);
                 user.setCreateTime(LocalDateTime.now());
                 user.setUpdateTime(LocalDateTime.now());

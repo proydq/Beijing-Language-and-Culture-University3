@@ -73,6 +73,7 @@
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import Sidebar from '../Layout/Sidebar.vue'
 import ApprovalTable from './ApprovalTable.vue'
 import ApprovalDialog from './ApprovalDialog.vue'
@@ -105,14 +106,33 @@ export default {
   },
   emits: ['approve', 'reject'],
   setup(props, { emit }) {
-    // 审批类型菜单
-    const approvalMenuItems = [
-      { key: 'all', label: '全部审批', icon: 'DocumentChecked' },
-      { key: 'pending', label: '待审批', icon: 'Clock' },
-      { key: 'approved', label: '已通过', icon: 'CircleCheck' },
-      { key: 'rejected', label: '已拒绝', icon: 'CircleClose' },
-    ]
+    const userStore = useUserStore()
+    
+    // 检查用户是否有特定权限
+    const hasPermission = (permissionCode) => {
+      return userStore.permissions.includes(permissionCode)
+    }
+    
+    // 根据权限动态生成审批类型菜单
+    const approvalMenuItems = computed(() => {
+      const items = []
+      
+      // 只有拥有booking:booking:manage或system:system:manage权限的用户才能看到全部审批
+      if (hasPermission('booking:booking:manage') || hasPermission('system:system:manage')) {
+        items.push({ key: 'all', label: '全部审批', icon: 'DocumentChecked' })
+      }
+      
+      // 所有审批用户都可以看到这些选项
+      items.push(
+        { key: 'pending', label: '待审批', icon: 'Clock' },
+        { key: 'approved', label: '已通过', icon: 'CircleCheck' },
+        { key: 'rejected', label: '已拒绝', icon: 'CircleClose' }
+      )
+      
+      return items
+    })
 
+    // 默认选中第一个可用的菜单项，如果用户没有查看全部的权限，则默认为'pending'
     const activeApprovalType = ref('pending')
     const loading = ref(false)
 
@@ -250,8 +270,9 @@ export default {
         } else if (activeApprovalType.value === 'rejected') {
           // 获取已拒绝审批列表（当前用户审批拒绝的记录）
           response = await getRejectedApprovals(params)
-        } else {
-          // 获取全部审批列表
+        } else if (activeApprovalType.value === 'all' && 
+                   (hasPermission('booking:booking:manage') || hasPermission('system:system:manage'))) {
+          // 只有有权限的用户才能获取全部审批列表
           const statusMap = {
             all: undefined,
             pending: 'PENDING',
@@ -260,6 +281,9 @@ export default {
           }
           params.approvalStatus = statusMap[activeApprovalType.value]
           response = await getAllApprovals(params)
+        } else {
+          // 没有权限查看全部，默认显示待审批
+          response = await getPendingApprovals(params)
         }
 
         if (response.code === 200) {

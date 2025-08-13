@@ -28,7 +28,8 @@ export const API_PATHS = {
   RECYCLE_BIN: '/recycle-bin',
   ROLE_MANAGEMENT: '/role-management',
   SCHEME_MANAGEMENT: '/scheme-management',
-  SYSTEM_USER: '/system/user'
+  SYSTEM_USER: '/system/user',
+  ADMIN_MANAGEMENT: '/admin-management'
 }
 
 // 统一使用 request 实例

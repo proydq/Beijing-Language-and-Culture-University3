@@ -1,0 +1,318 @@
+package com.proshine.system;
+
+import com.proshine.common.security.CustomPermissionEvaluator;
+import com.proshine.common.security.DynamicSecurityMetadataSource;
+import com.proshine.system.entity.SysAuditLog;
+import com.proshine.system.entity.SysPermissionAlias;
+import com.proshine.system.entity.SysPermissionUrl;
+import com.proshine.system.repository.SysAuditLogRepository;
+import com.proshine.system.repository.SysPermissionAliasRepository;
+import com.proshine.system.repository.SysPermissionUrlRepository;
+import com.proshine.system.service.AuditLogService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * 权限系统集成测试
+ */
+@SpringBootTest
+@TestPropertySource(locations = "classpath:application-test.properties")
+@Transactional
+public class PermissionSystemIntegrationTest {
+    
+    @Autowired
+    private CustomPermissionEvaluator permissionEvaluator;
+    
+    @Autowired
+    private DynamicSecurityMetadataSource securityMetadataSource;
+    
+    @Autowired
+    private SysPermissionAliasRepository aliasRepository;
+    
+    @Autowired
+    private SysPermissionUrlRepository urlRepository;
+    
+    @Autowired
+    private SysAuditLogRepository auditLogRepository;
+    
+    @Autowired
+    private AuditLogService auditLogService;
+    
+    @BeforeEach
+    public void setup() {
+        // 清理测试数据
+        auditLogRepository.deleteAll();
+        aliasRepository.deleteAll();
+        urlRepository.deleteAll();
+        
+        // 准备测试数据
+        setupTestData();
+    }
+    
+    /**
+     * 准备测试数据
+     */
+    private void setupTestData() {
+        // 创建权限别名映射
+        createPermissionAlias("USER_MANAGE", "system:user:manage", "用户管理权限");
+        createPermissionAlias("USER_ADD", "system:user:create", "用户新增权限");
+        createPermissionAlias("USER_EDIT", "system:user:update", "用户编辑权限");
+        createPermissionAlias("USER_DELETE", "system:user:delete", "用户删除权限");
+        createPermissionAlias("ROOM_MANAGE", "building:room:manage", "房间管理权限");
+        
+        // 创建URL权限映射
+        createUrlPermission("/api/sys-user/**", "GET", "system:user:view", "USER", "查看用户信息");
+        createUrlPermission("/api/sys-user", "POST", "system:user:create", "USER", "创建用户");
+        createUrlPermission("/api/room/**", "GET", "building:room:view", "ROOM", "查看房间信息");
+        
+        // 刷新缓存
+        permissionEvaluator.refreshAliasCache();
+        securityMetadataSource.refreshUrlPermissions();
+    }
+    
+    private void createPermissionAlias(String oldCode, String newCode, String description) {
+        SysPermissionAlias alias = new SysPermissionAlias();
+        alias.setOldCode(oldCode);
+        alias.setNewCode(newCode);
+        alias.setDescription(description);
+        alias.setCreateBy("test");
+        aliasRepository.save(alias);
+    }
+    
+    private void createUrlPermission(String urlPattern, String httpMethod, String permCode, 
+                                   String module, String description) {
+        SysPermissionUrl urlPermission = new SysPermissionUrl();
+        urlPermission.setUrlPattern(urlPattern);
+        urlPermission.setHttpMethod(httpMethod);
+        urlPermission.setPermCode(permCode);
+        urlPermission.setModule(module);
+        urlPermission.setDescription(description);
+        urlPermission.setSortOrder(10);
+        urlPermission.setStatus(1);
+        urlPermission.setCreateBy("test");
+        urlRepository.save(urlPermission);
+    }
+    
+    /**
+     * 测试权限别名映射功能
+     */
+    @Test
+    public void testPermissionAliasMapping() {
+        // 测试旧权限码能映射到新权限码
+        Authentication auth = createAuthentication("system:user:manage");
+        
+        // 用户拥有新权限码，检查旧权限码应该通过
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_MANAGE"));
+        
+        // 测试反向映射
+        auth = createAuthentication("USER_MANAGE");
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:manage"));
+    }
+    
+    /**
+     * 测试manage权限推理
+     */
+    @Test
+    public void testManagePermissionInference() {
+        Authentication auth = createAuthentication("system:user:manage");
+        
+        // 拥有manage权限应该自动拥有所有子权限
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:view"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:create"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:update"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:delete"));
+        
+        // 也应该能通过旧权限码检查
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_ADD"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_EDIT"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_DELETE"));
+    }
+    
+    /**
+     * 测试域级manage权限
+     */
+    @Test
+    public void testDomainManagePermission() {
+        Authentication auth = createAuthentication("system:manage");
+        
+        // 拥有域级manage权限应该拥有该域下所有权限
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:view"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:role:create"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:organization:delete"));
+        
+        // 但不应该拥有其他域的权限
+        assertFalse(permissionEvaluator.hasPermission(auth, null, "building:room:view"));
+    }
+    
+    /**
+     * 测试URL权限映射
+     */
+    @Test
+    public void testUrlPermissionMapping() {
+        // 测试URL权限映射是否正确加载
+        assertEquals(3, securityMetadataSource.getAllConfigAttributes().size());
+        
+        // 测试缓存功能
+        int initialSize = securityMetadataSource.getAllConfigAttributes().size();
+        
+        // 添加新的URL权限映射
+        createUrlPermission("/api/test/**", "POST", "system:test:create", "TEST", "测试权限");
+        securityMetadataSource.refreshUrlPermissions();
+        
+        // 验证缓存已更新
+        assertTrue(securityMetadataSource.getAllConfigAttributes().size() > initialSize);
+    }
+    
+    /**
+     * 测试审计日志功能
+     */
+    @Test
+    public void testAuditLogFunctionality() {
+        // 创建审计日志
+        SysAuditLog auditLog = new SysAuditLog();
+        auditLog.setTraceId(UUID.randomUUID().toString());
+        auditLog.setUserId("test-user");
+        auditLog.setUsername("testuser");
+        auditLog.setModule("USER");
+        auditLog.setAction("CREATE");
+        auditLog.setPermCode("system:user:create");
+        auditLog.setRequestUrl("/api/sys-user");
+        auditLog.setRequestMethod("POST");
+        auditLog.setIpAddress("127.0.0.1");
+        auditLog.setSuccess(1);
+        auditLog.setDuration(150L);
+        auditLog.setRequestTime(new Date());
+        auditLog.setResponseTime(new Date());
+        
+        // 保存审计日志
+        auditLogService.save(auditLog);
+        
+        // 验证保存成功
+        Page<SysAuditLog> logs = auditLogService.findByUserId("test-user", PageRequest.of(0, 10));
+        assertEquals(1, logs.getContent().size());
+        
+        SysAuditLog savedLog = logs.getContent().get(0);
+        assertEquals("testuser", savedLog.getUsername());
+        assertEquals("USER", savedLog.getModule());
+        assertEquals("CREATE", savedLog.getAction());
+    }
+    
+    /**
+     * 测试权限统计功能
+     */
+    @Test
+    public void testPermissionStatistics() {
+        // 创建多个审计日志
+        for (int i = 0; i < 5; i++) {
+            SysAuditLog auditLog = new SysAuditLog();
+            auditLog.setTraceId(UUID.randomUUID().toString());
+            auditLog.setUserId("user-" + i);
+            auditLog.setUsername("user" + i);
+            auditLog.setModule("USER");
+            auditLog.setAction("VIEW");
+            auditLog.setPermCode("system:user:view");
+            auditLog.setRequestTime(new Date());
+            auditLog.setSuccess(i % 2); // 一半成功，一半失败
+            auditLogService.save(auditLog);
+        }
+        
+        // 测试权限使用统计
+        Map<String, Long> permissionUsage = auditLogService.statisticsPermissionUsage();
+        assertTrue(permissionUsage.containsKey("system:user:view"));
+        
+        // 测试用户操作统计
+        Map<String, Object> userStats = auditLogService.statisticsUserActions(
+            "user-0", new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000), new Date()
+        );
+        
+        assertNotNull(userStats.get("totalActions"));
+        assertNotNull(userStats.get("successCount"));
+        assertNotNull(userStats.get("failedCount"));
+    }
+    
+    /**
+     * 测试混合权限场景
+     */
+    @Test
+    public void testMixedPermissionScenarios() {
+        // 用户同时拥有新旧权限码
+        Authentication auth = createAuthentication("USER_MANAGE", "system:role:view", "building:room:create");
+        
+        // 所有权限检查都应该通过
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "USER_MANAGE"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:manage"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:user:create")); // 通过manage推理
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "system:role:view"));
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "building:room:create"));
+        
+        // 批量权限检查
+        assertTrue(permissionEvaluator.hasAnyPermission(auth, "USER_ADD", "ROOM_VIEW"));
+        assertTrue(permissionEvaluator.hasAllPermissions(auth, "USER_MANAGE", "system:role:view"));
+    }
+    
+    /**
+     * 测试缓存刷新功能
+     */
+    @Test
+    public void testCacheRefresh() {
+        // 初始状态
+        int initialAliasCount = permissionEvaluator.getAliasCacheSize();
+        int initialUrlCount = securityMetadataSource.getAllConfigAttributes().size();
+        
+        // 添加新的别名映射
+        createPermissionAlias("TEST_PERMISSION", "system:test:permission", "测试权限");
+        
+        // 刷新前，新权限不可用
+        Authentication auth = createAuthentication("system:test:permission");
+        assertFalse(permissionEvaluator.hasPermission(auth, null, "TEST_PERMISSION"));
+        
+        // 刷新缓存
+        permissionEvaluator.refreshAliasCache();
+        
+        // 刷新后，新权限可用
+        assertTrue(permissionEvaluator.hasPermission(auth, null, "TEST_PERMISSION"));
+        assertTrue(permissionEvaluator.getAliasCacheSize() > initialAliasCount);
+    }
+    
+    /**
+     * 测试错误权限码处理
+     */
+    @Test
+    public void testInvalidPermissionCodes() {
+        Authentication auth = createAuthentication("INVALID_PERMISSION");
+        
+        // 无效权限码应该返回false
+        assertFalse(permissionEvaluator.hasPermission(auth, null, "NONEXISTENT_PERMISSION"));
+        assertFalse(permissionEvaluator.hasPermission(auth, null, "invalid:format"));
+        assertFalse(permissionEvaluator.hasPermission(auth, null, ""));
+        
+        // null权限码应该返回false
+        assertFalse(permissionEvaluator.hasPermission(auth, null, null));
+    }
+    
+    /**
+     * 创建测试用的认证对象
+     */
+    private Authentication createAuthentication(String... permissions) {
+        return new UsernamePasswordAuthenticationToken(
+            "testuser", 
+            "password",
+            Arrays.stream(permissions)
+                .map(SimpleGrantedAuthority::new)
+                .collect(java.util.stream.Collectors.toList())
+        );
+    }
+}

@@ -80,4 +80,25 @@ public interface SysUserRoleRepository extends JpaRepository<SysUserRole, String
     @Transactional
     @Query(value = "INSERT INTO sys_user_role (id, user_id, role_id, create_time) VALUES (REPLACE(UUID(), '-', ''), :userId, :roleId, NOW())", nativeQuery = true)
     void batchInsertUserRoles(@Param("userId") String userId, @Param("roleId") String roleId);
+    
+    /**
+     * 根据用户ID和客户域ID查询用户角色关联
+     *
+     * @param userId 用户ID
+     * @param customerId 客户域ID
+     * @return 用户角色关联列表
+     */
+    List<SysUserRole> findByUserIdAndCustomerId(String userId, String customerId);
+    
+    /**
+     * 查询用户角色详细信息
+     *
+     * @param userIds 用户ID列表
+     * @param customerId 客户域ID
+     * @return 用户角色详细信息
+     */
+    @Query("SELECT ur.userId, r.id, r.roleName, r.roleDescription, r.roleType " +
+           "FROM SysUserRole ur JOIN SysRole r ON ur.roleId = r.id " +
+           "WHERE ur.userId IN :userIds AND ur.customerId = :customerId AND r.status = 'ACTIVE' AND r.customerId = :customerId")
+    List<Object[]> findUserRolesWithDetails(@Param("userIds") List<String> userIds, @Param("customerId") String customerId);
 }

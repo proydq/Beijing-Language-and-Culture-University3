@@ -27,7 +27,7 @@ public class RoleManagementController {
      * 分页查询角色列表
      */
     @PostMapping("/search")
-    @PreAuthorize("hasAuthority('ROLE_SEARCH') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:role:view') or hasAuthority('system:role:manage')")
     public ResponseEntity<ResponsePageDataEntity<RoleVo>> search(@RequestBody SearchRoleCondition condition) {
         try {
             log.info("==========/role-management/search=============");
@@ -45,7 +45,7 @@ public class RoleManagementController {
      * 根据ID查询角色详情
      */
     @GetMapping("/findById")
-    @PreAuthorize("hasAuthority('ROLE_SEARCH') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:role:view') or hasAuthority('system:role:manage')")
     public ResponseEntity<RoleDto> findById(@RequestParam String id) {
         try {
             log.info("==========/role-management/findById=============");
@@ -62,7 +62,7 @@ public class RoleManagementController {
      * 新增或编辑角色
      */
     @PostMapping("/save")
-    @PreAuthorize("hasAuthority('ROLE_ADD') or hasAuthority('ROLE_EDIT') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:role:create') or hasAuthority('system:role:update') or hasAuthority('system:role:manage')")
     public ResponseEntity<Void> save(@RequestBody RoleDto roleDto) {
         try {
             log.info("==========/role-management/save=============");
@@ -80,7 +80,7 @@ public class RoleManagementController {
      * 逻辑删除角色
      */
     @DeleteMapping("/delete")
-    @PreAuthorize("hasAuthority('ROLE_DELETE') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:role:delete') or hasAuthority('system:role:manage')")
     public ResponseEntity<Void> delete(@RequestParam String id) {
         try {
             log.info("==========/role-management/delete=============");
@@ -98,7 +98,7 @@ public class RoleManagementController {
      * 获取权限树结构
      */
     @GetMapping("/permissions")
-    @PreAuthorize("hasAuthority('PERMISSION_SEARCH') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:permission:view') or hasAuthority('system:role:manage')")
     public ResponseEntity<List<PermissionNode>> permissions() {
         try {
             log.info("==========/role-management/permissions=============");
@@ -115,7 +115,7 @@ public class RoleManagementController {
      * 重新分配角色权限
      */
     @PostMapping("/assign-permissions")
-    @PreAuthorize("hasAuthority('ROLE_ASSIGN_PERM') or hasAuthority('ROLE_MANAGE')")
+    @PreAuthorize("hasAuthority('system:role:assign-permission') or hasAuthority('system:role:manage')")
     public ResponseEntity<Void> assignPermissions(@RequestBody AssignPermissionRequest request) {
         try {
             log.info("==========/role-management/assign-permissions=============");

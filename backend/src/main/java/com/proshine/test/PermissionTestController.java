@@ -41,20 +41,20 @@ public class PermissionTestController {
     }
     
     /**
-     * 需要USER_SEARCH权限的测试接口
+     * 需要system:user:view权限的测试接口
      */
     @GetMapping("/need-search")
-    @PreAuthorize("hasAuthority('USER_SEARCH')")
+    @PreAuthorize("hasAuthority('system:user:view')")
     public ResponseEntity<String> needSearchPermission() {
-        return ResponseEntity.success("您有USER_SEARCH权限");
+        return ResponseEntity.success("您有system:user:view权限");
     }
     
     /**
-     * 需要USER_ADD权限的测试接口
+     * 需要system:user:create权限的测试接口
      */
     @GetMapping("/need-add")
-    @PreAuthorize("hasAuthority('USER_ADD')")
+    @PreAuthorize("hasAuthority('system:user:create')")
     public ResponseEntity<String> needAddPermission() {
-        return ResponseEntity.success("您有USER_ADD权限");
+        return ResponseEntity.success("您有system:user:create权限");
     }
 }

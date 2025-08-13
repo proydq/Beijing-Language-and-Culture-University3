@@ -38,7 +38,7 @@ public class RoomScheduleController {
      * @return 教室周课表信息
      */
     @PostMapping("/week-detail")
-    @PreAuthorize("hasAuthority('ROOM_SCHEDULE_VIEW') or hasAuthority('ROOM_SCHEDULE_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:schedule-view') or hasAuthority('building:room:schedule:manage')")
     public ResponseEntity<RoomWeeklyScheduleVO> getRoomWeeklyDetail(
             @Valid @RequestBody RoomWeeklyScheduleRequest request) {
         
@@ -63,7 +63,7 @@ public class RoomScheduleController {
      * @return 教学周列表
      */
     @GetMapping("/weeks")
-    @PreAuthorize("hasAuthority('ROOM_SCHEDULE_VIEW') or hasAuthority('ROOM_SCHEDULE_MANAGE')")
+    @PreAuthorize("hasAuthority('building:room:schedule-view') or hasAuthority('building:room:schedule:manage')")
     public ResponseEntity<List<SchoolWeekVO>> getAllSchoolWeeks() {
         
         logger.info("接收到获取教学周列表请求");

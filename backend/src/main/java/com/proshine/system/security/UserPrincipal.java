@@ -58,7 +58,7 @@ public class UserPrincipal implements UserDetails {
     
     @Override
     public boolean isAccountNonLocked() {
-        return status == SysUser.Status.NORMAL;
+        return status == SysUser.Status.ACTIVE;
     }
     
     @Override
@@ -68,6 +68,6 @@ public class UserPrincipal implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return status == SysUser.Status.NORMAL;
+        return status == SysUser.Status.ACTIVE;
     }
 }

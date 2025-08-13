@@ -49,6 +49,23 @@ public interface SysUserRepository extends JpaRepository<SysUser, String>, JpaSp
     List<SysUser> findByDepartmentIdAndCustomerIdAndDeletedFalse(String departmentId, String customerId);
     
     /**
+     * 根据用户ID和客户域ID查询用户
+     *
+     * @param id 用户ID
+     * @param customerId 客户域ID
+     * @return 用户信息
+     */
+    Optional<SysUser> findByIdAndCustomerId(String id, String customerId);
+    
+    /**
+     * 根据状态统计用户数量
+     *
+     * @param status 状态
+     * @return 用户数量
+     */
+    long countByStatus(com.proshine.system.entity.SysUser.Status status);
+    
+    /**
      * 检查用户名是否存在
      *
      * @param username 用户名

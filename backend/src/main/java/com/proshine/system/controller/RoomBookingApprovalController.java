@@ -32,7 +32,7 @@ public class RoomBookingApprovalController {
      * @return 待审批列表
      */
     @PostMapping("/approvals/pending")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getPendingApprovals(
             @RequestBody ApprovalListRequest request) {
         try {
@@ -52,7 +52,7 @@ public class RoomBookingApprovalController {
      * @return 全部审批列表
      */
     @PostMapping("/approvals/all")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getAllApprovals(
             @RequestBody ApprovalListRequest request) {
         try {
@@ -73,7 +73,7 @@ public class RoomBookingApprovalController {
      * @return 审批结果
      */
     @PostMapping("/approve/{bookingId}")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_APPROVE') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:process') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<ApprovalResponse> approveBooking(
             @PathVariable String bookingId,
             @RequestBody ApprovalRequest request) {
@@ -94,7 +94,7 @@ public class RoomBookingApprovalController {
      * @return 预约详情
      */
     @GetMapping("/approval/detail/{bookingId}")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<BookingDetailResponse> getBookingDetail(@PathVariable String bookingId) {
         try {
             log.info("获取预约详情，预约ID: {}", bookingId);
@@ -113,7 +113,7 @@ public class RoomBookingApprovalController {
      * @return 审批历史列表
      */
     @GetMapping("/approval-history/{bookingId}")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<List<ApprovalHistoryResponse>> getApprovalHistory(@PathVariable String bookingId) {
         try {
             log.info("获取审批历史，预约ID: {}", bookingId);
@@ -132,7 +132,7 @@ public class RoomBookingApprovalController {
      * @return 批量审批结果
      */
     @PostMapping("/batch-approve")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_APPROVE') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:process') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<BatchApprovalResponse> batchApprove(@RequestBody BatchApprovalRequest request) {
         try {
             log.info("批量审批，请求参数: {}", request);
@@ -151,7 +151,7 @@ public class RoomBookingApprovalController {
      * @return 已通过审批列表
      */
     @PostMapping("/approvals/approved")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getApprovedApprovals(
             @RequestBody ApprovalListRequest request) {
         try {
@@ -171,7 +171,7 @@ public class RoomBookingApprovalController {
      * @return 已拒绝审批列表
      */
     @PostMapping("/approvals/rejected")
-    @PreAuthorize("hasAuthority('BOOKING_APPROVAL_VIEW') or hasAuthority('BOOKING_APPROVAL_MANAGE')")
+    @PreAuthorize("hasAuthority('approval:approval:view') or hasAuthority('approval:approval:manage')")
     public ResponseEntity<ResponsePageDataEntity<ApprovalListResponse>> getRejectedApprovals(
             @RequestBody ApprovalListRequest request) {
         try {

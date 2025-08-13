@@ -78,22 +78,6 @@ export function useOrganizationManagement() {
     description: ''
   })
 
-  const orgMembersData = ref([
-    {
-      id: 1,
-      realName: '张三',
-      jobNumber: 'JS001',
-      position: '前端开发工程师',
-      phone: '13800138001'
-    },
-    {
-      id: 2,
-      realName: '李四',
-      jobNumber: 'JS002',
-      position: '后端开发工程师',
-      phone: '13800138002'
-    }
-  ])
 
   // 组织表单验证规则
   const orgFormRules = {
@@ -289,24 +273,6 @@ export function useOrganizationManagement() {
     }
   }
 
-  const handleAddOrgMember = () => {
-    console.log('添加组织成员')
-    // 这里可以打开添加成员的弹窗
-  }
-
-  const handleRemoveOrgMember = (row) => {
-    ElMessageBox.confirm(`确定要移除成员"${row.realName}"吗？`, '确认移除', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }).then(() => {
-      const index = orgMembersData.value.findIndex(item => item.id === row.id)
-      if (index !== -1) {
-        orgMembersData.value.splice(index, 1)
-      }
-      ElMessage.success('移除成功')
-    })
-  }
 
   const resetOrgDialogForm = () => {
     Object.assign(orgDialogFormData, {
@@ -354,7 +320,6 @@ export function useOrganizationManagement() {
     orgTreeData,
     orgFormData,
     orgDialogFormData,
-    orgMembersData,
     departmentOptions,
     departmentLoading,
     fetchDepartmentOptions,
@@ -370,8 +335,6 @@ export function useOrganizationManagement() {
     handleEditOrg,
     handleCancelOrgEdit,
     handleSaveOrg,
-    handleAddOrgMember,
-    handleRemoveOrgMember,
     handleOrgDialogClose,
     handleOrgDialogSubmit
   }

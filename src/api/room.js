@@ -102,18 +102,12 @@ export const exportRooms = (condition) => {
   })
 }
 
-// 房间类型常量
+// 房间类型常量 - 目前仅支持四种类型
 export const ROOM_TYPES = {
   CLASSROOM: 'CLASSROOM',
   MEETING_ROOM: 'MEETING_ROOM',
   LABORATORY: 'LABORATORY',
-  OFFICE: 'OFFICE',
-  DORMITORY: 'DORMITORY',
-  LIBRARY: 'LIBRARY',
-  CANTEEN: 'CANTEEN',
-  GYMNASIUM: 'GYMNASIUM',
-  AUDITORIUM: 'AUDITORIUM',
-  OTHER: 'OTHER'
+  OFFICE: 'OFFICE'
 }
 
 // 房间类型标签
@@ -121,11 +115,5 @@ export const ROOM_TYPE_LABELS = {
   [ROOM_TYPES.CLASSROOM]: '教室',
   [ROOM_TYPES.MEETING_ROOM]: '会议室',
   [ROOM_TYPES.LABORATORY]: '实验室',
-  [ROOM_TYPES.OFFICE]: '办公室',
-  [ROOM_TYPES.DORMITORY]: '宿舍',
-  [ROOM_TYPES.LIBRARY]: '图书馆',
-  [ROOM_TYPES.CANTEEN]: '食堂',
-  [ROOM_TYPES.GYMNASIUM]: '体育馆',
-  [ROOM_TYPES.AUDITORIUM]: '礼堂',
-  [ROOM_TYPES.OTHER]: '其他'
+  [ROOM_TYPES.OFFICE]: '办公室'
 }

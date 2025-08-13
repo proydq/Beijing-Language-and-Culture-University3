@@ -43,54 +43,37 @@
           </el-breadcrumb>
         </div>
 
-        <!-- 标签页 - 只保留权限管理 -->
-        <el-tabs v-model="activeTab" class="tabs">
-          <el-tab-pane label="权限管理" name="admin"></el-tab-pane>
-        </el-tabs>
-
         <!-- 搜索筛选区域 -->
         <div class="search-area">
-          <el-form :model="searchForm" class="search-form">
-            <el-row :gutter="20" align="middle">
-              <el-col :span="5">
-                <el-form-item label="管理员名称:" prop="adminName">
-                  <el-input v-model="searchForm.adminName" placeholder="请输入姓名信息" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="5">
-                <el-form-item label="登录账号:" prop="loginAccount">
-                  <el-input v-model="searchForm.loginAccount" placeholder="请输入姓名信息" />
-                </el-form-item>
-              </el-col>
-              <el-col :span="4">
-                <el-form-item label="账号状态:" prop="accountStatus">
-                  <el-select v-model="searchForm.accountStatus" placeholder="全部" style="width: 100%">
-                    <el-option label="全部" value="" />
-                    <el-option label="正常" value="normal" />
-                    <el-option label="禁用" value="disabled" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="5">
-                <el-form-item label="所属角色:" prop="roleId">
-                  <el-select v-model="searchForm.roleId" placeholder="请选择角色信息" style="width: 100%">
-                    <el-option label="请选择角色信息" value="" />
-                    <el-option label="默认超级管理员" value="1" />
-                    <el-option label="会议系统管理员" value="2" />
-                    <el-option label="互动系统管理员" value="3" />
-                    <el-option label="门禁系统管理员" value="4" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="5">
-                <el-form-item>
-                  <div class="search-buttons">
-                    <el-button type="primary" @click="handleSearch">搜索</el-button>
-                    <el-button @click="handleReset">重置</el-button>
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
+          <el-form :model="searchForm" class="search-form" inline>
+            <el-form-item label="管理员名称:">
+              <el-input v-model="searchForm.adminName" placeholder="请输入搜索信息" clearable />
+            </el-form-item>
+            <el-form-item label="登录账号:">
+              <el-input v-model="searchForm.loginAccount" placeholder="请输入搜索信息" clearable />
+            </el-form-item>
+            <el-form-item label="账号状态:">
+              <el-select v-model="searchForm.accountStatus" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" value="" />
+                <el-option label="正常" value="ACTIVE" />
+                <el-option label="禁用" value="INACTIVE" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="所属角色:">
+              <el-select v-model="searchForm.roleId" placeholder="请选择角色" clearable style="width: 200px">
+                <el-option label="全部" value="" />
+                <el-option 
+                  v-for="role in availableRoles" 
+                  :key="role.roleId" 
+                  :label="role.roleName" 
+                  :value="role.roleId" 
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
+              <el-button @click="handleReset">重置</el-button>
+            </el-form-item>
           </el-form>
         </div>
 
@@ -103,40 +86,64 @@
 
           <!-- 管理员表格 -->
           <div class="admin-table">
-            <el-table :data="adminTableData" style="width: 100%" border stripe>
-              <el-table-column type="index" label="序号" />
-              <el-table-column label="头像">
+            <el-table :data="adminTableData" style="width: 100%" v-loading="loading" element-loading-text="加载中...">
+              <el-table-column type="selection" width="55" />
+              <el-table-column type="index" label="序号" width="60" align="center" />
+              <el-table-column label="头像" width="80" align="center">
                 <template #default="{ row }">
-                  <el-image :src="row.avatar" style="width: 40px; height: 40px" />
+                  <div class="avatar-cell">
+                    <el-avatar v-if="row.avatarUrl" :size="40" :src="row.avatarUrl" />
+                    <el-icon v-else :size="40" color="#c0c4cc"><user-filled /></el-icon>
+                  </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="name" label="姓名" :formatter="formatValue" />
-              <el-table-column prop="gender" label="性别" :formatter="formatValue" />
-              <el-table-column prop="phone" label="手机号" :formatter="formatValue" />
-              <el-table-column prop="department" label="所属部门" :formatter="formatValue" />
-              <el-table-column label="所属角色">
+              <el-table-column prop="realName" label="姓名" min-width="80" />
+              <el-table-column prop="gender" label="性别" width="60" align="center" />
+              <el-table-column prop="phone" label="手机号" min-width="120" />
+              <el-table-column prop="departmentName" label="所属部门" min-width="120" />
+              <el-table-column label="所属角色" min-width="120">
                 <template #default="{ row }">
-                  <el-tag :color="row.roleColor" effect="dark" style="color: white;">
-                    {{ formatValue(row.roleName) }}
-                  </el-tag>
+                  <div v-if="row.roles && row.roles.length > 0">
+                    <el-tag v-for="role in row.roles" :key="role.roleId" style="margin-right: 5px">
+                      {{ role.roleName }}
+                    </el-tag>
+                  </div>
+                  <span v-else>-</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="accountNumber" label="后台登录账号" :formatter="formatValue" />
-              <el-table-column label="管理员账号状态">
+              <el-table-column prop="username" label="后台登录账号" min-width="140" />
+              <el-table-column label="管理员账号状态" min-width="120" align="center">
                 <template #default="{ row }">
-                  <el-tag :type="getStatusTagType(row.status)">
-                    {{ getStatusText(row.status) }}
-                  </el-tag>
+                  <span :style="{ color: row.accountStatus === 'ACTIVE' ? '#67C23A' : '#909399' }">
+                    {{ row.accountStatus === 'ACTIVE' ? '正常' : '禁用' }}
+                  </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="addTime" label="添加时间" :formatter="formatValue" />
-              <el-table-column prop="wechatNickname" label="微信昵称" :formatter="formatValue" />
-              <el-table-column prop="wechatPhone" label="微信绑定手机" :formatter="formatValue" />
-              <el-table-column prop="wechatBindTime" label="微信绑定时间" :formatter="formatValue" />
-              <el-table-column label="操作">
+              <el-table-column label="添加时间" min-width="160">
+                <template #default="{ row }">
+                  {{ row.createTime ? new Date(row.createTime).toLocaleDateString('zh-CN') : '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="微信昵称" min-width="100">
+                <template #default="{ row }">
+                  {{ row.wechatNickname || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="微信绑定手机号" min-width="140">
+                <template #default="{ row }">
+                  {{ row.wechatPhone || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="微信绑定时间" min-width="160">
+                <template #default="{ row }">
+                  {{ row.wechatBindTime ? new Date(row.wechatBindTime).toLocaleDateString('zh-CN') : '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="180" fixed="right">
                 <template #default="{ row }">
                   <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-                  <el-button type="warning" size="small" @click="handleDisable(row)">禁用</el-button>
+                  <el-button v-if="row.accountStatus === 'INACTIVE'" type="primary" size="small" plain @click="handleEdit(row)">解除禁用</el-button>
+                  <el-button v-else type="warning" size="small" @click="handleDisable(row)">禁用</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -162,47 +169,123 @@
     <el-dialog
       v-model="adminDialogVisible"
       :title="isEditAdmin ? '编辑管理员' : '添加管理员'"
-      width="500px"
+      width="60%"
+      :close-on-click-modal="false"
       @close="handleAdminDialogClose"
     >
-      <el-form ref="adminFormRef" :model="adminForm" :rules="adminRules" label-width="120px">
-        <el-form-item label="管理员姓名:" prop="name">
-          <el-input v-model="adminForm.name" placeholder="请输入管理员姓名" />
-        </el-form-item>
-        
-        <el-form-item label="性别:" prop="gender">
-          <el-select v-model="adminForm.gender" placeholder="请选择性别" style="width: 100%">
-            <el-option label="男" value="男" />
-            <el-option label="女" value="女" />
+      <div class="admin-dialog-content">
+        <!-- 顶部选择角色区域 -->
+        <div class="role-selection">
+          <label class="role-label">选择角色：</label>
+          <el-select v-model="adminForm.roleId" placeholder="请选择角色名称" style="width: 300px">
+            <el-option 
+              v-for="role in availableRoles" 
+              :key="role.roleId" 
+              :label="role.roleName" 
+              :value="role.roleId" 
+            />
           </el-select>
-        </el-form-item>
-        
-        <el-form-item label="手机号:" prop="phone">
-          <el-input v-model="adminForm.phone" placeholder="请输入手机号" />
-        </el-form-item>
-        
-        <el-form-item label="所属部门:" prop="department">
-          <el-input v-model="adminForm.department" placeholder="请输入所属部门" />
-        </el-form-item>
-        
-        <el-form-item label="选择角色:" prop="roleId">
-          <el-select v-model="adminForm.roleId" placeholder="请选择角色" style="width: 100%">
-            <el-option label="默认超级管理员" value="1" />
-            <el-option label="会议系统管理员" value="2" />
-            <el-option label="互动系统管理员" value="3" />
-            <el-option label="门禁系统管理员" value="4" />
-          </el-select>
-        </el-form-item>
-        
-        <el-form-item label="后台登录账号:" prop="accountNumber">
-          <el-input v-model="adminForm.accountNumber" placeholder="请输入登录账号" />
-        </el-form-item>
-      </el-form>
+          <el-button type="primary" class="select-user-btn" @click="handleSelectUser">选择用户</el-button>
+        </div>
+
+        <!-- 管理员列表表格 -->
+        <div class="admin-list-section">
+          <h3 class="section-title">管理员列表</h3>
+          <div class="notice-text">
+            您好，用户需加开提交后，工号将自动成为后台登录账号，首次登录后需要修改密码；否则后台将无法进行第二次登录；设置成功后，需要在小程序端无规则绑定，以免影响移动端使用
+          </div>
+          
+          <!-- 空状态 -->
+          <div v-if="selectedUsers.length === 0" class="empty-state">
+            <el-icon class="empty-icon" size="64" color="#d9d9d9">
+              <document />
+            </el-icon>
+            <p>暂无数据</p>
+          </div>
+          
+          <!-- 用户列表 -->
+          <el-table v-else :data="selectedUsers" style="width: 100%" border>
+            <el-table-column type="selection" width="55" />
+            <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column prop="name" label="姓名" />
+            <el-table-column prop="department" label="部门" />
+            <el-table-column prop="position" label="职位" />
+            <el-table-column prop="phone" label="电话" />
+            <el-table-column prop="email" label="邮箱" />
+            <el-table-column label="操作" width="100" align="center">
+              <template #default="{ row }">
+                <el-button type="danger" link @click="handleRemoveUser(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
 
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handleAdminDialogClose">取消</el-button>
-          <el-button type="primary" @click="handleAdminSubmit">确定</el-button>
+          <el-button type="primary" @click="handleAdminSubmit">确认</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 选择用户弹窗 -->
+    <el-dialog
+      v-model="userSelectDialogVisible"
+      title="选择用户"
+      width="70%"
+      :close-on-click-modal="false"
+    >
+      <div class="user-select-content">
+        <!-- 搜索区域 -->
+        <el-form :model="userSearchForm" inline class="user-search-form">
+          <el-form-item label="姓名:">
+            <el-input v-model="userSearchForm.name" placeholder="请输入姓名" clearable @keyup.enter="handleUserSearch" />
+          </el-form-item>
+          <el-form-item label="部门:">
+            <el-input v-model="userSearchForm.department" placeholder="请输入部门" clearable @keyup.enter="handleUserSearch" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleUserSearch">搜索</el-button>
+            <el-button @click="handleUserSearchReset">重置</el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 用户列表 -->
+        <el-table
+          ref="userTableRef"
+          :data="userTableData"
+          @selection-change="handleUserSelectionChange"
+          style="width: 100%"
+          border
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column prop="name" label="姓名" width="120" />
+          <el-table-column prop="department" label="部门" width="150" />
+          <el-table-column prop="position" label="职位" width="120" />
+          <el-table-column prop="email" label="邮箱" min-width="180" />
+          <el-table-column prop="phone" label="电话" width="130" />
+        </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination">
+          <el-pagination
+            v-model:current-page="userPagination.currentPage"
+            v-model:page-size="userPagination.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="userPagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleUserSizeChange"
+            @current-change="handleUserCurrentChange"
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="userSelectDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleUserSelectConfirm">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -210,10 +293,12 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UserFilled } from '@element-plus/icons-vue'
+import { UserFilled, Document } from '@element-plus/icons-vue'
+import { searchPersonnel } from '@/api/schemeManagement'
+import { adminManagementAPI } from '@/api/adminManagement'
 
 export default {
   name: 'AdminManagement',
@@ -221,9 +306,13 @@ export default {
     const router = useRouter()
     const activeTab = ref('admin')
     const adminFormRef = ref()
+    const userTableRef = ref()
     const adminDialogVisible = ref(false)
+    const userSelectDialogVisible = ref(false)
     const isEditAdmin = ref(false)
     const currentAdminData = ref({})
+    const selectedUsers = ref([])
+    const tempSelectedUsers = ref([])
 
     const searchForm = reactive({
       adminName: '',
@@ -239,12 +328,19 @@ export default {
     })
 
     const adminForm = reactive({
-      name: '',
-      gender: '',
-      phone: '',
-      department: '',
       roleId: '',
-      accountNumber: ''
+      users: []
+    })
+
+    const userSearchForm = reactive({
+      name: '',
+      department: ''
+    })
+
+    const userPagination = reactive({
+      currentPage: 1,
+      pageSize: 10,
+      total: 50
     })
 
     const adminRules = {
@@ -269,87 +365,24 @@ export default {
       ]
     }
 
-    // 管理员数据
-    const adminTableData = ref([
-      {
-        id: 1,
-        avatar: 'https://via.placeholder.com/40',
-        name: '张三',
-        gender: '男',
-        phone: '13111311131',
-        department: '产品部门',
-        roleName: '默认超级管理员',
-        roleColor: '#ff0000',
-        accountNumber: 'k3456789',
-        status: 'normal',
-        addTime: '2021.12.02',
-        wechatNickname: '小顾子',
-        wechatPhone: '13111311131',
-        wechatBindTime: '2021.12.02'
-      },
-      {
-        id: 2,
-        avatar: 'https://via.placeholder.com/40',
-        name: '张四',
-        gender: '女',
-        phone: '13211321132',
-        department: '产品部门',
-        roleName: '会议系统管理员',
-        roleColor: '#ff9900',
-        accountNumber: 'k3456788',
-        status: 'normal',
-        addTime: '2021.12.02',
-        wechatNickname: '小顾子涵',
-        wechatPhone: '15787887788',
-        wechatBindTime: '2021.12.02',
-      },
-      {
-        id: 3,
-        avatar: 'https://via.placeholder.com/40',
-        name: '张五',
-        gender: '男',
-        phone: '13311331133',
-        department: '产品部门',
-        roleName: '互动系统管理员',
-        roleColor: '#ff9966',
-        accountNumber: 'k3456787',
-        status: 'normal',
-        addTime: '2021.12.02',
-        wechatNickname: '小顾子回家',
-        wechatPhone: '13311331133',
-        wechatBindTime: '2021.12.02',
-      },
-      {
-        id: 4,
-        avatar: 'https://via.placeholder.com/40',
-        name: '张五',
-        gender: '男',
-        phone: '13311331133',
-        department: '产品部门',
-        roleName: '门禁系统管理员',
-        roleColor: '#ffcc00',
-        accountNumber: 'k3456787',
-        status: 'disabled',
-        addTime: '2021.12.02',
-        wechatNickname: '/',
-        wechatPhone: '/',
-        wechatBindTime: '/',
-      }
-    ])
+    // 管理员数据从接口获取
+    const adminTableData = ref([])
+    const loading = ref(false)
+    const availableRoles = ref([])
 
-    const formatValue = (_, __, value) => {
-      return value ? value : '/'
-    }
+    // 用户数据从接口获取
+    const userTableData = ref([])
+
 
     const getStatusTagType = (status) => {
-      if (status === 'disabled') return 'danger'
-      if (status === 'normal') return 'success'
+      if (status === 'INACTIVE') return 'danger'
+      if (status === 'ACTIVE') return 'success'
       return 'warning'
     }
 
     const getStatusText = (status) => {
-      if (status === 'disabled') return '禁用'
-      if (status === 'normal') return '正常'
+      if (status === 'INACTIVE') return '禁用'
+      if (status === 'ACTIVE') return '正常'
       return '/'
     }
 
@@ -362,8 +395,81 @@ export default {
       router.push('/role-management')
     }
 
+    // 加载管理员列表
+    const loadAdminList = async () => {
+      try {
+        loading.value = true
+        const condition = {
+          adminName: searchForm.adminName,
+          loginAccount: searchForm.loginAccount,
+          accountStatus: searchForm.accountStatus,
+          roleId: searchForm.roleId,
+          roleName: searchForm.roleName,
+          pageNumber: pagination.currentPage,
+          pageSize: pagination.pageSize
+        }
+
+        const response = await adminManagementAPI.searchAdmins(condition)
+        
+        console.log('管理员列表API响应:', response)
+        console.log('response.data:', response.data)
+        
+        if (response.code === 200 && response.data) {
+          // 处理数据，确保所有字段都有默认值，并处理特殊值
+          adminTableData.value = (response.data.rows || []).map(row => ({
+            ...row,
+            id: row.id || '',
+            realName: row.realName || '',
+            gender: row.gender || '',
+            phone: row.phone || '',
+            departmentName: row.departmentName || '',
+            roles: row.roles || [],
+            username: row.username || '',
+            accountStatus: row.accountStatus || 'ACTIVE',
+            createTime: row.createTime || null,
+            // 处理 "/" 值，转换为空字符串或默认显示
+            wechatNickname: (row.wechatNickname === '/' || !row.wechatNickname) ? '' : row.wechatNickname,
+            wechatPhone: (row.wechatPhone === '/' || !row.wechatPhone) ? '' : row.wechatPhone,
+            wechatBindTime: row.wechatBindTime || null,
+            // 添加头像字段默认值
+            avatarUrl: row.avatarUrl || null
+          }))
+          pagination.total = response.data.total || 0
+        } else {
+          ElMessage.error(response.message || '获取管理员列表失败')
+        }
+      } catch (error) {
+        console.error('获取管理员列表失败:', error)
+        ElMessage.error(error.response?.data?.message || '获取管理员列表失败')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 加载可分配角色列表
+    const loadAvailableRoles = async () => {
+      try {
+        const response = await adminManagementAPI.getAvailableRoles()
+        
+        if (response.code === 200 && response.data) {
+          // 处理角色数据，确保有正确的字段
+          availableRoles.value = (response.data || []).map(role => ({
+            ...role,
+            roleId: role.roleId || role.id || '',
+            roleName: role.roleName || role.name || ''
+          }))
+        } else {
+          ElMessage.error(response.message || '获取角色列表失败')
+        }
+      } catch (error) {
+        console.error('获取角色列表失败:', error)
+        ElMessage.error('获取角色列表失败')
+      }
+    }
+
     const handleSearch = () => {
-      console.log('搜索管理员:', searchForm)
+      pagination.currentPage = 1
+      loadAdminList()
     }
 
     const handleReset = () => {
@@ -371,10 +477,12 @@ export default {
       searchForm.loginAccount = ''
       searchForm.accountStatus = ''
       searchForm.roleId = ''
+      handleSearch()
     }
 
     const handleAddAdmin = () => {
-      router.push('/add-admin')
+      adminDialogVisible.value = true
+      isEditAdmin.value = false
     }
 
     const handleEditAdmin = (row) => {
@@ -393,7 +501,7 @@ export default {
 
     const handleDelete = (row) => {
       ElMessageBox.confirm(
-        `确认要删除管理员\"${row.name}\"吗？`,
+        `确认要删除管理员\"${row.realName}\"吗？`,
         '提示',
         {
           confirmButtonText: '确定',
@@ -401,19 +509,31 @@ export default {
           type: 'danger',
         }
       )
-        .then(() => {
-          const index = adminTableData.value.findIndex((item) => item.id === row.id)
-          if (index !== -1) {
-            adminTableData.value.splice(index, 1)
+        .then(async () => {
+          try {
+            const userId = row.id || row.userId
+            if (!userId) {
+              ElMessage.error('用户ID不存在')
+              return
+            }
+            const response = await adminManagementAPI.deleteAdmin(userId)
+            if (response.code === 200) {
+              ElMessage.success('删除成功')
+              loadAdminList()
+            } else {
+              ElMessage.error(response.message || '删除失败')
+            }
+          } catch (error) {
+            console.error('删除管理员失败:', error)
+            ElMessage.error('删除失败')
           }
-          ElMessage.success('删除成功')
         })
         .catch(() => {})
     }
 
     const handleDisable = (row) => {
       ElMessageBox.confirm(
-        `确认要禁用管理员\"${row.name}\"吗？`,
+        `确认要禁用管理员\"${row.realName}\"吗？`,
         '提示',
         {
           confirmButtonText: '确定',
@@ -421,9 +541,56 @@ export default {
           type: 'warning',
         }
       )
-        .then(() => {
-          row.status = 'disabled'
-          ElMessage.success('已禁用')
+        .then(async () => {
+          try {
+            const userId = row.id || row.userId
+            if (!userId) {
+              ElMessage.error('用户ID不存在')
+              return
+            }
+            const response = await adminManagementAPI.updateAdminStatus(userId, { status: 'INACTIVE' })
+            if (response.code === 200) {
+              ElMessage.success('已禁用')
+              loadAdminList()
+            } else {
+              ElMessage.error(response.message || '禁用失败')
+            }
+          } catch (error) {
+            console.error('禁用管理员失败:', error)
+            ElMessage.error('禁用失败')
+          }
+        })
+        .catch(() => {})
+    }
+
+    const handleEdit = (row) => {
+      ElMessageBox.confirm(
+        `确认要解除禁用管理员\"${row.realName}\"吗？`,
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'primary',
+        }
+      )
+        .then(async () => {
+          try {
+            const userId = row.id || row.userId
+            if (!userId) {
+              ElMessage.error('用户ID不存在')
+              return
+            }
+            const response = await adminManagementAPI.updateAdminStatus(userId, { status: 'ACTIVE' })
+            if (response.code === 200) {
+              ElMessage.success('解除禁用成功')
+              loadAdminList()
+            } else {
+              ElMessage.error(response.message || '解除禁用失败')
+            }
+          } catch (error) {
+            console.error('解除禁用失败:', error)
+            ElMessage.error('解除禁用失败')
+          }
         })
         .catch(() => {})
     }
@@ -431,10 +598,12 @@ export default {
     const handleSizeChange = (val) => {
       pagination.pageSize = val
       pagination.currentPage = 1
+      loadAdminList()
     }
 
     const handleCurrentChange = (val) => {
       pagination.currentPage = val
+      loadAdminList()
     }
 
     const handleAdminDialogClose = () => {
@@ -459,51 +628,151 @@ export default {
     }
 
     const handleAdminSubmit = async () => {
+      if (!adminForm.roleId) {
+        ElMessage.error('请选择角色')
+        return
+      }
+      
+      if (selectedUsers.value.length === 0) {
+        ElMessage.error('请选择用户')
+        return
+      }
+      
       try {
-        await adminFormRef.value.validate()
-        
-        // 角色映射
-        const roleMap = {
-          '1': { name: '默认超级管理员', color: '#ff0000' },
-          '2': { name: '会议系统管理员', color: '#ff9900' },
-          '3': { name: '互动系统管理员', color: '#ff9966' },
-          '4': { name: '门禁系统管理员', color: '#ffcc00' }
+        const userIds = selectedUsers.value.map(user => user.id || user.userId).filter(id => id)
+        if (userIds.length === 0) {
+          ElMessage.error('选择的用户没有有效的ID')
+          return
         }
         
-        if (isEditAdmin.value) {
-          // 编辑管理员
-          const index = adminTableData.value.findIndex(item => item.id === currentAdminData.value.id)
-          if (index !== -1) {
-            adminTableData.value[index] = {
-              ...adminTableData.value[index],
-              ...adminForm,
-              roleName: roleMap[adminForm.roleId].name,
-              roleColor: roleMap[adminForm.roleId].color
-            }
+        const roleIds = [adminForm.roleId]
+        
+        const request = {
+          userIds,
+          roleIds
+        }
+        
+        const response = await adminManagementAPI.addAdmins(request)
+        if (response.code === 200) {
+          const result = response.data
+          if (result.successCount > 0) {
+            ElMessage.success(`成功添加 ${result.successCount} 个管理员`)
           }
-          ElMessage.success('管理员信息更新成功')
+          if (result.failCount > 0) {
+            ElMessage.warning(`${result.failCount} 个用户添加失败`)
+          }
+          
+          // 刷新管理员列表
+          loadAdminList()
+          handleAdminDialogClose()
         } else {
-          ElMessage.success('管理员信息更新成功')
+          ElMessage.error(response.message || '添加管理员失败')
         }
-        
-        handleAdminDialogClose()
       } catch (error) {
-        console.log('表单验证失败:', error)
+        console.error('添加管理员失败:', error)
+        ElMessage.error('添加管理员失败')
       }
     }
+
+    // 选择用户相关方法
+    const handleSelectUser = () => {
+      userSelectDialogVisible.value = true
+      // 打开弹窗时加载用户数据
+      loadUserData()
+    }
+
+    const loadUserData = async () => {
+      try {
+        const params = {
+          pageNumber: userPagination.currentPage,
+          pageSize: userPagination.pageSize,
+          name: userSearchForm.name || '',
+          department: userSearchForm.department || '',
+          position: ''
+        }
+
+        const response = await searchPersonnel(params)
+        if (response.code === 200) {
+          userTableData.value = response.data.rows || []
+          userPagination.total = response.data.total || 0
+        } else {
+          ElMessage.error(response.message || '获取用户数据失败')
+        }
+      } catch (error) {
+        console.error('获取用户数据失败:', error)
+        ElMessage.error('获取用户数据失败')
+      }
+    }
+
+    const handleUserSearch = () => {
+      userPagination.currentPage = 1
+      loadUserData()
+    }
+
+    const handleUserSearchReset = () => {
+      userSearchForm.name = ''
+      userSearchForm.department = ''
+      userPagination.currentPage = 1
+      loadUserData()
+    }
+
+    const handleUserSelectionChange = (selection) => {
+      tempSelectedUsers.value = selection
+    }
+
+    const handleUserSelectConfirm = () => {
+      selectedUsers.value = [...tempSelectedUsers.value]
+      userSelectDialogVisible.value = false
+      ElMessage.success(`已选择 ${selectedUsers.value.length} 个用户`)
+    }
+
+    const handleRemoveUser = (user) => {
+      const index = selectedUsers.value.findIndex(item => item.id === user.id)
+      if (index !== -1) {
+        selectedUsers.value.splice(index, 1)
+        ElMessage.success('用户移除成功')
+      }
+    }
+
+    const handleUserSizeChange = (val) => {
+      userPagination.pageSize = val
+      userPagination.currentPage = 1
+      loadUserData()
+    }
+
+    const handleUserCurrentChange = (val) => {
+      userPagination.currentPage = val
+      loadUserData()
+    }
+
+    // 页面初始化
+    onMounted(() => {
+      loadAdminList()
+      loadAvailableRoles()
+    })
 
     return {
       activeTab,
       adminFormRef,
+      userTableRef,
       adminDialogVisible,
+      userSelectDialogVisible,
       isEditAdmin,
       searchForm,
       pagination,
       adminForm,
       adminRules,
       adminTableData,
+      userTableData,
+      userSearchForm,
+      userPagination,
+      selectedUsers,
+      tempSelectedUsers,
+      loading,
+      availableRoles,
       UserFilled,
-      goToHome,  // 新增返回首页方法
+      Document,
+      goToHome,
       goToRoleManagement,
       handleSearch,
       handleReset,
@@ -511,11 +780,22 @@ export default {
       handleEditAdmin,
       handleDelete,
       handleDisable,
+      handleEdit,
       handleSizeChange,
       handleCurrentChange,
       handleAdminDialogClose,
       handleAdminSubmit,
-      formatValue,
+      handleSelectUser,
+      loadUserData,
+      handleUserSearch,
+      handleUserSearchReset,
+      handleUserSelectionChange,
+      handleUserSelectConfirm,
+      handleRemoveUser,
+      handleUserSizeChange,
+      handleUserCurrentChange,
+      loadAdminList,
+      loadAvailableRoles,
       getStatusTagType,
       getStatusText
     }
@@ -710,5 +990,92 @@ export default {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.avatar-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-table :deep(.el-table__header) {
+  background-color: #f5f7fa;
+}
+
+.admin-table :deep(.el-table__row) {
+  height: 60px;
+}
+
+.admin-table :deep(.el-button--small) {
+  padding: 5px 10px;
+}
+
+/* 添加管理员弹窗样式 */
+.admin-dialog-content {
+  padding: 10px 0;
+}
+
+.role-selection {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.role-label {
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+}
+
+.select-user-btn {
+  margin-left: auto;
+}
+
+.admin-list-section {
+  margin-top: 20px;
+}
+
+.section-title {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.notice-text {
+  background-color: #fff2e8;
+  border: 1px solid #ffd591;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 13px;
+  color: #d46b08;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+}
+
+/* 选择用户弹窗样式 */
+.user-select-content {
+  padding: 10px 0;
+}
+
+.user-search-form {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
 }
 </style>

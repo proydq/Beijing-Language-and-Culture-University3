@@ -63,6 +63,12 @@ const staticRoutes = [
       meta: { requiresAuth: true }
     },
     {
+      path: '/admin-management',
+      name: 'AdminManagement',
+      component: AdminManagement,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/api-test',
       name: 'ApiTest',
       component: ApiTest

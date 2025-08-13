@@ -96,9 +96,18 @@ public class SysUserServiceImpl implements SysUserService {
                     predicates.add(criteriaBuilder.equal(root.get("departmentId"), condition.getDepartmentId()));
                 }
                 
-                // 状态查询
+                // 状态查询 - 增加安全处理
                 if (condition.getStatus() != null) {
-                    predicates.add(criteriaBuilder.equal(root.get("status"), condition.getStatus()));
+                    try {
+                        predicates.add(criteriaBuilder.equal(root.get("status"), condition.getStatus()));
+                    } catch (Exception e) {
+                        log.warn("状态查询异常，忽略状态过滤条件: {}", e.getMessage());
+                        // 如果状态查询失败，则只查询ACTIVE状态的用户
+                        predicates.add(criteriaBuilder.equal(root.get("status"), SysUser.Status.ACTIVE));
+                    }
+                } else {
+                    // 如果没有指定状态，默认只查询ACTIVE状态的用户
+                    predicates.add(criteriaBuilder.equal(root.get("status"), SysUser.Status.ACTIVE));
                 }
                 
                 // 性别查询
@@ -192,7 +201,7 @@ public class SysUserServiceImpl implements SysUserService {
             
             // 设置默认状态
             if (user.getStatus() == null) {
-                user.setStatus(SysUser.Status.NORMAL);
+                user.setStatus(SysUser.Status.ACTIVE);
             }
             
             user.setDeleted(false);
@@ -441,7 +450,7 @@ public class SysUserServiceImpl implements SysUserService {
         // 获取用户角色
         List<SysRole> roles = roleRepository.findByUserId(user.getId());
         userVo.setRoleIds(roles.stream().map(SysRole::getId).collect(Collectors.toList()));
-        userVo.setRoleNames(roles.stream().map(SysRole::getName).collect(Collectors.toList()));
+        userVo.setRoleNames(roles.stream().map(SysRole::getRoleName).collect(Collectors.toList()));
         
         // 获取用户权限
         List<String> permissions = permissionRepository.findByUserId(user.getId())

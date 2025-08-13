@@ -24,14 +24,23 @@ public class SysRole {
     @Column(name = "id", columnDefinition = "VARCHAR(32) COMMENT '主键UUID'")
     private String id;
     
-    @Column(name = "name", columnDefinition = "VARCHAR(50) COMMENT '角色名称'")
-    private String name;
+    @Column(name = "role_name", columnDefinition = "VARCHAR(50) COMMENT '角色名称'")
+    private String roleName;
     
     @Column(name = "code", columnDefinition = "VARCHAR(50) COMMENT '角色编码（用于权限控制）'")
     private String code;
     
-    @Column(name = "remark", columnDefinition = "TEXT COMMENT '描述'")
-    private String remark;
+    @Column(name = "role_description", columnDefinition = "TEXT COMMENT '角色描述'")
+    private String roleDescription;
+    
+    @Column(name = "role_type", columnDefinition = "VARCHAR(20) COMMENT '角色类型'")
+    private String roleType;
+    
+    @Column(name = "is_default", columnDefinition = "TINYINT(1) DEFAULT 0 COMMENT '是否默认角色'")
+    private Boolean isDefault = false;
+    
+    @Column(name = "status", columnDefinition = "VARCHAR(20) DEFAULT 'ACTIVE' COMMENT '角色状态'")
+    private String status = "ACTIVE";
     
     @Column(name = "customer_id", columnDefinition = "VARCHAR(32) COMMENT '客户域ID'")
     private String customerId;
