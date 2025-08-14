@@ -5,25 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
-import com.proshine.system.dto.request.AccessRecordsRequest;
-import com.proshine.system.dto.request.ExportAccessRecordsRequest;
-import com.proshine.system.dto.request.RemoteAccessRecordsRequest;
-import com.proshine.system.dto.request.RemoteOpenDoorRequest;
-import com.proshine.system.dto.request.OperationLogsRequest;
-import com.proshine.system.dto.response.AccessRecordResponse;
-import com.proshine.system.dto.response.AccessStatsResponse;
-import com.proshine.system.dto.response.ExportResponse;
-import com.proshine.system.dto.response.RoomStatusResponse;
-import com.proshine.system.dto.response.RemoteAccessRecordResponse;
-import com.proshine.system.dto.response.RemoteAccessStatsResponse;
-import com.proshine.system.dto.response.RemoteOpenDoorResponse;
+import com.proshine.system.dto.request.*;
+import com.proshine.system.dto.response.*;
 import com.proshine.system.entity.*;
+import com.proshine.system.repository.BookingCoursePlanningRelationRepository;
 import com.proshine.system.repository.*;
 import com.proshine.system.security.SecurityUtil;
-import com.proshine.system.service.ApprovalConfigService;
-import com.proshine.system.service.BookingPersonnelPermissionService;
-import com.proshine.system.service.ContinuousBookingSettingService;
-import com.proshine.system.service.RoomBookingService;
+import com.proshine.system.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -35,9 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import javax.persistence.criteria.Predicate;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.criteria.Predicate;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -97,7 +85,13 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     private TbAttendanceAdministrativeCourseTimeConfigRepository courseTimeConfigRepository;
     
     @Autowired
+    private MqttService mqttService;
+    
+    @Autowired
     private SchoolCalendar2Repository schoolCalendar2Repository;
+    
+    @Autowired
+    private BookingCoursePlanningRelationRepository bookingCoursePlanningRelationRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -1144,11 +1138,68 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         // 保存更新
         roomBookingRepository.save(booking);
         
+        // 删除相关的排课记录
+        deleteRelatedCoursePlanning(bookingId);
+        
+        // 发送设备通知
+        if (mqttService != null) {
+            try {
+                mqttService.notifyTerminalsByRoomId(booking.getRoomId(), booking.getCstmId());
+                log.info("已发送预约取消通知到终端设备");
+            } catch (Exception e) {
+                log.error("发送设备通知失败，但不影响主流程", e);
+            }
+        }
+        
         log.info("用户 {} 取消了预约 {}，原因：{}", currentUserId, bookingId, request.getReason());
         
         return "预约已成功取消";
     }
 
+    /**
+     * 删除预约相关的排课记录
+     * @param bookingId 预约ID
+     */
+    private void deleteRelatedCoursePlanning(String bookingId) {
+        try {
+            log.info("开始删除预约相关的排课记录，预约ID: {}", bookingId);
+            
+            // 查询关联关系
+            List<BookingCoursePlanningRelation> relations = 
+                bookingCoursePlanningRelationRepository.findByBookingId(bookingId);
+            
+            if (relations.isEmpty()) {
+                log.info("未找到预约相关的排课记录，预约ID: {}", bookingId);
+                return;
+            }
+            
+            // 收集所有相关的排课ID
+            List<String> coursePlanningIds = relations.stream()
+                .map(BookingCoursePlanningRelation::getCoursePlanningId)
+                .collect(Collectors.toList());
+            
+            log.info("找到{}条相关排课记录，准备删除", coursePlanningIds.size());
+            
+            // 删除排课记录
+            for (String coursePlanningId : coursePlanningIds) {
+                try {
+                    coursePlanningRepository.deleteById(coursePlanningId);
+                    log.info("删除排课记录成功，ID: {}", coursePlanningId);
+                } catch (Exception e) {
+                    log.error("删除排课记录失败，ID: {}", coursePlanningId, e);
+                }
+            }
+            
+            // 删除关联关系
+            bookingCoursePlanningRelationRepository.deleteByBookingId(bookingId);
+            log.info("删除预约排课关联关系成功，预约ID: {}", bookingId);
+            
+        } catch (Exception e) {
+            log.error("删除预约相关排课记录失败，预约ID: {}", bookingId, e);
+            // 不抛出异常，避免影响主流程
+        }
+    }
+    
     /**
      * 转换预约实体为审批列表响应DTO
      */
@@ -2260,6 +2311,15 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                     
                     CoursePlanning saved = coursePlanningRepository.save(coursePlanning);
                     coursePlanningRepository.flush(); // 强制立即提交到数据库
+                    
+                    // 保存预约与排课的关联关系
+                    BookingCoursePlanningRelation relation = new BookingCoursePlanningRelation();
+                    relation.setId(java.util.UUID.randomUUID().toString());
+                    relation.setBookingId(booking.getId());
+                    relation.setCoursePlanningId(saved.getId());
+                    relation.setCstmId(booking.getCstmId());
+                    bookingCoursePlanningRelationRepository.save(relation);
+                    
                     successCount++;
                     
                     // 验证保存是否成功
@@ -2284,6 +2344,16 @@ public class RoomBookingServiceImpl implements RoomBookingService {
                 log.error("⚠️ 警告：期望创建{}条记录，实际成功创建{}条记录，可能存在保存失败", 
                     timeSlots.size(), successCount);
             }
+            
+            // 发送设备通知
+            if (mqttService != null) {
+                try {
+                    mqttService.notifyTerminalsByRoomId(booking.getRoomId(), booking.getCstmId());
+                    log.info("已发送预约通过通知到终端设备");
+                } catch (Exception e) {
+                    log.error("发送设备通知失败，但不影响主流程", e);
+                }
+            }
                 
         } catch (Exception e) {
             log.error("创建课程排课记录失败，预约ID: {}", booking.getId(), e);
@@ -2295,7 +2365,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     /**
      * 预约时间段内部类
      */
-    private static class BookingTimeSlot {
+    public static class BookingTimeSlot {
         public final LocalDateTime startTime;
         public final LocalDateTime endTime;
         public final LocalDate date;
@@ -2304,6 +2374,33 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             this.startTime = startTime;
             this.endTime = endTime;
             this.date = startTime.toLocalDate();
+        }
+        
+        public LocalDateTime getStartTime() {
+            return startTime;
+        }
+        
+        public LocalDateTime getEndTime() {
+            return endTime;
+        }
+        
+        public LocalDate getDate() {
+            return date;
+        }
+        
+        public int getWeekDay() {
+            return startTime.getDayOfWeek().getValue();
+        }
+        
+        public int getCourseSection() {
+            // 简单计算课程节次（基于小时）
+            int hour = startTime.getHour();
+            if (hour >= 8 && hour < 10) return 1;
+            else if (hour >= 10 && hour < 12) return 2;
+            else if (hour >= 14 && hour < 16) return 3;
+            else if (hour >= 16 && hour < 18) return 4;
+            else if (hour >= 19 && hour < 21) return 5;
+            else return 0;
         }
         
         @Override
@@ -2546,7 +2643,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             }
             
             // 格式化开始时间为HH:mm格式进行匹配
-            String timeStr = startTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+            String timeStr = startTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
             
             // 找到最匹配的课程节次
             for (TbAttendanceAdministrativeCourseTimeConfig config : timeConfigs) {

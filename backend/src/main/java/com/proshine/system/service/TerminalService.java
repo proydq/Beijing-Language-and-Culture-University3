@@ -1,5 +1,6 @@
 package com.proshine.system.service;
 
+
 import com.proshine.system.entity.Terminal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,166 +9,141 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 终端设备服务接口
- * 
- * @author system
- * @date 2024-01-01
+ * 终端服务接口
  */
 public interface TerminalService {
-
+    
     /**
      * 保存或更新终端
+     * @param terminal 终端实体
+     * @return 保存后的终端
      */
-    Terminal saveOrUpdate(Terminal terminal);
-
+    Terminal save(Terminal terminal);
+    
     /**
      * 根据ID查询终端
+     * @param id 终端ID
+     * @param cstmId 客户域ID
+     * @return 终端信息
      */
-    Optional<Terminal> findById(String id);
-
+    Optional<Terminal> findById(String id, String cstmId);
+    
     /**
-     * 根据终端ID查询终端
+     * 根据客户域ID和终端ID查询
+     * @param cstmId 客户域ID
+     * @param terminalId 终端ID
+     * @return 终端信息
      */
-    Optional<Terminal> findByTerminalId(String terminalId, String cstmId);
-
+    Optional<Terminal> findByCstmIdAndTerminalId(String cstmId, String terminalId);
+    
     /**
-     * 查询客户域下所有终端
+     * 根据客户域ID查询所有终端
+     * @param cstmId 客户域ID
+     * @return 终端列表
      */
-    List<Terminal> findAllByCustomerId(String cstmId);
-
+    List<Terminal> findByCstmIdAndExtraId2(String cstmId, String extraId2);
+    
     /**
-     * 分页查询客户域下的终端
+     * 分页查询终端
+     * @param cstmId 客户域ID
+     * @param pageable 分页参数
+     * @return 终端分页数据
      */
-    Page<Terminal> findByCustomerId(String cstmId, Pageable pageable);
+    Page<Terminal> findByCstmId(String cstmId, Pageable pageable);
 
-    /**
-     * 根据房间ID查询绑定的终端列表
-     */
-    List<Terminal> findByRoomId(String roomId, String cstmId);
 
-    /**
-     * 根据房间ID查询绑定的终端（单个）
-     */
-    Optional<Terminal> findFirstByRoomId(String roomId, String cstmId);
-
-    /**
-     * 查询在线终端列表
-     */
-    List<Terminal> findOnlineTerminals(String cstmId);
-
-    /**
-     * 查询离线终端列表
-     */
-    List<Terminal> findOfflineTerminals(String cstmId);
-
+    List<Terminal> findByCstmId(String cstmId);
+    
     /**
      * 根据终端名称模糊查询
+     * @param cstmId 客户域ID
+     * @param terminalName 终端名称
+     * @return 终端列表
      */
-    List<Terminal> findByNameContaining(String name, String cstmId);
-
+    List<Terminal> findByTerminalNameLike(String cstmId, String terminalName);
+    
     /**
-     * 复合条件查询
+     * 根据在线状态查询
+     * @param cstmId 客户域ID
+     * @param onlineState 在线状态
+     * @return 终端列表
      */
-    Page<Terminal> findByConditions(String terminalName, Integer onlineState, 
-                                   String roomId, String cstmId, Pageable pageable);
-
+    List<Terminal> findByOnlineState(String cstmId, Integer onlineState);
+    
     /**
-     * 删除终端
+     * 根据教室名称查询
+     * @param cstmId 客户域ID
+     * @param classroomName 教室名称
+     * @return 终端列表
      */
-    void deleteById(String id);
-
+    List<Terminal> findByClassroomName(String cstmId, String classroomName);
+    
     /**
-     * 批量删除终端
+     * 统计在线终端数量
+     * @param cstmId 客户域ID
+     * @return 在线终端数量
      */
-    void deleteByIds(List<String> ids);
-
-    /**
-     * 绑定终端到房间
-     */
-    void bindToRoom(String terminalId, String roomId, String cstmId);
-
-    /**
-     * 解绑终端和房间
-     */
-    void unbindFromRoom(String terminalId, String cstmId);
-
+    Long countOnlineTerminals(String cstmId);
+    
     /**
      * 更新终端在线状态
+     * @param id 终端ID
+     * @param cstmId 客户域ID
+     * @param onlineState 在线状态
+     * @return 是否更新成功
      */
-    void updateOnlineState(String terminalId, Terminal.OnlineState onlineState, String cstmId);
-
+    boolean updateOnlineState(String id, String cstmId, Integer onlineState);
+    
     /**
-     * 终端上线
+     * 终端登录
+     * @param id 终端ID
+     * @param cstmId 客户域ID
+     * @return 是否更新成功
      */
-    void terminalOnline(String terminalId, String ipaddr, String cstmId);
-
+    boolean terminalLogon(String id, String cstmId);
+    
     /**
-     * 终端下线
+     * 终端登出
+     * @param id 终端ID
+     * @param cstmId 客户域ID
+     * @return 是否更新成功
      */
-    void terminalOffline(String terminalId, String cstmId);
-
+    boolean terminalLogoff(String id, String cstmId);
+    
     /**
-     * 更新最后存活时间
+     * 删除终端
+     * @param id 终端ID
+     * @param cstmId 客户域ID
+     * @return 是否删除成功
      */
-    void updateLastAliveTime(String terminalId, String cstmId);
-
+    boolean delete(String id, String cstmId);
+    
     /**
-     * 获取终端统计信息
+     * 批量保存终端
+     * @param terminals 终端列表
+     * @return 保存后的终端列表
      */
-    TerminalStatistics getStatistics(String cstmId);
-
-    /**
-     * 查询未绑定房间的终端
-     */
-    List<Terminal> findUnboundTerminals(String cstmId);
-
-    /**
-     * 查询已绑定房间的终端
-     */
-    List<Terminal> findBoundTerminals(String cstmId);
-
+    List<Terminal> saveAll(List<Terminal> terminals);
+    
     /**
      * 检查终端ID是否存在
+     * @param cstmId 客户域ID
+     * @param terminalId 终端ID
+     * @return 是否存在
      */
-    boolean existsByTerminalId(String terminalId, String cstmId);
-
+    boolean existsTerminalId(String cstmId, String terminalId);
+    
     /**
-     * 检查IP地址是否被占用
+     * 创建新终端
+     * @param terminal 终端信息
+     * @return 创建的终端
      */
-    boolean existsByIpAddress(String ipaddr, String cstmId);
-
+    Terminal createTerminal(Terminal terminal);
+    
     /**
-     * 终端统计信息内部类
+     * 更新终端信息
+     * @param terminal 终端信息
+     * @return 更新后的终端
      */
-    class TerminalStatistics {
-        private long totalCount;
-        private long onlineCount;
-        private long offlineCount;
-        private long boundCount;
-        private long unboundCount;
-
-        public TerminalStatistics(long totalCount, long onlineCount, long offlineCount, 
-                                long boundCount, long unboundCount) {
-            this.totalCount = totalCount;
-            this.onlineCount = onlineCount;
-            this.offlineCount = offlineCount;
-            this.boundCount = boundCount;
-            this.unboundCount = unboundCount;
-        }
-
-        // Getters
-        public long getTotalCount() { return totalCount; }
-        public long getOnlineCount() { return onlineCount; }
-        public long getOfflineCount() { return offlineCount; }
-        public long getBoundCount() { return boundCount; }
-        public long getUnboundCount() { return unboundCount; }
-        
-        public double getOnlineRate() {
-            return totalCount > 0 ? (double) onlineCount / totalCount * 100 : 0.0;
-        }
-        
-        public double getBoundRate() {
-            return totalCount > 0 ? (double) boundCount / totalCount * 100 : 0.0;
-        }
-    }
+    Terminal updateTerminal(Terminal terminal);
 }

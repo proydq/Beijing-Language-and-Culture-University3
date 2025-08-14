@@ -8,6 +8,7 @@ com\proshine\system\dto\response\RemoteAccessStatsResponse$RemoteAccessStatsResp
 com\proshine\system\service\ContinuousBookingSettingService.class
 com\proshine\system\dto\AddAdminResponse$AddAdminResponseBuilder.class
 com\proshine\system\dto\ClassroomAddVo.class
+com\proshine\mqtt\config\MqttProperties.class
 com\proshine\system\entity\SysPermission$Type.class
 com\proshine\system\service\FileUploadService.class
 com\proshine\system\entity\RoomBooking.class
@@ -46,6 +47,7 @@ com\proshine\system\entity\BookingApproval$ApprovalAction.class
 com\proshine\common\constant\PermissionConstants$System.class
 com\proshine\system\controller\UserPermissionController.class
 com\proshine\system\dto\ContinuousBookingSettingWithRoomDto.class
+com\proshine\system\service\DeviceNotificationService.class
 com\proshine\system\controller\TitleController.class
 com\proshine\system\dto\FileCheckResponse$FileInfo.class
 com\proshine\system\entity\BookingTimeRuleUser.class
@@ -59,6 +61,7 @@ com\proshine\system\dto\SearchTerminalCondition.class
 com\proshine\system\entity\CoursePlanning.class
 com\proshine\system\SystemApplication.class
 com\proshine\system\repository\SysOrganizationRepository.class
+com\proshine\mqtt\config\MqttProperties$Client.class
 com\proshine\system\dto\BookingDistributionDto.class
 com\proshine\system\dto\ClassroomVo$ApprovalLevelDetail.class
 com\proshine\system\exception\RoomException$RoomDuplicateException.class
@@ -81,6 +84,7 @@ com\proshine\system\controller\AdminManagementController.class
 com\proshine\system\dto\BookingPersonnelPermissionDto$RoomDto.class
 com\proshine\system\dto\FileUploadEnhancedResponse$FileUploadEnhancedResponseBuilder.class
 com\proshine\system\dto\SearchUserCondition.class
+com\proshine\mqtt\entity\MqttCmd.class
 com\proshine\system\dto\BookingTimeValidationDto$AvailableTimeRange.class
 com\proshine\system\dto\response\RemoteOpenDoorResponse.class
 com\proshine\system\security\JwtUtil.class
@@ -147,6 +151,7 @@ com\proshine\system\dto\RoomBookingDetailsResponse$RoomInfo.class
 com\proshine\system\controller\RoomScheduleController.class
 com\proshine\system\repository\ClassroomApprovalConfigRepository.class
 com\proshine\system\repository\BookingPersonnelPermissionRoomRepository.class
+com\proshine\mqtt\entity\enumer\EnumService$EnumMeetingInfos.class
 com\proshine\system\dto\RoomBookingStatsRequest.class
 com\proshine\system\dto\BookingDetailResponse$ApprovalStep.class
 com\proshine\system\dto\SearchPositionDTO.class
@@ -172,6 +177,7 @@ com\proshine\system\entity\SysFile.class
 com\proshine\common\constant\PermissionConstants$Room.class
 com\proshine\system\dto\ApprovalResponse.class
 com\proshine\common\constant\PermissionConstants$Violation.class
+com\proshine\mqtt\config\MqttProperties$Broker.class
 com\proshine\system\dto\SearchBlacklistCondition.class
 com\proshine\system\entity\BookingRecord$RecordType.class
 com\proshine\system\dto\RoomBookingDetailsResponse$RoomInfo$RoomInfoBuilder.class
@@ -206,6 +212,7 @@ com\proshine\common\constant\PermissionConstants$BookingApproval.class
 com\proshine\system\dto\ApprovalHistoryResponse.class
 com\proshine\system\dto\AvailableRoomsRequest.class
 com\proshine\common\constant\SystemConstants$ApprovalStatus.class
+com\proshine\system\service\impl\DeviceNotificationServiceImpl.class
 com\proshine\system\dto\RoleDto.class
 com\proshine\system\controller\DebugController.class
 com\proshine\system\entity\SysFileReference.class
@@ -217,6 +224,7 @@ com\proshine\system\dto\BookingTimeValidationDto$AvailableTimesResponse.class
 com\proshine\system\dto\BookingDetailResponse.class
 com\proshine\system\entity\BookingPersonnelPermissionRoom.class
 com\proshine\system\dto\RoomBookingStatsResponse.class
+com\proshine\mqtt\service\MqttSendService.class
 com\proshine\system\util\UserStatusFixUtil.class
 com\proshine\system\repository\SysFileEnhancedRepository.class
 com\proshine\common\handler\GlobalExceptionHandler.class
@@ -258,6 +266,7 @@ com\proshine\system\exception\RoomException$RoomNotFoundException.class
 com\proshine\common\constant\PermissionConstants$Scheme.class
 com\proshine\common\dto\BCryptUtil.class
 com\proshine\system\service\RoleManagementService.class
+com\proshine\mqtt\config\MqttConfig.class
 com\proshine\system\dto\AddBlacklistRequest.class
 com\proshine\system\entity\Terminal$EntranceType.class
 com\proshine\system\repository\SysRoleRepository.class
@@ -290,6 +299,7 @@ com\proshine\system\service\impl\AuthenticationServiceImpl.class
 com\proshine\system\service\impl\SysUserServiceImpl.class
 com\proshine\common\constant\SystemConstants$UsageStatus.class
 com\proshine\system\repository\UserBlacklistRepository.class
+com\proshine\mqtt\entity\enumer\EnumService.class
 com\proshine\system\dto\ApprovalListResponse.class
 com\proshine\system\dto\AssignPermissionRequest.class
 com\proshine\system\dto\BatchDeleteClassroomVo.class
@@ -302,6 +312,7 @@ com\proshine\system\security\JwtAuthenticationFilter.class
 com\proshine\system\dto\TitleVo.class
 com\proshine\system\service\RoomBookingService.class
 com\proshine\system\dto\UserVo.class
+com\proshine\mqtt\config\MqttProperties$Connection.class
 com\proshine\system\dto\PermissionNode.class
 com\proshine\system\dto\PersonnelVo.class
 com\proshine\system\entity\UserViolationRecord.class
@@ -349,6 +360,7 @@ com\proshine\system\controller\BookingPersonnelPermissionController.class
 com\proshine\system\controller\RoomController.class
 com\proshine\system\dto\AddAdminRequest.class
 com\proshine\system\entity\SysUserRole.class
+com\proshine\mqtt\entity\enumer\EnumService$EnumBookingNotification.class
 com\proshine\system\controller\ViolationSettingController.class
 com\proshine\system\dto\BatchApprovalResponse$BatchApprovalDetail.class
 com\proshine\system\entity\BookingApproval.class

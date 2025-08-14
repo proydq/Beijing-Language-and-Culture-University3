@@ -1,5 +1,6 @@
 package com.proshine.system.service.impl;
 
+
 import com.proshine.system.entity.Terminal;
 import com.proshine.system.repository.TerminalRepository;
 import com.proshine.system.service.TerminalService;
@@ -9,260 +10,218 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
- * 终端设备服务实现类
- * 
- * @author system
- * @date 2024-01-01
+ * 终端服务实现类
  */
 @Slf4j
 @Service
-@Transactional
 public class TerminalServiceImpl implements TerminalService {
-
+    
     @Autowired
     private TerminalRepository terminalRepository;
+    
+    @Override
+    @Transactional
+    public Terminal save(Terminal terminal) {
+        if (terminal.getCreateTime() == null) {
+            terminal.setCreateTime(new Date());
+        }
+        return terminalRepository.save(terminal);
+    }
+    
+    @Override
+    public Optional<Terminal> findById(String id, String cstmId) {
+        Terminal.TerminalId terminalId = new Terminal.TerminalId();
+        terminalId.setId(id);
+        terminalId.setCstmId(cstmId);
+        return terminalRepository.findById(terminalId);
+    }
+    
+    @Override
+    public Optional<Terminal> findByCstmIdAndTerminalId(String cstmId, String terminalId) {
+        return terminalRepository.findByCstmIdAndTerminalId(cstmId, terminalId);
+    }
+    
+    @Override
+    public List<Terminal> findByCstmIdAndExtraId2(String cstmId,String extraId2) {
+        return terminalRepository.findByCstmIdAndExtraId2(cstmId,extraId2);
+    }
+    
+    @Override
+    public Page<Terminal> findByCstmId(String cstmId, Pageable pageable) {
+        return terminalRepository.findByCstmId(cstmId, pageable);
+    }
 
     @Override
-    public Terminal saveOrUpdate(Terminal terminal) {
+    public List<Terminal> findByCstmId(String cstmId) {
+        return terminalRepository.findByCstmId(cstmId);
+    }
+
+    @Override
+    public List<Terminal> findByTerminalNameLike(String cstmId, String terminalName) {
+        return terminalRepository.findByCstmIdAndTerminalNameLike(cstmId, terminalName);
+    }
+    
+    @Override
+    public List<Terminal> findByOnlineState(String cstmId, Integer onlineState) {
+        return terminalRepository.findByCstmIdAndOnlineState(cstmId, onlineState);
+    }
+    
+    @Override
+    public List<Terminal> findByClassroomName(String cstmId, String classroomName) {
+        return terminalRepository.findByCstmIdAndClassroomName(cstmId, classroomName);
+    }
+    
+    @Override
+    public Long countOnlineTerminals(String cstmId) {
+        return terminalRepository.countOnlineTerminalsByCstmId(cstmId);
+    }
+    
+    @Override
+    @Transactional
+    public boolean updateOnlineState(String id, String cstmId, Integer onlineState) {
+        try {
+            int updated = terminalRepository.updateOnlineState(id, cstmId, onlineState, new Date());
+            return updated > 0;
+        } catch (Exception e) {
+            log.error("更新终端在线状态失败: id={}, cstmId={}, onlineState={}", id, cstmId, onlineState, e);
+            return false;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public boolean terminalLogon(String id, String cstmId) {
+        try {
+            int updated = terminalRepository.updateLogonTime(id, cstmId, new Date());
+            if (updated > 0) {
+                log.info("终端登录成功: id={}, cstmId={}", id, cstmId);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("终端登录失败: id={}, cstmId={}", id, cstmId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public boolean terminalLogoff(String id, String cstmId) {
+        try {
+            int updated = terminalRepository.updateLogoffTime(id, cstmId, new Date());
+            if (updated > 0) {
+                log.info("终端登出成功: id={}, cstmId={}", id, cstmId);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("终端登出失败: id={}, cstmId={}", id, cstmId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public boolean delete(String id, String cstmId) {
+        try {
+            Terminal.TerminalId terminalId = new Terminal.TerminalId();
+            terminalId.setId(id);
+            terminalId.setCstmId(cstmId);
+            
+            if (terminalRepository.existsById(terminalId)) {
+                terminalRepository.deleteById(terminalId);
+                log.info("删除终端成功: id={}, cstmId={}", id, cstmId);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("删除终端失败: id={}, cstmId={}", id, cstmId, e);
+            return false;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public List<Terminal> saveAll(List<Terminal> terminals) {
+        // 设置创建时间
+        terminals.forEach(terminal -> {
+            if (terminal.getCreateTime() == null) {
+                terminal.setCreateTime(new Date());
+            }
+        });
+        return terminalRepository.saveAll(terminals);
+    }
+    
+    @Override
+    public boolean existsTerminalId(String cstmId, String terminalId) {
+        return terminalRepository.existsByCstmIdAndTerminalId(cstmId, terminalId);
+    }
+    
+    @Override
+    @Transactional
+    public Terminal createTerminal(Terminal terminal) {
+        // 如果没有设置ID，生成一个
+        if (terminal.getId() == null || terminal.getId().isEmpty()) {
+            terminal.setId(UUID.randomUUID().toString().replace("-", ""));
+        }
+        
+        // 检查终端ID是否已存在
+        if (terminal.getTerminalId() != null && 
+            existsTerminalId(terminal.getCstmId(), terminal.getTerminalId())) {
+            throw new RuntimeException("终端ID已存在: " + terminal.getTerminalId());
+        }
+        
+        // 设置默认值
+        if (terminal.getOnlineState() == null) {
+            terminal.setOnlineState(0); // 默认离线
+        }
         if (terminal.getCreateTime() == null) {
             terminal.setCreateTime(new Date());
         }
         
-        log.info("保存/更新终端: ID={}, 终端ID={}, 名称={}", 
-            terminal.getId(), terminal.getTerminalId(), terminal.getTerminalName());
+        Terminal saved = terminalRepository.save(terminal);
+        log.info("创建终端成功: id={}, terminalId={}, terminalName={}", 
+                saved.getId(), saved.getTerminalId(), saved.getTerminalName());
         
-        return terminalRepository.save(terminal);
+        return saved;
     }
-
+    
     @Override
-    @Transactional(readOnly = true)
-    public Optional<Terminal> findById(String id) {
-        return terminalRepository.findById(id);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<Terminal> findByTerminalId(String terminalId, String cstmId) {
-        return terminalRepository.findByTerminalIdAndCstmId(terminalId, cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findAllByCustomerId(String cstmId) {
-        return terminalRepository.findByCstmIdOrderByCreateTimeDesc(cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Terminal> findByCustomerId(String cstmId, Pageable pageable) {
-        return terminalRepository.findByCstmIdOrderByCreateTimeDesc(cstmId, pageable);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findByRoomId(String roomId, String cstmId) {
-        return terminalRepository.findByRoomId(roomId, cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<Terminal> findFirstByRoomId(String roomId, String cstmId) {
-        return terminalRepository.findFirstByRoomId(roomId, cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findOnlineTerminals(String cstmId) {
-        return terminalRepository.findOnlineTerminals(cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findOfflineTerminals(String cstmId) {
-        return terminalRepository.findOfflineTerminals(cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findByNameContaining(String name, String cstmId) {
-        return terminalRepository.findByTerminalNameContaining(name, cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Terminal> findByConditions(String terminalName, Integer onlineState, 
-                                         String roomId, String cstmId, Pageable pageable) {
-        return terminalRepository.findByConditions(terminalName, onlineState, roomId, cstmId, pageable);
-    }
-
-    @Override
-    public void deleteById(String id) {
-        log.info("删除终端: ID={}", id);
-        terminalRepository.deleteById(id);
-    }
-
-    @Override
-    public void deleteByIds(List<String> ids) {
-        log.info("批量删除终端: 数量={}", ids.size());
-        terminalRepository.deleteAllById(ids);
-    }
-
-    @Override
-    public void bindToRoom(String terminalId, String roomId, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            String oldRoomId = terminal.getRoomId();
-            terminal.setRoomId(roomId);
-            terminalRepository.save(terminal);
-            
-            log.info("终端绑定房间: 终端ID={}, 原房间ID={}, 新房间ID={}", 
-                terminalId, oldRoomId, roomId);
-        } else {
-            log.warn("终端不存在，无法绑定房间: 终端ID={}, 房间ID={}", terminalId, roomId);
-            throw new IllegalArgumentException("终端不存在: " + terminalId);
-        }
-    }
-
-    @Override
-    public void unbindFromRoom(String terminalId, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            String oldRoomId = terminal.getRoomId();
-            terminal.setRoomId(null);
-            terminalRepository.save(terminal);
-            
-            log.info("终端解绑房间: 终端ID={}, 原房间ID={}", terminalId, oldRoomId);
-        } else {
-            log.warn("终端不存在，无法解绑房间: 终端ID={}", terminalId);
-            throw new IllegalArgumentException("终端不存在: " + terminalId);
-        }
-    }
-
-    @Override
-    public void updateOnlineState(String terminalId, Terminal.OnlineState onlineState, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            Terminal.OnlineState oldState = terminal.getOnlineState();
-            terminal.setOnlineState(onlineState);
-            terminal.setLastAliveTime(new Date());
-            
-            if (onlineState == Terminal.OnlineState.ONLINE) {
-                terminal.setLogonTime(new Date());
-            } else if (onlineState == Terminal.OnlineState.OFFLINE) {
-                terminal.setLogoffTime(new Date());
-            }
-            
-            terminalRepository.save(terminal);
-            
-            log.info("终端状态更新: 终端ID={}, 原状态={}, 新状态={}", 
-                terminalId, oldState, onlineState);
-        } else {
-            log.warn("终端不存在，无法更新状态: 终端ID={}", terminalId);
-            throw new IllegalArgumentException("终端不存在: " + terminalId);
-        }
-    }
-
-    @Override
-    public void terminalOnline(String terminalId, String ipaddr, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            terminal.setOnlineState(Terminal.OnlineState.ONLINE);
-            terminal.setLogonTime(new Date());
-            terminal.setLastAliveTime(new Date());
-            
-            if (StringUtils.hasText(ipaddr)) {
-                terminal.setIpaddr(ipaddr);
-            }
-            
-            terminalRepository.save(terminal);
-            
-            log.info("终端上线: 终端ID={}, IP地址={}", terminalId, ipaddr);
-        } else {
-            log.warn("终端不存在，无法上线: 终端ID={}", terminalId);
-            throw new IllegalArgumentException("终端不存在: " + terminalId);
-        }
-    }
-
-    @Override
-    public void terminalOffline(String terminalId, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            terminal.setOnlineState(Terminal.OnlineState.OFFLINE);
-            terminal.setLogoffTime(new Date());
-            
-            terminalRepository.save(terminal);
-            
-            log.info("终端下线: 终端ID={}", terminalId);
-        } else {
-            log.warn("终端不存在，无法下线: 终端ID={}", terminalId);
-            throw new IllegalArgumentException("终端不存在: " + terminalId);
-        }
-    }
-
-    @Override
-    public void updateLastAliveTime(String terminalId, String cstmId) {
-        Optional<Terminal> terminalOpt = findByTerminalId(terminalId, cstmId);
-        if (terminalOpt.isPresent()) {
-            Terminal terminal = terminalOpt.get();
-            terminal.setLastAliveTime(new Date());
-            terminalRepository.save(terminal);
-            
-            log.debug("更新终端存活时间: 终端ID={}", terminalId);
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public TerminalStatistics getStatistics(String cstmId) {
-        long totalCount = terminalRepository.countByCstmId(cstmId);
-        long onlineCount = terminalRepository.countOnlineTerminals(cstmId);
-        long offlineCount = terminalRepository.countOfflineTerminals(cstmId);
+    @Transactional
+    public Terminal updateTerminal(Terminal terminal) {
+        // 检查终端是否存在
+        Terminal.TerminalId terminalId = new Terminal.TerminalId();
+        terminalId.setId(terminal.getId());
+        terminalId.setCstmId(terminal.getCstmId());
         
-        List<Terminal> boundTerminals = terminalRepository.findBoundTerminals(cstmId);
-        List<Terminal> unboundTerminals = terminalRepository.findUnboundTerminals(cstmId);
+        Optional<Terminal> existingOpt = terminalRepository.findById(terminalId);
+        if (!existingOpt.isPresent()) {
+            throw new RuntimeException("终端不存在: id=" + terminal.getId());
+        }
         
-        long boundCount = boundTerminals.size();
-        long unboundCount = unboundTerminals.size();
+        Terminal existing = existingOpt.get();
         
-        log.debug("终端统计: 客户域={}, 总数={}, 在线={}, 离线={}, 已绑定={}, 未绑定={}", 
-            cstmId, totalCount, onlineCount, offlineCount, boundCount, unboundCount);
+        // 如果修改了terminalId，检查是否重复
+        if (terminal.getTerminalId() != null && 
+            !terminal.getTerminalId().equals(existing.getTerminalId()) &&
+            existsTerminalId(terminal.getCstmId(), terminal.getTerminalId())) {
+            throw new RuntimeException("终端ID已存在: " + terminal.getTerminalId());
+        }
         
-        return new TerminalStatistics(totalCount, onlineCount, offlineCount, boundCount, unboundCount);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findUnboundTerminals(String cstmId) {
-        return terminalRepository.findUnboundTerminals(cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Terminal> findBoundTerminals(String cstmId) {
-        return terminalRepository.findBoundTerminals(cstmId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByTerminalId(String terminalId, String cstmId) {
-        return findByTerminalId(terminalId, cstmId).isPresent();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByIpAddress(String ipaddr, String cstmId) {
-        return terminalRepository.findByIpaddrAndCstmId(ipaddr, cstmId).isPresent();
+        // 保留创建时间
+        terminal.setCreateTime(existing.getCreateTime());
+        
+        Terminal saved = terminalRepository.save(terminal);
+        log.info("更新终端成功: id={}, terminalId={}, terminalName={}", 
+                saved.getId(), saved.getTerminalId(), saved.getTerminalName());
+        
+        return saved;
     }
 }
