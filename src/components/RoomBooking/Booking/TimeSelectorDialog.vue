@@ -57,6 +57,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { getSchoolWeeks, getRoomWeeklySchedule } from '@/api/roomSchedule'
+import { getBookingTimeConfig, validateBookingTime } from '@/api/bookingTimeControl'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
@@ -75,31 +76,49 @@ watch(
 )
 watch(dialogVisible, val => emit('update:visible', val))
 
-// 监听弹窗打开，重置数据并加载默认的第一周课表
+// 监听弹窗打开，重置数据并加载当前教学周课表
 watch(dialogVisible, async (newVal) => {
   if (newVal) {
     // 重置选择状态
     selected.value.clear()
-    // 如果教学周数据已加载，加载第一周课表
-    if (weeks.value.length > 0) {
-      await loadRoomSchedule(0) // 加载第一周(索引0)的课表
-    }
+    // 加载教学周数据（包含预约配置）
+    await loadSchoolWeeks() // 这会自动设置activeWeek为当前周并加载预约配置
   }
 })
 
 const weeks = ref([])
 const roomSchedule = ref({}) // 存储房间课表数据，格式：{week: {date_period: {courseName, teacher, ...}}}
 const courseTimeConfig = ref([]) // 存储课程时间配置
+const bookingConfig = ref(null) // 存储预约时间配置（新增）
 
-// 加载教学周数据
+// 加载教学周数据（修改为使用预约时间配置接口）
 const loadSchoolWeeks = async () => {
+  if (!props.roomId) {
+    console.log('loadSchoolWeeks: 没有roomId，跳过加载')
+    return
+  }
+  
   try {
-    const response = await getSchoolWeeks()
-    if (response.code === 200) {
-      weeks.value = response.data || []
-      // 如果弹窗是打开状态且有教学周数据，加载第一周课表
+    const response = await getBookingTimeConfig(props.roomId)
+    if (response.code === 200 && response.data?.teachingWeeks) {
+      // 保存完整的预约配置
+      bookingConfig.value = response.data
+      
+      // 只使用可预约的教学周
+      weeks.value = response.data.teachingWeeks.filter(week => week.isBookable)
+      
+      // 查找当前教学周的索引
+      const currentWeekIndex = weeks.value.findIndex(week => week.isCurrentWeek)
+      if (currentWeekIndex !== -1) {
+        activeWeek.value = currentWeekIndex
+      } else if (weeks.value.length > 0) {
+        // 如果没有找到当前周，默认选择第一个可预约的周
+        activeWeek.value = 0
+      }
+      
+      // 如果弹窗是打开状态且有教学周数据，加载对应周课表
       if (dialogVisible.value && weeks.value.length > 0) {
-        await loadRoomSchedule(0)
+        await loadRoomSchedule(activeWeek.value)
       }
     } else {
       ElMessage.error('获取教学周数据失败')
@@ -176,8 +195,34 @@ const loadRoomSchedule = async (weekIndex) => {
   }
 }
 
-onMounted(() => {
-  loadSchoolWeeks()
+// 加载预约时间配置（新增）
+const loadBookingTimeConfig = async () => {
+  if (!props.roomId) {
+    console.log('loadBookingTimeConfig: 没有roomId，跳过加载')
+    return
+  }
+  
+  console.log('开始加载预约时间配置，roomId:', props.roomId)
+  
+  try {
+    const response = await getBookingTimeConfig(props.roomId)
+    console.log('预约配置API响应:', response)
+    if (response.code === 200) {
+      bookingConfig.value = response.data
+      console.log('预约配置加载成功:', bookingConfig.value)
+    } else {
+      console.warn('预约配置加载失败，响应:', response)
+    }
+  } catch (error) {
+    console.error('加载预约配置失败:', error)
+    // 失败不影响原有功能
+  }
+}
+
+onMounted(async () => {
+  // 预约时间配置会在loadSchoolWeeks中一起加载，避免重复请求
+  // await loadBookingTimeConfig()
+  await loadSchoolWeeks()
 })
 
 // 动态生成节次列表，基于课程时间配置
@@ -202,7 +247,7 @@ const periods = computed(() => {
     .map(config => `第${config.courseSort}节 ${config.courseStartTime}-${config.courseEndTime}`)
 })
 
-const activeWeek = ref(0)
+const activeWeek = ref(0) // 初始值，会在loadSchoolWeeks中根据当前教学周调整
 
 // 监听教学周切换，加载对应课表
 watch(activeWeek, async (newWeekIndex) => {
@@ -244,12 +289,52 @@ const currentWeekSchedule = computed(() => {
   return roomSchedule.value[activeWeek.value] || {}
 })
 
+// 检查时间段是否可以预约（新增）
+const isTimeSlotBookable = (date, period) => {
+  if (!bookingConfig.value) return true // 没有配置时默认可预约
+  
+  const { serverTime, bookingLimits } = bookingConfig.value
+  
+  // 1. 检查是否在可预约日期范围内
+  if (bookingLimits?.availableDates) {
+    const availableDate = bookingLimits.availableDates.find(d => d.date === date)
+    if (!availableDate) {
+      return false // 不在可预约日期范围内
+    }
+    
+    // 2. 检查具体时间段是否可预约
+    if (availableDate.isToday && availableDate.minTime) {
+      // 获取对应节次的时间配置
+      const timeConfig = courseTimeConfig.value.find(config => config.courseSort === (period + 1))
+      if (timeConfig && timeConfig.courseStartTime) {
+        const currentTime = new Date(`1970-01-01 ${availableDate.minTime}`)
+        const slotTime = new Date(`1970-01-01 ${timeConfig.courseStartTime}`)
+        if (slotTime < currentTime) {
+          return false // 早于当前时间
+        }
+      }
+    }
+  }
+  
+  return true
+}
+
 function toggleSelect(date, period) {
   const key = `${date}_${period}`
-  // 检查是否被占用、冲突或有课程安排
+  
+  // 原有检查：占用、冲突或有课程安排
   if (occupiedSet.value.has(key) || conflictSet.value.has(key) || currentWeekSchedule.value[key]) {
     return
   }
+  
+  // 新增检查：是否在预约约束范围内
+  if (!isTimeSlotBookable(date, period)) {
+    // 可以显示提示信息
+    ElMessage.warning('该时间段不在可预约范围内')
+    return
+  }
+  
+  // 原有选择逻辑
   if (selected.value.has(key)) selected.value.delete(key)
   else selected.value.add(key)
 }
@@ -260,7 +345,8 @@ function getCellClass(date, period) {
     occupied: occupiedSet.value.has(key),
     conflict: conflictSet.value.has(key),
     selected: selected.value.has(key),
-    'has-course': !!currentWeekSchedule.value[key] // 新增：有课程的样式
+    'has-course': !!currentWeekSchedule.value[key], // 有课程的样式
+    'not-bookable': !isTimeSlotBookable(date, period) // 新增：不可预约的样式
   }
 }
 
@@ -273,11 +359,19 @@ function getCellText(date, period) {
     // 显示课程名称和教师名称
     return `${course.courseName}\n${course.teacherName}`
   }
+  if (!isTimeSlotBookable(date, period)) return '不可约' // 新增：不可预约状态
   if (selected.value.has(key)) return '已选'
   return ''
 }
 
-function save() {
+async function save() {
+  if (selected.value.size === 0) {
+    ElMessage.warning('请选择预约时间')
+    return
+  }
+  
+  console.log('开始保存预约，当前选择:', Array.from(selected.value))
+  
   const result = Array.from(selected.value).map(str => {
     const [date, periodIndex] = str.split('_')
     const period = Number(periodIndex)
@@ -293,6 +387,58 @@ function save() {
       endTime: timeConfig?.courseEndTime || ''
     }
   })
+  
+  // 最终验证（新增）
+  if (bookingConfig.value && result.length > 0) {
+    console.log('开始最终预约时间验证，配置:', bookingConfig.value)
+    try {
+      const sortedResult = result.sort((a, b) => {
+        if (a.date === b.date) {
+          return a.period - b.period
+        }
+        return new Date(a.date) - new Date(b.date)
+      })
+      
+      const firstSelection = sortedResult[0]
+      const lastSelection = sortedResult[sortedResult.length - 1]
+      
+      if (firstSelection.startTime && lastSelection.endTime) {
+        // 确保时间格式正确，避免重复添加秒数
+        const formatTime = (timeStr) => {
+          const parts = timeStr.split(':')
+          return parts.length === 3 ? timeStr : `${timeStr}:00`
+        }
+        
+        const bookingStartTime = `${firstSelection.date} ${formatTime(firstSelection.startTime)}`
+        const bookingEndTime = `${lastSelection.date} ${formatTime(lastSelection.endTime)}`
+        
+        console.log('调用验证预约时间接口:', { 
+          roomId: props.roomId, 
+          bookingStartTime, 
+          bookingEndTime 
+        })
+        
+        const response = await validateBookingTime({
+          roomId: props.roomId,
+          bookingStartTime,
+          bookingEndTime
+        })
+        
+        console.log('预约时间验证响应:', response)
+        
+        if (response.code === 200 && !response.data.isValid) {
+          ElMessage.error(response.data.errorMessage + (response.data.suggestion ? ` (${response.data.suggestion})` : ''))
+          return
+        }
+      }
+    } catch (error) {
+      console.error('验证预约时间失败:', error)
+      ElMessage.warning('时间验证失败，请确认选择的时间是否合理')
+      // 继续保存，不阻止用户操作
+    }
+  } else {
+    console.log('跳过最终验证 - bookingConfig:', bookingConfig.value, ', result长度:', result.length)
+  }
   
   // 生成格式化的时间描述
   const timeDescription = result.map(item => {
@@ -400,6 +546,30 @@ function cancel() {
   color: #2d3436;
   cursor: not-allowed;
   font-weight: 500;
+}
+
+.not-bookable {
+  background: #f5f5f5;
+  color: #c0c4cc;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.not-bookable::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(192, 196, 204, 0.3) 2px,
+    rgba(192, 196, 204, 0.3) 4px
+  );
+  pointer-events: none;
 }
 
 .has-course .cell-text {

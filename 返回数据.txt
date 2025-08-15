@@ -1,0 +1,212 @@
+{
+  "code": "0",
+  "message": "成功",
+  "data": {
+    "serverTime": {
+      "currentDateTime": "2025-06-22 09:45:40",
+      "currentDate": "2025-06-22",
+      "timestamp": 1750556740603
+    },
+    "currentWeekInfo": {
+      "academicYear": "2024-2025",
+      "semester": 2,
+      "semesterName": "下学期",
+      "weekNumber": 16,
+      "weekName": "第16周",
+      "weekStartDate": "2025-06-16",
+      "weekEndDate": "2025-06-22",
+      "currentDayOfWeek": 7,
+      "currentDayName": "周日"
+    },
+    "bookingLimits": {
+      "advanceBookingDays": 7,
+      "continuousBookingDays": 7,
+      "canContinuousBooking": false,
+      "minBookingDate": "2025-06-22",
+      "maxBookingDate": "2025-03-09",
+      "minBookingTime": "09:45:40",
+      "availableDates": []
+    },
+    "teachingWeeks": [
+      {
+        "weekNumber": 19,
+        "weekName": "第19周",
+        "startDate": "2025-07-07",
+        "endDate": "2025-07-13",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 18,
+        "weekName": "第18周",
+        "startDate": "2025-06-30",
+        "endDate": "2025-07-06",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 17,
+        "weekName": "第17周",
+        "startDate": "2025-06-23",
+        "endDate": "2025-06-29",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 16,
+        "weekName": "第16周",
+        "startDate": "2025-06-16",
+        "endDate": "2025-06-22",
+        "isCurrentWeek": true,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 15,
+        "weekName": "第15周",
+        "startDate": "2025-06-09",
+        "endDate": "2025-06-15",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 14,
+        "weekName": "第14周",
+        "startDate": "2025-06-02",
+        "endDate": "2025-06-08",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 13,
+        "weekName": "第13周",
+        "startDate": "2025-05-26",
+        "endDate": "2025-06-01",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 12,
+        "weekName": "第12周",
+        "startDate": "2025-05-19",
+        "endDate": "2025-05-25",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 11,
+        "weekName": "第11周",
+        "startDate": "2025-05-12",
+        "endDate": "2025-05-18",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 10,
+        "weekName": "第10周",
+        "startDate": "2025-05-05",
+        "endDate": "2025-05-11",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 9,
+        "weekName": "第9周",
+        "startDate": "2025-04-28",
+        "endDate": "2025-05-04",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 8,
+        "weekName": "第8周",
+        "startDate": "2025-04-21",
+        "endDate": "2025-04-27",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 7,
+        "weekName": "第7周",
+        "startDate": "2025-04-14",
+        "endDate": "2025-04-20",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 6,
+        "weekName": "第6周",
+        "startDate": "2025-04-07",
+        "endDate": "2025-04-13",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 5,
+        "weekName": "第5周",
+        "startDate": "2025-03-31",
+        "endDate": "2025-04-06",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 4,
+        "weekName": "第4周",
+        "startDate": "2025-03-24",
+        "endDate": "2025-03-30",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 3,
+        "weekName": "第3周",
+        "startDate": "2025-03-17",
+        "endDate": "2025-03-23",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 2,
+        "weekName": "第2周",
+        "startDate": "2025-03-10",
+        "endDate": "2025-03-16",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      },
+      {
+        "weekNumber": 1,
+        "weekName": "第1周",
+        "startDate": "2025-03-03",
+        "endDate": "2025-03-09",
+        "isCurrentWeek": false,
+        "isBookable": false,
+        "bookableDays": 0
+      }
+    ],
+    "semesterInfo": {
+      "semesterName": "2024-2025学年下学期",
+      "totalWeeks": 19,
+      "currentWeekIndex": 16,
+      "semesterStartDate": "2025-07-07",
+      "semesterEndDate": "2025-03-09"
+    }
+  },
+  "timestamp": "2025-06-22T09:45:40.604"
+}

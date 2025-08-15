@@ -7,6 +7,8 @@ import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
 import com.proshine.system.dto.request.*;
 import com.proshine.system.dto.response.*;
+import com.proshine.system.dto.request.BookingTimeValidationRequest;
+import com.proshine.system.dto.response.BookingTimeValidationResponse;
 import com.proshine.system.entity.*;
 import com.proshine.system.repository.BookingCoursePlanningRelationRepository;
 import com.proshine.system.repository.*;
@@ -92,6 +94,9 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     
     @Autowired
     private BookingCoursePlanningRelationRepository bookingCoursePlanningRelationRepository;
+    
+    @Autowired
+    private RoomBookingTimeService roomBookingTimeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -530,22 +535,27 @@ public class RoomBookingServiceImpl implements RoomBookingService {
     }
 
     private void validateBookingRules(String userId, CreateBookingRequest request) {
+        // 1. 检查用户权限
         if (!permissionService.hasBookingPermission(userId, request.getRoomId())) {
             throw new RuntimeException("无预约权限");
         }
 
-        BookingPersonnelPermission permission = permissionService.getUserPermission(userId, request.getRoomId());
-        if (!validateAdvanceBookingDays(permission, request.getBookingStartTime())) {
-            throw new RuntimeException("超出允许预约天数");
-        }
-
-        ContinuousBookingSetting setting = continuousBookingSettingService.getByRoomId(request.getRoomId());
-        if (!validateContinuousBookingDays(setting, request)) {
-            throw new RuntimeException("超出连续预约限制");
-        }
-
-        if (hasTimeConflict(request.getRoomId(), request.getBookingStartTime(), request.getBookingEndTime())) {
-            throw new RuntimeException("该时间段房间已被预约");
+        // 2. 使用新的时间验证服务进行综合验证
+        BookingTimeValidationRequest validationRequest = BookingTimeValidationRequest.builder()
+            .roomId(request.getRoomId())
+            .bookingStartTime(request.getBookingStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+            .bookingEndTime(request.getBookingEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+            .build();
+        
+        BookingTimeValidationResponse validationResponse = roomBookingTimeService.validateBookingTime(validationRequest);
+        
+        if (!validationResponse.getIsValid()) {
+            // 根据错误码提供更详细的错误信息
+            String errorMessage = validationResponse.getErrorMessage();
+            if (validationResponse.getSuggestion() != null) {
+                errorMessage += "。" + validationResponse.getSuggestion();
+            }
+            throw new RuntimeException(errorMessage);
         }
     }
 

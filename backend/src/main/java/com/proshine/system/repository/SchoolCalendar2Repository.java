@@ -34,4 +34,22 @@ public interface SchoolCalendar2Repository extends JpaRepository<SchoolCalendar2
      * @return 教学周列表
      */
     List<SchoolCalendar2> findByCustomerIdOrderByXnDescXqAscWeekAsc(String customerId);
+    
+    /**
+     * 根据客户域ID、学年和学期查询所有教学周，按周次排序
+     *
+     * @param customerId 客户ID
+     * @param xn 学年
+     * @param xq 学期
+     * @return 教学周列表
+     */
+    List<SchoolCalendar2> findByCustomerIdAndXnAndXqOrderByWeek(String customerId, String xn, Integer xq);
+    
+    /**
+     * 根据客户域ID查询所有教学周，按开始日期倒序
+     *
+     * @param customerId 客户ID
+     * @return 教学周列表
+     */
+    List<SchoolCalendar2> findByCustomerIdOrderByStartDateDesc(String customerId);
 }

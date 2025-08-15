@@ -1,4 +1,5 @@
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\RecycleBinService.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\RoomBookingTimeService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\UserBookingLimitService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\ViolationSettingController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchBookingPersonnelPermissionCondition.java
@@ -14,7 +15,6 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\constant\SystemConstants.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\security\UserPrincipal.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchViolationCondition.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\DeviceNotificationServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\FileUploadEnhancedResponse.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\exception\RoomException.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\enums\ErrorCode.java
@@ -22,6 +22,7 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\CoursePlanning.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\AreaService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysUserRepository.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\BookingCoursePlanningRelationRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\BookingTimeRule.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\UserBlacklistDto.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\RoomScheduleController.java
@@ -48,12 +49,14 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\TerminalServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\request\OperationLogsRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BookingListResponse.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\response\BookingTimeValidationResponse.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\RecycleBinController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ViolationSettingUpdateRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\CreateBookingResponse.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\UserBookingLimitRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\RoomBookingDetailsRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\UserViolationRecordDto.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\RoomBookingTimeController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\BlacklistServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchPositionDTO.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\UpdateAdminRolesRequest.java
@@ -93,10 +96,10 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\response\ResponseEntity.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysPermission.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\request\RemoteOpenDoorRequest.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\mqtt\config\MqttProperties.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\CreateBookingRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\response\ResponsePageDataEntity.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\request\AccessRecordsRequest.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\BookingCoursePlanningRelation.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\ViolationSettingServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\AreaVo.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\ApprovalConfigRepository.java
@@ -104,7 +107,6 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BookingDistributionDto.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\AreaController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BatchApprovalResponse.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\mqtt\entity\enumer\EnumService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\AddAdminRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\ViolationSetting.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\RoomBookingDetailsResponse.java
@@ -120,7 +122,6 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ApprovalResponse.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysPermissionAlias.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\TerminalRepository.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\TerminalController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\user\dto\SearchUserCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\CancelBookingRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\OrganizationService.java
@@ -142,17 +143,17 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\SysUserController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\ApprovalConfig.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\SysUserServiceImpl.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\mqtt\config\MqttConfig.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\ContinuousBookingSettingController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysTitle.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BatchDeleteAdminRequest.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\config\MqttConfig.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\RemoteOperationLog.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\request\RemoteAccessRecordsRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysTitleRepository.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\DeviceNotificationService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\BookingPersonnelPermission.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\BookingTimeRuleController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysFileReferenceRepository.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\request\BookingTimeValidationRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SyncResult.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchPersonnelCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ApprovalHistoryResponse.java
@@ -184,10 +185,12 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchTerminalCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\RoomRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\TitleService.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\RoomBookingTimeServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\BookingPersonnelPermissionRoomRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\BookingTimeRuleServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BatchApprovalRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\util\UserStatusFixUtil.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\MqttService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\common\constant\PermissionConstants.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\LoginResponse.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\RoomBookingStatsResponse.java
@@ -245,7 +248,6 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\RoomBookingStatsRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysOrganizationRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysPositionRepository.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\mqtt\service\MqttSendService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ContinuousBookingSettingDto.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchContinuousBookingSettingCondition.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ClassroomAddVo.java
@@ -257,10 +259,12 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ImportResult.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\user\service\UserService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BookingTimeRuleDto.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\mqtt\MqttServiceEnum.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\SchemeManagementService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysPermissionRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\SearchTitleDTO.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\BookingTimeRuleService.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\mqtt\MqttCmd.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\FileUploadEnhancedService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\security\JwtUtil.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\RoomScheduleService.java
@@ -269,8 +273,8 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\security\CustomUserDetailsService.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\repository\SysPermissionAliasRepository.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\UserVo.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\BookingTimeConfigDTO.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ExportClassroomVo.java
-D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\mqtt\entity\MqttCmd.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\controller\PositionController.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\ApprovalListRequest.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\response\RemoteAccessRecordResponse.java
@@ -286,6 +290,7 @@ D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\prosh
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\PositionServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\TitleVo.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\dto\FileCheckResponse.java
+D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\MqttServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\impl\RoomScheduleServiceImpl.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\entity\SysFileEnhanced.java
 D:\code\Beijing-Language-and-Culture-University3\backend\src\main\java\com\proshine\system\service\RoomService.java
