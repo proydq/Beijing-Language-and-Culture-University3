@@ -297,14 +297,25 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
         
         if (currentWeekOpt.isPresent()) {
             SchoolCalendar2 currentWeek = currentWeekOpt.get();
-            // 获取同一学年学期的所有周
+            // 获取同一学年学期的所有周，按周次升序排列
             return schoolCalendar2Repository.findByCustomerIdAndXnAndXqOrderByWeek(
                 customerId, currentWeek.getXn(), currentWeek.getXq()
             );
         }
         
-        // 如果不在教学周内，获取最近的学期
-        return schoolCalendar2Repository.findByCustomerIdOrderByStartDateDesc(customerId);
+        // 如果不在教学周内，获取最近学年的所有教学周
+        // 先获取所有教学周，按开始日期降序
+        List<SchoolCalendar2> allWeeks = schoolCalendar2Repository.findByCustomerIdOrderByStartDateDesc(customerId);
+        if (!allWeeks.isEmpty()) {
+            // 获取最近的一个教学周（第一个元素）
+            SchoolCalendar2 latestWeek = allWeeks.get(0);
+            // 重新查询该学年学期的所有周，按周次升序排列
+            return schoolCalendar2Repository.findByCustomerIdAndXnAndXqOrderByWeek(
+                customerId, latestWeek.getXn(), latestWeek.getXq()
+            );
+        }
+        
+        return new ArrayList<>();
     }
     
     /**
@@ -431,8 +442,13 @@ public class RoomBookingTimeServiceImpl implements RoomBookingTimeService {
             return null;
         }
         
-        SchoolCalendar2 firstWeek = semesterWeeks.get(0);
-        SchoolCalendar2 lastWeek = semesterWeeks.get(semesterWeeks.size() - 1);
+        // 找到真正的第一周和最后一周（根据周数而不是列表位置）
+        SchoolCalendar2 firstWeek = semesterWeeks.stream()
+            .min(Comparator.comparing(SchoolCalendar2::getWeek))
+            .orElse(semesterWeeks.get(0));
+        SchoolCalendar2 lastWeek = semesterWeeks.stream()
+            .max(Comparator.comparing(SchoolCalendar2::getWeek))
+            .orElse(semesterWeeks.get(semesterWeeks.size() - 1));
         
         return BookingTimeConfigDTO.SemesterInfo.builder()
             .semesterName(firstWeek.getXn() + "学年" + (firstWeek.getXq() == 1 ? "上学期" : "下学期"))
