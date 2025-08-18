@@ -7,7 +7,7 @@ import request from '@/utils/request'
  */
 export function getBookingTimeConfig(roomId) {
   return request({
-    url: '/api/room-booking/booking-time-config',
+    url: '/room-booking/booking-time-config',
     method: 'get',
     params: {
       roomId
@@ -21,7 +21,7 @@ export function getBookingTimeConfig(roomId) {
  */
 export function getCurrentTimeInfo() {
   return request({
-    url: '/api/room-booking/current-time-info',
+    url: '/room-booking/current-time-info',
     method: 'get'
   })
 }
@@ -36,7 +36,7 @@ export function getCurrentTimeInfo() {
  */
 export function validateBookingTime(data) {
   return request({
-    url: '/api/room-booking/validate-booking-time',
+    url: '/room-booking/validate-booking-time',
     method: 'post',
     data
   })

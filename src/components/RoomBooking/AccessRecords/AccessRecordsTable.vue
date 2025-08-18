@@ -150,7 +150,7 @@
 import { ref, computed } from 'vue'
 import { 
   Clock, Refresh, Monitor, View,
-  CreditCard, Camera, Button as ButtonIcon
+  CreditCard, Camera, Mouse as ButtonIcon
 } from '@element-plus/icons-vue'
 
 // Props

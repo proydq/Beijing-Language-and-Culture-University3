@@ -26,7 +26,7 @@ import java.util.List;
  * @date 2024-01-01
  */
 @RestController
-@RequestMapping("/api/room")
+@RequestMapping("/room")
 @Slf4j
 public class RoomController {
 

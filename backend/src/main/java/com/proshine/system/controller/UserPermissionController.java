@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * 提供获取当前用户权限、角色等信息的接口
  */
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 @Slf4j
 public class UserPermissionController {
     

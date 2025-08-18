@@ -91,7 +91,7 @@ export function useUserManagement() {
   const fetchDepartments = async () => {
     departmentsLoading.value = true
     try {
-      const { code, message, data } = await request.get('/api/organization/all')
+      const { code, message, data } = await request.get('/organization/all')
       if (code === 200) {
         departments.value = data || []
       } else {
@@ -107,7 +107,7 @@ export function useUserManagement() {
   const fetchPositions = async () => {
     positionsLoading.value = true
     try {
-      const { code, message, data } = await request.get('/api/position/all')
+      const { code, message, data } = await request.get('/position/all')
       if (code === 200) {
         positions.value = data || []
       } else {
@@ -123,7 +123,7 @@ export function useUserManagement() {
   const fetchTitles = async () => {
     titlesLoading.value = true
     try {
-      const { code, message, data } = await request.get('/api/title/all')
+      const { code, message, data } = await request.get('/title/all')
       if (code === 200) {
         titles.value = data || []
       } else {
@@ -518,7 +518,7 @@ export function useUserManagement() {
       })
 
       // 调用后端删除接口
-      const res = await request.delete(`/api/user/${row.id}`)
+      const res = await request.delete(`/user/${row.id}`)
       if (res.code === 200) {
         ElMessage.success('删除成功')
         // 刷新用户列表

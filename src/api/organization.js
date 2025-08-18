@@ -5,7 +5,7 @@ import request from '@/utils/request'
  */
 export function getOrganizationOptions() {
   return request({
-    url: '/api/organization/all',
+    url: '/organization/all',
     method: 'get'
   })
 }
@@ -15,7 +15,7 @@ export function getOrganizationOptions() {
  */
 export function getOrganizationTree() {
   return request({
-    url: '/api/organization/tree',
+    url: '/organization/tree',
     method: 'get'
   })
 }
@@ -25,7 +25,7 @@ export function getOrganizationTree() {
  */
 export function getOrganizationById(id) {
   return request({
-    url: `/api/organization/${id}`,
+    url: `/organization/${id}`,
     method: 'get'
   })
 }
@@ -35,7 +35,7 @@ export function getOrganizationById(id) {
  */
 export function createOrganization(data) {
   return request({
-    url: '/api/organization',
+    url: '/organization',
     method: 'post',
     data
   })
@@ -46,7 +46,7 @@ export function createOrganization(data) {
  */
 export function updateOrganization(id, data) {
   return request({
-    url: `/api/organization/${id}`,
+    url: `/organization/${id}`,
     method: 'put',
     data
   })
@@ -57,7 +57,7 @@ export function updateOrganization(id, data) {
  */
 export function deleteOrganization(id) {
   return request({
-    url: `/api/organization/${id}`,
+    url: `/organization/${id}`,
     method: 'delete'
   })
 }

@@ -18,7 +18,7 @@ import java.util.List;
  * @date 2024-01-01
  */
 @RestController
-@RequestMapping("/api/room-booking")
+@RequestMapping("/room-booking")
 @Slf4j
 public class RoomBookingApprovalController {
 

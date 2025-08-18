@@ -29,7 +29,8 @@
       "Bash(mkdir:*)",
       "Bash(pip install:*)",
       "Bash(pkill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

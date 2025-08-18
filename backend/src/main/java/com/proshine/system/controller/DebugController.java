@@ -14,7 +14,7 @@ import java.util.List;
  * 调试控制器 - 用于检查权限数据
  */
 @RestController
-@RequestMapping("/api/debug")
+@RequestMapping("/debug")
 public class DebugController {
 
     @Autowired

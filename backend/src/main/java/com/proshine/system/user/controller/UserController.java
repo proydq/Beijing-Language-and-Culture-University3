@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletResponse;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/user")
 @Slf4j
 public class UserController {
 

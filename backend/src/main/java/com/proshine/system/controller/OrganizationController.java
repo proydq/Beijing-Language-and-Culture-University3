@@ -16,7 +16,7 @@ import java.util.List;
  * 组织机构控制器
  */
 @RestController
-@RequestMapping("/api/organization")
+@RequestMapping("/organization")
 @Slf4j
 public class OrganizationController {
 

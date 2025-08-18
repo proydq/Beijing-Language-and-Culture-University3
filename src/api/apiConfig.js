@@ -5,17 +5,15 @@
 
 // 后端控制器路径映射
 export const API_PATHS = {
-  // 带 /api 前缀的路径
-  ROOM: '/api/room',
-  ROOM_BOOKING: '/api/room-booking',
-  ROOM_SCHEDULE: '/api/room-schedule',
-  USER: '/api/user',
-  ORGANIZATION: '/api/organization',
-  POSITION: '/api/position',
-  TITLE: '/api/title',
-  UPLOAD: '/api/upload',
-  
-  // 不带 /api 前缀的路径
+  // 所有路径统一不带 /api 前缀（会在 request.js 中自动添加）
+  ROOM: '/room',
+  ROOM_BOOKING: '/room-booking',
+  ROOM_SCHEDULE: '/room-schedule',
+  USER: '/user',
+  ORGANIZATION: '/organization',
+  POSITION: '/position',
+  TITLE: '/title',
+  UPLOAD: '/upload',
   AUTHENTICATION: '/authentication',
   BLACKLIST: '/blacklist',
   VIOLATION_SETTINGS: '/violation-settings',

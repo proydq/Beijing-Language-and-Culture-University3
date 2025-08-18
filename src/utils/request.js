@@ -10,6 +10,12 @@ const request = axios.create({
 
 request.interceptors.request.use(
   config => {
+    // 统一添加 /api 前缀
+    // 如果请求路径不是以 /api 开头，则添加 /api 前缀
+    if (config.url && !config.url.startsWith('/api')) {
+      config.url = `/api${config.url}`
+    }
+    
     const token = localStorage.getItem('userToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`

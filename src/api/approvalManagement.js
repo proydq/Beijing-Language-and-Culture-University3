@@ -14,7 +14,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const getPendingApprovals = (params) => {
-  return request.post('/api/room-booking/approvals/pending', params)
+  return request.post('/room-booking/approvals/pending', params)
 }
 
 /**
@@ -30,7 +30,7 @@ export const getPendingApprovals = (params) => {
  * @returns {Promise}
  */
 export const getAllApprovals = (params) => {
-  return request.post('/api/room-booking/approvals/all', params)
+  return request.post('/room-booking/approvals/all', params)
 }
 
 /**
@@ -45,12 +45,12 @@ export const getAllApprovals = (params) => {
  * @returns {Promise}
  */// 获取已通过审批列表
 export const getApprovedApprovals = (params) => {
-  return request.post('/api/room-booking/approvals/approved', params)
+  return request.post('/room-booking/approvals/approved', params)
 }
 
 // 获取已拒绝审批列表
 export const getRejectedApprovals = (params) => {
-  return request.post('/api/room-booking/approvals/rejected', params)
+  return request.post('/room-booking/approvals/rejected', params)
 }
 
 /**
@@ -62,7 +62,7 @@ export const getRejectedApprovals = (params) => {
  * @returns {Promise}
  */
 export const approveBooking = (bookingId, approvalData) => {
-  return request.post(`/api/room-booking/approve/${bookingId}`, approvalData)
+  return request.post(`/room-booking/approve/${bookingId}`, approvalData)
 }
 
 /**
@@ -71,7 +71,7 @@ export const approveBooking = (bookingId, approvalData) => {
  * @returns {Promise}
  */
 export const getBookingDetail = (bookingId) => {
-  return request.get(`/api/room-booking/detail/${bookingId}`)
+  return request.get(`/room-booking/detail/${bookingId}`)
 }
 
 /**
@@ -80,7 +80,7 @@ export const getBookingDetail = (bookingId) => {
  * @returns {Promise}
  */
 export const getApprovalHistory = (bookingId) => {
-  return request.get(`/api/room-booking/approval-history/${bookingId}`)
+  return request.get(`/room-booking/approval-history/${bookingId}`)
 }
 
 /**
@@ -92,7 +92,7 @@ export const getApprovalHistory = (bookingId) => {
  * @returns {Promise}
  */
 export const batchApprove = (batchData) => {
-  return request.post('/api/room-booking/batch-approve', batchData)
+  return request.post('/room-booking/batch-approve', batchData)
 }
 
 // ==================== 常量定义 ====================

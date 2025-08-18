@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { API_PATHS } from './apiConfig'
 
 /**
  * 分页查询房间列表
@@ -6,7 +7,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const searchRooms = (condition) => {
-  return request.post('/api/room/search', condition)
+  return request.post(`${API_PATHS.ROOM}/search`, condition)
 }
 
 /**
@@ -15,7 +16,7 @@ export const searchRooms = (condition) => {
  * @returns {Promise}
  */
 export const getRoomById = (id) => {
-  return request.get(`/api/room/${id}`)
+  return request.get(`${API_PATHS.ROOM}/${id}`)
 }
 
 /**
@@ -24,7 +25,7 @@ export const getRoomById = (id) => {
  * @returns {Promise}
  */
 export const addRoom = (roomData) => {
-  return request.post('/api/room', roomData)
+  return request.post(API_PATHS.ROOM, roomData)
 }
 
 /**
@@ -34,7 +35,7 @@ export const addRoom = (roomData) => {
  * @returns {Promise}
  */
 export const updateRoom = (id, roomData) => {
-  return request.put(`/api/room/${id}`, roomData)
+  return request.put(`${API_PATHS.ROOM}/${id}`, roomData)
 }
 
 /**
@@ -43,7 +44,7 @@ export const updateRoom = (id, roomData) => {
  * @returns {Promise}
  */
 export const deleteRoom = (id) => {
-  return request.delete(`/api/room/${id}`)
+  return request.delete(`${API_PATHS.ROOM}/${id}`)
 }
 
 /**
@@ -52,7 +53,7 @@ export const deleteRoom = (id) => {
  * @returns {Promise}
  */
 export const batchDeleteRooms = (ids) => {
-  return request.delete('/api/room/batch', { data: ids })
+  return request.delete(`${API_PATHS.ROOM}/batch`, { data: ids })
 }
 
 /**
@@ -60,7 +61,7 @@ export const batchDeleteRooms = (ids) => {
  * @returns {Promise}
  */
 export const getRoomTypes = () => {
-  return request.get('/api/room/types')
+  return request.get(`${API_PATHS.ROOM}/types`)
 }
 
 /**
@@ -75,7 +76,7 @@ export const checkRoomUniqueness = (roomName, roomNo, excludeId = null) => {
   if (excludeId) {
     params.excludeId = excludeId
   }
-  return request.get('/api/room/check-uniqueness', { params })
+  return request.get(`${API_PATHS.ROOM}/check-uniqueness`, { params })
 }
 
 /**
@@ -84,7 +85,7 @@ export const checkRoomUniqueness = (roomName, roomNo, excludeId = null) => {
  * @returns {Promise}
  */
 export const importRooms = (formData) => {
-  return request.post('/api/room/import', formData, {
+  return request.post(`${API_PATHS.ROOM}/import`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -97,7 +98,7 @@ export const importRooms = (formData) => {
  * @returns {Promise}
  */
 export const exportRooms = (condition) => {
-  return request.post('/api/room/export', condition, {
+  return request.post(`${API_PATHS.ROOM}/export`, condition, {
     responseType: 'blob'
   })
 }

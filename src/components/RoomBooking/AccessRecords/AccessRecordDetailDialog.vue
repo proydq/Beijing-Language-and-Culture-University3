@@ -178,7 +178,7 @@ import { computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
   InfoFilled, House, User, Key, Calendar, Warning, Printer,
-  CreditCard, Camera, Button as ButtonIcon
+  CreditCard, Camera, Mouse as ButtonIcon
 } from '@element-plus/icons-vue'
 
 // Props

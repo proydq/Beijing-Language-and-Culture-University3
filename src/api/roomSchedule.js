@@ -7,7 +7,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const getSchoolWeeks = () => {
-  return request.get('/api/room-schedule/weeks')
+  return request.get('/room-schedule/weeks')
 }
 
 /**
@@ -18,5 +18,5 @@ export const getSchoolWeeks = () => {
  * @returns {Promise}
  */
 export const getRoomWeeklySchedule = (params) => {
-  return request.post('/api/room-schedule/week-detail', params)
+  return request.post('/room-schedule/week-detail', params)
 }

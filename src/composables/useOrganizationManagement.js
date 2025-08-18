@@ -20,7 +20,7 @@ export function useOrganizationManagement() {
   const fetchDepartmentOptions = async () => {
     departmentLoading.value = true
     try {
-      const { code, message, data } = await request.get('/api/organization/all')
+      const { code, message, data } = await request.get('/organization/all')
       if (code === 200) {
         departmentOptions.value = data || []
       } else {
@@ -101,7 +101,7 @@ export function useOrganizationManagement() {
   // ====================== 后端请求 ======================
   const fetchOrganizationTree = async () => {
     try {
-      const { code, message, data } = await request.get('/api/organization/tree')
+      const { code, message, data } = await request.get('/organization/tree')
       if (code === 200) {
         orgTreeData.value = data || []
       } else {
@@ -114,7 +114,7 @@ export function useOrganizationManagement() {
 
   const loadOrganizationDetail = async (id) => {
     try {
-      const { code, message, data } = await request.get(`/api/organization/${id}`)
+      const { code, message, data } = await request.get(`/organization/${id}`)
       if (code === 200) {
         Object.assign(orgFormData, {
           name: data.name || '',
@@ -139,7 +139,7 @@ export function useOrganizationManagement() {
 
   const createOrganization = async () => {
     try {
-      const { code, message } = await request.post('/api/organization', orgDialogFormData)
+      const { code, message } = await request.post('/organization', orgDialogFormData)
       if (code === 200) {
         ElMessage.success('新增成功')
         handleOrgDialogClose()
@@ -155,7 +155,7 @@ export function useOrganizationManagement() {
   const updateOrganization = async () => {
     try {
       const id = selectedOrgNode.value?.id
-      const { code, message } = await request.put(`/api/organization/${id}`, orgDialogFormData)
+      const { code, message } = await request.put(`/organization/${id}`, orgDialogFormData)
       if (code === 200) {
         ElMessage.success('编辑成功')
         handleOrgDialogClose()
@@ -173,7 +173,7 @@ export function useOrganizationManagement() {
 
   const deleteOrganization = async (id) => {
     try {
-      const { code, message } = await request.delete(`/api/organization/${id}`)
+      const { code, message } = await request.delete(`/organization/${id}`)
       if (code === 200) {
         ElMessage.success('删除成功')
         fetchOrganizationTree()

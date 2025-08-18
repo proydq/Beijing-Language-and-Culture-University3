@@ -22,7 +22,7 @@ import java.security.Principal;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/upload/v2")
+@RequestMapping("/upload/v2")
 public class FileUploadEnhancedController {
     
     @Autowired

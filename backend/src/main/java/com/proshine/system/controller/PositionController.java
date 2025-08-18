@@ -19,7 +19,7 @@ import java.util.List;
  * Position controller.
  */
 @RestController
-@RequestMapping("/api/position")
+@RequestMapping("/position")
 @Slf4j
 public class PositionController {
 

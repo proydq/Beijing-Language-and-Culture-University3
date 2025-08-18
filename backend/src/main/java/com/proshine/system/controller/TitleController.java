@@ -20,7 +20,7 @@ import java.util.List;
  * Title controller.
  */
 @RestController
-@RequestMapping("/api/title")
+@RequestMapping("/title")
 @Slf4j
 public class TitleController {
 

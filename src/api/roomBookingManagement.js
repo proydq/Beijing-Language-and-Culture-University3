@@ -15,7 +15,7 @@ import request from '@/utils/request'
  * @returns {Promise}
  */
 export const getMyBookings = (params) => {
-  return request.post('/api/room-booking/my-bookings', params)
+  return request.post('/room-booking/my-bookings', params)
 }
 
 /**
@@ -32,7 +32,7 @@ export const getMyBookings = (params) => {
  * @returns {Promise}
  */
 export const getAllBookings = (params) => {
-  return request.post('/api/room-booking/all-bookings', params)
+  return request.post('/room-booking/all-bookings', params)
 }
 
 /**
@@ -44,7 +44,7 @@ export const getAllBookings = (params) => {
  * @returns {Promise}
  */
 export const getAvailableRooms = (params) => {
-  return request.post('/api/room-booking/rooms/available', params)
+  return request.post('/room-booking/rooms/available', params)
 }
 
 /**
@@ -72,7 +72,7 @@ export const getAvailableRooms = (params) => {
  * @returns {Promise}
  */
 export const createBooking = (bookingData) => {
-  return request.post('/api/room-booking/create', bookingData)
+  return request.post('/room-booking/create', bookingData)
 }
 
 /**
@@ -131,7 +131,7 @@ export const cancelBooking = (id, cancelData) => {
  * @returns {Promise}
  */
 export const checkRoomAvailability = (checkData) => {
-  return request.post('/api/room-booking/check-availability', checkData)
+  return request.post('/room-booking/check-availability', checkData)
 }
 
 // ==================== 统计接口 ====================
@@ -146,7 +146,7 @@ export const getBookingStats = (startTime, endTime) => {
   const params = {}
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
-  return request.get('/api/room-booking/stats', { params })
+  return request.get('/room-booking/stats', { params })
 }
 
 /**
@@ -159,7 +159,7 @@ export const getBookingDistribution = (startTime, endTime) => {
   const params = {}
   if (startTime) params.startTime = startTime
   if (endTime) params.endTime = endTime
-  return request.get('/api/room-booking/distribution', { params })
+  return request.get('/room-booking/distribution', { params })
 }
 
 /**
@@ -168,7 +168,7 @@ export const getBookingDistribution = (startTime, endTime) => {
  * @returns {Promise}
  */
 export const getBookingTrend = (days = 7) => {
-  return request.get('/api/room-booking/trend', {
+  return request.get('/room-booking/trend', {
     params: { days }
   })
 }
@@ -180,7 +180,7 @@ export const getBookingTrend = (days = 7) => {
  * @returns {Promise}
  */
 export const getBookingTrendCustom = (startTime, endTime) => {
-  return request.get('/api/room-booking/trend/custom', {
+  return request.get('/room-booking/trend/custom', {
     params: { startTime, endTime }
   })
 }
@@ -197,7 +197,7 @@ export const getBookingTrendCustom = (startTime, endTime) => {
  * @returns {Promise}
  */
 export const getRoomBookingStats = (params) => {
-  return request.post('/api/room-booking/access-records/booking-stats', params)
+  return request.post('/room-booking/access-records/booking-stats', params)
 }
 
 /**
@@ -250,7 +250,7 @@ export const exportRoomBookingDetails = (roomId, params) => {
  * @returns {Promise}
  */
 export const exportRoomBookingStats = (params) => {
-  return request.post('/api/room-booking/access-records/booking-stats/export', params)
+  return request.post('/room-booking/access-records/booking-stats/export', params)
 }
 
 // ==================== 教室借用记录相关接口 ====================
@@ -270,7 +270,7 @@ export const exportRoomBookingStats = (params) => {
  * @returns {Promise}
  */
 export const getAccessRecords = (params) => {
-  return request.post('/api/room-booking/access-records', params)
+  return request.post('/room-booking/access-records', params)
 }
 
 /**
@@ -289,7 +289,7 @@ export const getAccessRecords = (params) => {
  * @returns {Promise}
  */
 export const exportAccessRecords = (params) => {
-  return request.post('/api/room-booking/access-records/export', params)
+  return request.post('/room-booking/access-records/export', params)
 }
 
 /**
@@ -301,7 +301,7 @@ export const exportAccessRecords = (params) => {
  * @returns {Promise}
  */
 export const getAccessStats = (params = {}) => {
-  return request.get('/api/room-booking/access-records/stats', { params })
+  return request.get('/room-booking/access-records/stats', { params })
 }
 
 /**
@@ -311,7 +311,7 @@ export const getAccessStats = (params = {}) => {
  */
 export const getRoomStatus = (areaId) => {
   const params = areaId ? { areaId } : {}
-  return request.get('/api/room-booking/access-records/room-status', { params })
+  return request.get('/room-booking/access-records/room-status', { params })
 }
 
 // ==================== 常量定义 ====================

@@ -21,7 +21,7 @@ import javax.validation.Valid;
  * @author proshine
  */
 @RestController
-@RequestMapping("/api/room-schedule")
+@RequestMapping("/room-schedule")
 @CrossOrigin(origins = "*")
 public class RoomScheduleController {
 

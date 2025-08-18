@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/room-booking")
+@RequestMapping("/room-booking")
 public class RoomBookingTimeController {
     
     @Autowired

@@ -3,25 +3,14 @@ package com.proshine.system.controller;
 import com.proshine.common.response.ResponseEntity;
 import com.proshine.common.response.ResponsePageDataEntity;
 import com.proshine.system.dto.*;
-import com.proshine.system.dto.request.AccessRecordsRequest;
-import com.proshine.system.dto.request.ExportAccessRecordsRequest;
-import com.proshine.system.dto.request.RemoteAccessRecordsRequest;
-import com.proshine.system.dto.request.RemoteOpenDoorRequest;
-import com.proshine.system.dto.request.OperationLogsRequest;
-import com.proshine.system.dto.response.AccessRecordResponse;
-import com.proshine.system.dto.response.AccessStatsResponse;
-import com.proshine.system.dto.response.ExportResponse;
-import com.proshine.system.dto.response.RoomStatusResponse;
-import com.proshine.system.dto.response.RemoteAccessRecordResponse;
-import com.proshine.system.dto.response.RemoteAccessStatsResponse;
-import com.proshine.system.dto.response.RemoteOpenDoorResponse;
+import com.proshine.system.dto.request.*;
+import com.proshine.system.dto.response.*;
 import com.proshine.system.entity.RemoteOperationLog;
 import com.proshine.system.service.RoomBookingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -34,7 +23,7 @@ import java.util.List;
  * @date 2024-01-01
  */
 @RestController
-@RequestMapping("/api/room-booking")
+@RequestMapping("/room-booking")
 @Slf4j
 public class RoomBookingController {
 
