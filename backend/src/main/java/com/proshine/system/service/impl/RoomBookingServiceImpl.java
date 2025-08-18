@@ -726,7 +726,7 @@ public class RoomBookingServiceImpl implements RoomBookingService {
         booking.setRoomName(request.getRoomName());
         booking.setApplicantId(userId);
         booking.setApplicantName(request.getApplicant());
-        booking.setApplicantType(request.getApplicantType());
+        booking.setApplicantType(getUserTypeFromDatabase(userId));
         booking.setApplicantPhone(request.getApplicantPhone());
         booking.setApplicantDepartment(request.getApplicantDepartment());
         booking.setBookingStartTime(request.getBookingStartTime());
@@ -3037,5 +3037,21 @@ public class RoomBookingServiceImpl implements RoomBookingService {
             
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    /**
+     * 从数据库获取用户类型
+     */
+    private String getUserTypeFromDatabase(String userId) {
+        try {
+            Optional<SysUser> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                String userType = userOpt.get().getUserType();
+                return StringUtils.hasText(userType) ? userType : "教师"; // 默认为教师
+            }
+        } catch (Exception e) {
+            log.warn("获取用户类型失败，用户ID: {}", userId, e);
+        }
+        return "教师"; // 默认值
     }
 }

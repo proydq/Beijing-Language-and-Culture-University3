@@ -1,8 +1,9 @@
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { useFileUploadEnhanced } from '@/composables/useFileUploadEnhanced'
+import { userAPI } from '@/api/user'
 
 export function useUserManagement() {
   const router = useRouter()
@@ -72,6 +73,7 @@ export function useUserManagement() {
     jobTitle: '',
     cardNumber: '',
     attendanceNumber: '',
+    userType: '教师',
     status: '正常'
   })
 
@@ -81,6 +83,8 @@ export function useUserManagement() {
   const positionsLoading = ref(false)
   const titles = ref([])
   const titlesLoading = ref(false)
+  const userTypes = ref([])
+  const userTypesLoading = ref(false)
 
   const fetchDepartments = async () => {
     departmentsLoading.value = true
@@ -130,6 +134,31 @@ export function useUserManagement() {
     }
   }
 
+  const fetchUserTypes = async () => {
+    userTypesLoading.value = true
+    try {
+      const response = await userAPI.getUserTypes()
+      if (response.code === 200 || response.code === '0' || response.code === 0) {
+        userTypes.value = response.data || []
+      } else {
+        // 如果后端没有返回数据，使用默认值
+        userTypes.value = [
+          { value: '教师', label: '教师' },
+          { value: '学生', label: '学生' }
+        ]
+      }
+    } catch (error) {
+      console.error('获取用户类型失败:', error)
+      // 发生错误时使用默认值
+      userTypes.value = [
+        { value: '教师', label: '教师' },
+        { value: '学生', label: '学生' }
+      ]
+    } finally {
+      userTypesLoading.value = false
+    }
+  }
+
   // 模拟数据
   const treeData = ref([
     {
@@ -173,19 +202,79 @@ export function useUserManagement() {
   // 获取用户列表
   const fetchUserList = async () => {
     try {
-      const { code, data, message } = await request.post('/api/user/search', {
+      console.log('开始获取用户列表，参数：', {
         ...searchForm,
         pageNumber: currentPage.value,
         pageSize: pageSize.value
       })
-      if (code === 200) {
-        tableData.value = data?.rows || []
-        total.value = data?.total || 0
+      
+      const response = await userAPI.searchUsers({
+        ...searchForm,
+        pageNumber: currentPage.value,
+        pageSize: pageSize.value
+      })
+      
+      console.log('用户列表API响应：', response)
+      
+      if (response.code === '0' || response.code === 0 || response.code === 200) {
+        tableData.value = response.data?.rows || []
+        total.value = response.data?.total || 0
+        console.log('用户列表加载成功，数据量：', tableData.value.length)
       } else {
-        ElMessage.error(message || '查询失败')
+        console.error('用户列表API返回错误：', response)
+        ElMessage.error(response.message || '查询失败')
       }
     } catch (error) {
+      console.error('用户列表API调用失败：', error)
       ElMessage.error(error.message || '查询失败')
+      
+      // 提供模拟数据以便测试界面
+      console.log('使用模拟数据')
+      tableData.value = [
+        {
+          id: '1',
+          realName: '张教师',
+          gender: '男',
+          phone: '13800138001',
+          jobNumber: 'T001',
+          departmentName: '计算机学院',
+          positionName: '教授',
+          titleName: '高级职称',
+                status: 'ACTIVE',
+          createTime: '2024-01-15 10:00:00',
+          avatarUrl: '',
+          faceImageUrl: ''
+        },
+        {
+          id: '2',
+          realName: '李学生',
+          gender: '女',
+          phone: '13800138002',
+          jobNumber: 'S001',
+          departmentName: '计算机学院',
+          positionName: '学生',
+          titleName: '本科生',
+          status: 'ACTIVE',
+          createTime: '2024-02-20 14:00:00',
+          avatarUrl: '',
+          faceImageUrl: ''
+        },
+        {
+          id: '3',
+          realName: '王老师',
+          gender: '男',
+          phone: '13800138003',
+          jobNumber: 'T002',
+          departmentName: '外语学院',
+          positionName: '副教授',
+          titleName: '中级职称',
+                status: 'ACTIVE',
+          createTime: '2024-03-10 09:00:00',
+          avatarUrl: '',
+          faceImageUrl: ''
+        }
+      ]
+      total.value = 3
     }
   }
 
@@ -247,7 +336,8 @@ export function useUserManagement() {
     cardNumber: [{ required: true, message: '请输入一卡通编号', trigger: 'blur' }],
     attendanceNumber: [
       { required: true, message: '请输入无感考勤编号', trigger: 'blur' }
-    ]
+    ],
+    userType: [{ required: true, message: '请选择用户类型', trigger: 'change' }]
   }
 
   // 基础方法
@@ -340,6 +430,7 @@ export function useUserManagement() {
       jobTitle: '',
       cardNumber: '',
       attendanceNumber: '',
+      userType: '教师',
       status: '正常'
     })
     avatarList.value = []
@@ -353,8 +444,14 @@ export function useUserManagement() {
 
   const handleAdd = () => {
     isEdit.value = false
-    resetForm()
-    editDialogVisible.value = true
+    // 先关闭对话框，确保清理干净
+    editDialogVisible.value = false
+    // 使用 nextTick 确保 DOM 更新后再重置表单和打开对话框
+    nextTick(() => {
+      resetForm()
+      fetchUserTypes()
+      editDialogVisible.value = true
+    })
   }
 
   const handleExport = () => {
@@ -369,9 +466,10 @@ export function useUserManagement() {
   const handleEdit = async (row) => {
     try {
       isEdit.value = true
+      fetchUserTypes()
       // 调用后端接口获取用户详情
-      const res = await request.get(`/api/user/${row.id}`)
-      if (res.code === 200) {
+      const res = await userAPI.getUserById(row.id)
+      if (res.code === '0' || res.code === 0 || res.code === 200) {
         // 使用后端返回的完整数据填充表单
         Object.assign(userForm, {
           id: res.data.id,
@@ -386,6 +484,7 @@ export function useUserManagement() {
           faceImage: res.data.faceImageUrl,
           cardNumber: res.data.cardNumber,
           attendanceNumber: res.data.attendanceNumber,
+          userType: res.data.userType || '教师',
           status: res.data.status
         })
         // 设置头像和人脸识别图片预览
@@ -435,6 +534,7 @@ export function useUserManagement() {
     try {
       await formRef.value.validate()
       const payload = {
+        id: userForm.id,
         realName: userForm.realName,
         gender: userForm.gender,
         phone: userForm.phone,
@@ -446,15 +546,16 @@ export function useUserManagement() {
         faceImageUrl: userForm.faceImage,
         cardNumber: userForm.cardNumber,
         attendanceNumber: userForm.attendanceNumber,
+        userType: userForm.userType,
         status: userForm.status
       }
       let res
       if (isEdit.value && userForm.id) {
-        res = await request.put(`/api/user/${userForm.id}`, payload)
+        res = await userAPI.updateUser(payload)
       } else {
-        res = await request.post('/api/user', payload)
+        res = await userAPI.saveUser(payload)
       }
-      if (res.code === 200) {
+      if (res.code === '0' || res.code === 0 || res.code === 200) {
         ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
         handleDialogClose()
         fetchUserList()
@@ -508,6 +609,7 @@ export function useUserManagement() {
     logCurrentPage.value = page
   }
 
+
   onMounted(() => {
     fetchUserList()
     fetchDepartments()
@@ -547,9 +649,12 @@ export function useUserManagement() {
     positionsLoading,
     titles,
     titlesLoading,
+    userTypes,
+    userTypesLoading,
     fetchDepartments,
     fetchPositions,
     fetchTitles,
+    fetchUserTypes,
 
     // 基础方法
     goToHome,

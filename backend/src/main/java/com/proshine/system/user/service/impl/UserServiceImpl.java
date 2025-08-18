@@ -148,6 +148,10 @@ public class UserServiceImpl implements UserService {
         user.setDepartmentName(organizationRepository.findById(request.getDepartmentId()).get().getName());
         user.setStatus(SysUser.Status.ACTIVE);
         user.setDeleted(false);
+        // 如果没有设置用户类型，则默认为教师
+        if (!StringUtils.hasText(user.getUserType())) {
+            user.setUserType("教师");
+        }
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
         user.setCustomerId(GlobalEnum.DEFAULT_CUSTOMER_ID);
@@ -194,6 +198,9 @@ public class UserServiceImpl implements UserService {
         }
         if (StringUtils.hasText(request.getAttendanceNumber())) {
             user.setAttendanceNumber(request.getAttendanceNumber());
+        }
+        if (StringUtils.hasText(request.getUserType())) {
+            user.setUserType(request.getUserType());
         }
         user.setUpdateTime(LocalDateTime.now());
         SysUser updated = userRepository.save(user);

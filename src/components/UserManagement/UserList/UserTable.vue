@@ -45,11 +45,19 @@
       <el-table-column prop="jobNumber" label="工号" width="120" />
       <el-table-column prop="position" label="职务" width="120" />
       <el-table-column prop="jobTitle" label="职称" width="120" />
+      <el-table-column prop="userType" label="用户类型" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.userType === '教师' ? 'primary' : 'success'">
+            {{ row.userType || '教师' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="createTime" label="账号添加时间" width="160" />
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button type="text" size="small" @click="handleView(row)">查看</el-button>
           <el-button type="text" size="small" @click="handleEdit(row)">编辑</el-button>
+          <el-button type="text" size="small" @click="handleEditUserType(row)">类型</el-button>
           <el-button
             type="text"
             size="small"
@@ -106,6 +114,7 @@ export default {
     'export',
     'view',
     'edit',
+    'edit-user-type',
     'delete',
     'size-change',
     'current-change'
@@ -138,6 +147,10 @@ export default {
       emit('edit', row)
     }
 
+    const handleEditUserType = (row) => {
+      emit('edit-user-type', row)
+    }
+
     const handleDelete = (row) => {
       emit('delete', row)
     }
@@ -161,6 +174,7 @@ export default {
       handleExport,
       handleView,
       handleEdit,
+      handleEditUserType,
       handleDelete,
       handleSizeChange,
       handleCurrentChange

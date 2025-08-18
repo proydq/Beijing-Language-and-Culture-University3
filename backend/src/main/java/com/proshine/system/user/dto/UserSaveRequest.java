@@ -18,4 +18,5 @@ public class UserSaveRequest {
     private String faceImageUrl;
     private String cardNumber;
     private String attendanceNumber;
+    private String userType;
 }

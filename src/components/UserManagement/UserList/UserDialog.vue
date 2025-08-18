@@ -15,6 +15,7 @@
         <el-descriptions-item label="所属部门">{{ currentUser.department }}</el-descriptions-item>
         <el-descriptions-item label="职务">{{ currentUser.position }}</el-descriptions-item>
         <el-descriptions-item label="职称">{{ currentUser.jobTitle }}</el-descriptions-item>
+        <el-descriptions-item label="用户类型">{{ currentUser.userType || '教师' }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ currentUser.createTime }}</el-descriptions-item>
       </el-descriptions>
     </div>
@@ -202,6 +203,26 @@
           </el-form-item>
         </el-col>
       </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="用户类型" prop="userType">
+            <el-select
+              v-model="userForm.userType"
+              placeholder="请选择用户类型"
+              style="width: 100%"
+              :loading="userTypeLoading"
+            >
+              <el-option
+                v-for="item in userTypes"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
@@ -220,6 +241,7 @@ import { useOrganizationManagement } from '@/composables/useOrganizationManageme
 import { usePositionManagement } from '@/composables/usePositionManagement.js'
 import { useTitleManagement } from '@/composables/useTitleManagement.js'
 import { useFileUploadEnhanced } from '@/composables/useFileUploadEnhanced'
+import { userAPI } from '@/api/user'
 
 const props = defineProps({
   detailDialogVisible: { type: Boolean, default: false },
@@ -234,6 +256,8 @@ const formRef = ref()
 const loading = ref(false)
 const avatarList = ref([])
 const faceList = ref([])
+const userTypes = ref([])
+const userTypeLoading = ref(false)
 
 // 初始化增强文件上传
 const avatarUpload = useFileUploadEnhanced({
@@ -286,7 +310,8 @@ const userForm = reactive({
   position: '',
   jobTitle: '',
   cardNumber: '',
-  attendanceNumber: ''
+  attendanceNumber: '',
+  userType: '教师'
 })
 
 
@@ -304,13 +329,29 @@ const formRules = {
   position: [{ required: true, message: '请选择职务', trigger: 'change' }],
   jobTitle: [{ required: true, message: '请选择职称', trigger: 'change' }],
   cardNumber: [{ required: true, message: '请输入一卡通编号', trigger: 'blur' }],
-  attendanceNumber: [{ required: true, message: '请输入无感考勤编号', trigger: 'blur' }]
+  attendanceNumber: [{ required: true, message: '请输入无感考勤编号', trigger: 'blur' }],
+  userType: [{ required: true, message: '请选择用户类型', trigger: 'change' }]
+}
+
+// 获取用户类型选项
+const fetchUserTypes = async () => {
+  try {
+    userTypeLoading.value = true
+    const response = await userAPI.getUserTypes()
+    userTypes.value = response.data || []
+  } catch (error) {
+    console.error('获取用户类型失败:', error)
+    ElMessage.error('获取用户类型失败')
+  } finally {
+    userTypeLoading.value = false
+  }
 }
 
 watch(
   () => props.editDialogVisible,
   val => {
     if (val) {
+      fetchUserTypes()
       if (props.isEdit && props.currentUser) {
         Object.assign(userForm, props.currentUser)
         avatarList.value = userForm.avatar ? [{ url: userForm.avatar }] : []
@@ -323,7 +364,13 @@ watch(
 )
 
 const resetForm = () => {
-  Object.keys(userForm).forEach(k => (userForm[k] = ''))
+  Object.keys(userForm).forEach(k => {
+    if (k === 'userType') {
+      userForm[k] = '教师'
+    } else {
+      userForm[k] = ''
+    }
+  })
   avatarList.value = []
   faceList.value = []
   formRef.value?.resetFields()

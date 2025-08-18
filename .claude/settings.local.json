@@ -28,7 +28,8 @@
       "Bash(powershell:*)",
       "Bash(mkdir:*)",
       "Bash(pip install:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

@@ -127,6 +127,14 @@ export const userAPI = {
    */
   getAllTitles() {
     return request.get(`${API_PATHS.TITLE}/all`)
+  },
+
+  /**
+   * 获取用户类型列表
+   * @returns {Promise}
+   */
+  getUserTypes() {
+    return request.get(`${API_PATHS.SYSTEM_USER}/userTypes`)
   }
 }
 

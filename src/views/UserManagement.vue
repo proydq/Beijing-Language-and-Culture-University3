@@ -546,6 +546,7 @@
       v-model="editDialogVisible"
       :title="isEdit ? '编辑用户' : '新增用户'"
       width="700px"
+      destroy-on-close
       @close="handleDialogClose"
     >
       <el-form ref="formRef" :model="userForm" :rules="formRules" label-width="90px">
@@ -680,6 +681,23 @@
               <el-input v-model="userForm.attendanceNumber" placeholder="请输入无感考勤编号" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="用户类型" prop="userType">
+              <el-select 
+                v-model="userForm.userType" 
+                placeholder="请选择用户类型"
+                style="width: 100%"
+                :loading="userTypesLoading"
+              >
+                <el-option
+                  v-for="item in userTypes"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
 
@@ -795,6 +813,7 @@
         </div>
       </template>
     </el-dialog>
+
     <!-- 同步进度对话框 -->
     <el-dialog v-model="syncDialogVisible" title="同步进度" width="600px">
       <el-progress :percentage="syncProgress" :status="syncProgress < 100 ? 'active' : 'success'" />

@@ -44,6 +44,7 @@
         @export="handleExport"
         @view="handleView"
         @edit="handleEdit"
+        @edit-user-type="handleEditUserType"
         @delete="handleDelete"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -59,6 +60,14 @@
         @update:edit-dialog-visible="editDialogVisible = $event"
         @save-user="handleSaveUser"
       />
+
+      <!-- 用户类型编辑对话框 -->
+      <UserTypeDialog
+        :visible="userTypeDialogVisible"
+        :current-user="currentUser"
+        @update:visible="userTypeDialogVisible = $event"
+        @user-type-updated="handleUserTypeUpdated"
+      />
     </div>
   </div>
 </template>
@@ -70,6 +79,7 @@ import { Search } from '@element-plus/icons-vue'
 import UserSearchForm from './UserSearchForm.vue'
 import UserTable from './UserTable.vue'
 import UserDialog from './UserDialog.vue'
+import UserTypeDialog from './UserTypeDialog.vue'
 
 export default {
   name: 'UserListContent',
@@ -77,13 +87,15 @@ export default {
     Search,
     UserSearchForm,
     UserTable,
-    UserDialog
+    UserDialog,
+    UserTypeDialog
   },
   setup() {
     const searchKeyword = ref('')
     const currentUser = ref(null)
     const detailDialogVisible = ref(false)
     const editDialogVisible = ref(false)
+    const userTypeDialogVisible = ref(false)
     const isEdit = ref(false)
     const total = ref(100)
 
@@ -124,6 +136,7 @@ export default {
         department: '技术部',
         position: '前端工程师',
         jobTitle: '高级工程师',
+        userType: '教师',
         status: '正常',
         createTime: '2023-01-15 10:30:00'
       },
@@ -136,6 +149,7 @@ export default {
         department: '行政部',
         position: '人事专员',
         jobTitle: '中级专员',
+        userType: '学生',
         status: '正常',
         createTime: '2023-02-20 14:20:00'
       },
@@ -148,6 +162,7 @@ export default {
         department: '技术部',
         position: '后端工程师',
         jobTitle: '高级工程师',
+        userType: '教师',
         status: '禁用',
         createTime: '2023-03-10 09:15:00'
       }
@@ -196,6 +211,16 @@ export default {
       editDialogVisible.value = true
     }
 
+    const handleEditUserType = (row) => {
+      currentUser.value = row
+      userTypeDialogVisible.value = true
+    }
+
+    const handleUserTypeUpdated = () => {
+      ElMessage.success('用户类型更新成功')
+      // 这里可以重新加载用户列表
+    }
+
     const handleDelete = (row) => {
       ElMessageBox.confirm(`确定要删除用户"${row.realName}"吗？`, '确认删除', {
         confirmButtonText: '确定',
@@ -224,6 +249,7 @@ export default {
       currentUser,
       detailDialogVisible,
       editDialogVisible,
+      userTypeDialogVisible,
       isEdit,
       total,
       treeData,
@@ -237,6 +263,8 @@ export default {
       handleExport,
       handleView,
       handleEdit,
+      handleEditUserType,
+      handleUserTypeUpdated,
       handleDelete,
       handleSaveUser,
       handleSizeChange,

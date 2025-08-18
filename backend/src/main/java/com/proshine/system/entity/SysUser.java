@@ -103,6 +103,9 @@ public class SysUser {
     @Column(name = "wechat_bind_time", columnDefinition = "DATETIME COMMENT '微信绑定时间'")
     private LocalDateTime wechatBindTime;
     
+    @Column(name = "user_type", columnDefinition = "VARCHAR(10) DEFAULT '教师' COMMENT '用户类型：教师/学生'")
+    private String userType = "教师";
+    
     /**
      * 用户状态枚举
      */
@@ -119,5 +122,13 @@ public class SysUser {
     @PreUpdate
     protected void onUpdate() {
         updateTime = LocalDateTime.now();
+    }
+    
+    public String getUserType() {
+        return userType;
+    }
+    
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 }

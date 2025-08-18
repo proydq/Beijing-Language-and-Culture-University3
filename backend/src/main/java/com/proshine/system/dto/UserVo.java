@@ -29,6 +29,7 @@ public class UserVo {
     private String cardNumber;
     private String attendanceNumber;
     private SysUser.Status status;
+    private String userType;
     private String customerId;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

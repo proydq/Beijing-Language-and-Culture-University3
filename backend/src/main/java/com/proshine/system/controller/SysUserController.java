@@ -12,7 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 系统用户控制器
@@ -298,6 +302,68 @@ public class SysUserController {
             
         } catch (Exception e) {
             log.error("检查工号失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取用户类型选项列表
+     *
+     * @return 用户类型选项
+     */
+    @GetMapping("/userTypes")
+    @PreAuthorize("hasAuthority('system:user:view') or hasAuthority('system:user:manage')")
+    public ResponseEntity<List<Map<String, String>>> getUserTypes() {
+        try {
+            log.info("==========/system/user/userTypes=============");
+            
+            List<Map<String, String>> userTypes = Arrays.asList("教师", "学生")
+                .stream()
+                .map(type -> {
+                    Map<String, String> option = new HashMap<>();
+                    option.put("value", type);
+                    option.put("label", type);
+                    return option;
+                })
+                .collect(Collectors.toList());
+            
+            log.info("获取用户类型选项成功，共 {} 个", userTypes.size());
+            return ResponseEntity.success(userTypes);
+            
+        } catch (Exception e) {
+            log.error("获取用户类型选项失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新用户类型
+     *
+     * @param userId 用户ID
+     * @param userType 用户类型
+     * @return 更新结果
+     */
+    @PostMapping("/updateUserType")
+    @PreAuthorize("hasAuthority('system:user:update') or hasAuthority('system:user:manage')")
+    public ResponseEntity<Void> updateUserType(
+            @RequestParam String userId,
+            @RequestParam String userType) {
+        try {
+            log.info("==========/system/user/updateUserType=============");
+            log.info("更新用户类型：{}, 类型：{}", userId, userType);
+            
+            // 验证用户类型有效性
+            if (!"教师".equals(userType) && !"学生".equals(userType)) {
+                return ResponseEntity.fail("用户类型无效，只能是'教师'或'学生'");
+            }
+            
+            userService.updateUserType(userId, userType);
+            
+            log.info("用户 {} 类型更新成功", userId);
+            return ResponseEntity.success(null);
+            
+        } catch (Exception e) {
+            log.error("更新用户类型失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
     }

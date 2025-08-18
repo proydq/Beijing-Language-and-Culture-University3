@@ -99,4 +99,12 @@ public interface SysUserService {
      * @return 是否存在
      */
     boolean existsByJobNumber(String jobNumber, String customerId);
+    
+    /**
+     * 更新用户类型
+     *
+     * @param userId 用户ID
+     * @param userType 用户类型
+     */
+    void updateUserType(String userId, String userType);
 }

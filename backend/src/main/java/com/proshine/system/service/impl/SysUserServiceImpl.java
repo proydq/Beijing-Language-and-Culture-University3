@@ -278,6 +278,9 @@ public class SysUserServiceImpl implements SysUserService {
             if (user.getStatus() != null) {
                 existingUser.setStatus(user.getStatus());
             }
+            if (StringUtils.hasText(user.getUserType())) {
+                existingUser.setUserType(user.getUserType());
+            }
             
             existingUser.setUpdateTime(LocalDateTime.now());
             
@@ -460,5 +463,32 @@ public class SysUserServiceImpl implements SysUserService {
         userVo.setPermissions(permissions);
         
         return userVo;
+    }
+    
+    @Override
+    @Transactional
+    public void updateUserType(String userId, String userType) {
+        try {
+            log.info("更新用户类型：用户ID={}, 类型={}", userId, userType);
+            
+            String customerId = SecurityUtil.getCustomerId();
+            Optional<SysUser> userOpt = userRepository.findByIdAndCustomerIdAndDeletedFalse(userId, customerId);
+            
+            if (!userOpt.isPresent()) {
+                throw new RuntimeException("用户不存在或已删除：" + userId);
+            }
+            
+            SysUser user = userOpt.get();
+            user.setUserType(userType);
+            user.setUpdateTime(LocalDateTime.now());
+            
+            userRepository.save(user);
+            
+            log.info("用户类型更新成功：用户ID={}, 新类型={}", userId, userType);
+            
+        } catch (Exception e) {
+            log.error("更新用户类型失败：用户ID={}, 类型={}", userId, userType, e);
+            throw new RuntimeException("更新用户类型失败：" + e.getMessage());
+        }
     }
 }
