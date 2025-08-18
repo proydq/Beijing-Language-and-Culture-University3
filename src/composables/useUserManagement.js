@@ -4,9 +4,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { useFileUploadEnhanced } from '@/composables/useFileUploadEnhanced'
 import { userAPI } from '@/api/user'
+import { useUserStore } from '@/stores/user'
 
 export function useUserManagement() {
   const router = useRouter()
+  const userStore = useUserStore()
   
   // 初始化增强文件上传
   const avatarUpload = useFileUploadEnhanced({
@@ -350,7 +352,14 @@ export function useUserManagement() {
   }
 
   const logout = () => {
-    console.log('退出登录')
+    // 清除用户数据
+    userStore.clearUserData()
+    
+    // 显示退出成功提示
+    ElMessage.success('退出登录成功')
+    
+    // 跳转到登录页
+    router.push('/login')
   }
 
   const handleTreeNodeClick = (data) => {

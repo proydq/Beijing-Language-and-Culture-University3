@@ -7,7 +7,12 @@ export const useUserStore = defineStore('user', () => {
     id: '',
     username: '',
     realName: '',
-    customerId: ''
+    customerId: '',
+    avatarUrl: '',
+    phone: '',
+    email: '',
+    departmentName: '',
+    positionName: ''
   })
 
   // 用户token
@@ -87,7 +92,12 @@ export const useUserStore = defineStore('user', () => {
       id: userData.userId || userData.id || '',
       username: userData.username || '',
       realName: userData.realName || '',
-      customerId: userData.customerId || ''
+      customerId: userData.customerId || '',
+      avatarUrl: userData.avatarUrl || '',
+      phone: userData.phone || '',
+      email: userData.email || '',
+      departmentName: userData.departmentName || '',
+      positionName: userData.positionName || ''
     }
     permissions.value = userData.permissions || []
     permissionDetails.value = userData.permissionDetails || []
@@ -164,7 +174,12 @@ export const useUserStore = defineStore('user', () => {
       id: '',
       username: '',
       realName: '',
-      customerId: ''
+      customerId: '',
+      avatarUrl: '',
+      phone: '',
+      email: '',
+      departmentName: '',
+      positionName: ''
     }
     permissions.value = []
     permissionDetails.value = []

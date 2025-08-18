@@ -10,6 +10,7 @@ import com.proshine.system.service.SysUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -364,6 +365,64 @@ public class SysUserController {
             
         } catch (Exception e) {
             log.error("更新用户类型失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取当前登录用户详情
+     *
+     * @return 当前用户信息
+     */
+    @GetMapping("/current")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserVo> getCurrentUser() {
+        try {
+            log.info("==========/system/user/current=============");
+            
+            String userId = SecurityUtil.getCurrentUserId();
+            log.info("获取当前用户详情，用户ID：{}", userId);
+            
+            UserVo userVo = userService.findById(userId);
+            
+            log.info("获取当前用户详情成功：{}", userVo.getUsername());
+            return ResponseEntity.success(userVo);
+            
+        } catch (Exception e) {
+            log.error("获取当前用户详情失败：", e);
+            return ResponseEntity.fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * 修改当前用户密码
+     *
+     * @param changePasswordRequest 修改密码请求
+     * @return 修改结果
+     */
+    @PostMapping("/changePassword")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(@RequestBody Map<String, String> changePasswordRequest) {
+        try {
+            log.info("==========/system/user/changePassword=============");
+            
+            String userId = SecurityUtil.getCurrentUserId();
+            String currentPassword = changePasswordRequest.get("currentPassword");
+            String newPassword = changePasswordRequest.get("newPassword");
+            
+            log.info("用户修改密码：{}", userId);
+            
+            if (!StringUtils.hasText(currentPassword) || !StringUtils.hasText(newPassword)) {
+                return ResponseEntity.fail("当前密码和新密码不能为空");
+            }
+            
+            userService.changePassword(userId, currentPassword, newPassword);
+            
+            log.info("用户 {} 密码修改成功", userId);
+            return ResponseEntity.success(null);
+            
+        } catch (Exception e) {
+            log.error("修改密码失败：", e);
             return ResponseEntity.fail(e.getMessage());
         }
     }

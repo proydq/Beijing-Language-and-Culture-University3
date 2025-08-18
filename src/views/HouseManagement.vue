@@ -10,9 +10,17 @@
       </div>
       <div class="header-right">
         <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+          <el-avatar 
+            v-if="userStore.userInfo.avatarUrl" 
+            :src="userStore.userInfo.avatarUrl"
+            :size="32"
+            @error="handleAvatarError"
+          >
+            <el-icon v-if="avatarError" size="20"><user /></el-icon>
+          </el-avatar>
+          <el-icon v-else size="20"><user /></el-icon>
         </div>
-        <span class="username">系统管理员</span>
+        <span class="username">{{ userStore.displayName }}</span>
         <el-dropdown>
           <span class="dropdown-link">
             <el-icon><grid /></el-icon>
@@ -309,6 +317,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import { Search } from '@element-plus/icons-vue'
 import { hasPermission } from '@/utils/permission'
 import {
@@ -341,8 +350,15 @@ export default {
   name: 'HouseManagement',
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
+    const avatarError = ref(false)
     const activeTab = ref('house')
     const treeRef = ref()
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
     const formRef = ref()
     const roomFormRef = ref()
     const dialogVisible = ref(false)
@@ -454,7 +470,14 @@ export default {
     }
 
     const logout = () => {
-      console.log('退出登录')
+      // 清除用户数据
+      userStore.clearUserData()
+      
+      // 显示退出成功提示
+      ElMessage.success('退出登录成功')
+      
+      // 跳转到登录页
+      router.push('/login')
     }
 
     // 获取房屋类型标签类型
@@ -917,6 +940,9 @@ export default {
       currentRoomData,
       selectedNode,
       actionType,
+      userStore,
+      avatarError,
+      handleAvatarError,
       searchForm,
       roomForm,
       formData,

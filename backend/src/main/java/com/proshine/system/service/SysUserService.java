@@ -107,4 +107,13 @@ public interface SysUserService {
      * @param userType 用户类型
      */
     void updateUserType(String userId, String userType);
+    
+    /**
+     * 修改用户密码
+     *
+     * @param userId 用户ID
+     * @param currentPassword 当前密码
+     * @param newPassword 新密码
+     */
+    void changePassword(String userId, String currentPassword, String newPassword);
 }

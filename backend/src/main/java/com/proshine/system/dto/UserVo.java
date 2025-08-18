@@ -17,6 +17,7 @@ public class UserVo {
     private String realName;
     private String gender;
     private String phone;
+    private String email;
     private String jobNumber;
     private String departmentId;
     private String departmentName;

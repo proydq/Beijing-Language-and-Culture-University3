@@ -10,9 +10,17 @@
       </div>
       <div class="header-right">
         <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+          <el-avatar 
+            v-if="userStore.userInfo.avatarUrl" 
+            :src="userStore.userInfo.avatarUrl"
+            :size="32"
+            @error="handleAvatarError"
+          >
+            <el-icon v-if="avatarError" size="20"><user /></el-icon>
+          </el-avatar>
+          <el-icon v-else size="20"><user /></el-icon>
         </div>
-        <span class="username">系统管理员</span>
+        <span class="username">{{ userStore.displayName }}</span>
         <el-dropdown>
           <span class="dropdown-link">
             <el-icon><grid /></el-icon>
@@ -64,12 +72,18 @@
         <div v-if="activeMenu === 'profile'" class="profile-section">
           <div class="section-header">
             <h2>个人信息</h2>
-            <el-button type="primary" @click="toggleEdit">
+            <el-button type="primary" @click="toggleEdit" :disabled="loading">
               {{ editMode ? '取消编辑' : '编辑信息' }}
             </el-button>
           </div>
 
-          <div class="profile-content">
+          <!-- 加载状态 -->
+          <div v-if="loading" class="loading-section" style="text-align: center; padding: 40px;">
+            <el-icon class="is-loading" size="30"><loading /></el-icon>
+            <p style="margin-top: 10px; color: #666;">正在加载用户信息...</p>
+          </div>
+
+          <div v-else class="profile-content">
             <div class="avatar-section">
               <div class="avatar-upload">
                 <img :src="profileForm.avatar || '/default-avatar.png'" alt="头像" class="avatar-img" />
@@ -128,8 +142,10 @@
 
                 <!-- 编辑模式下的操作按钮 -->
                 <div v-if="editMode" class="form-actions">
-                  <el-button @click="cancelEdit">取消</el-button>
-                  <el-button type="primary" @click="saveProfile">保存</el-button>
+                  <el-button @click="cancelEdit" :disabled="loading">取消</el-button>
+                  <el-button type="primary" @click="saveProfile" :loading="loading">
+                    {{ loading ? '保存中...' : '保存' }}
+                  </el-button>
                 </div>
               </el-form>
             </div>
@@ -170,8 +186,10 @@
               </el-form-item>
               
               <div class="form-actions">
-                <el-button @click="resetPasswordForm">重置</el-button>
-                <el-button type="primary" @click="changePassword">修改密码</el-button>
+                <el-button @click="resetPasswordForm" :disabled="loading">重置</el-button>
+                <el-button type="primary" @click="changePassword" :loading="loading">
+                  {{ loading ? '修改中...' : '修改密码' }}
+                </el-button>
               </div>
             </el-form>
           </div>
@@ -270,30 +288,78 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { userAPI } from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 export default {
   name: 'PersonalCenter',
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
+    const avatarError = ref(false)
     const activeMenu = ref('profile')
     const editMode = ref(false)
     const profileFormRef = ref()
     const passwordFormRef = ref()
 
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
+
     // 个人信息表单
     const profileForm = reactive({
-      username: 'admin',
-      realName: '系统管理员',
-      email: 'admin@example.com',
-      phone: '13800138000',
-      department: '技术部',
-      position: '系统管理员',
-      bio: '负责系统的整体管理和维护工作',
+      username: '',
+      realName: '',
+      email: '',
+      phone: '',
+      department: '',
+      position: '',
+      bio: '',
       avatar: ''
     })
+
+    // 加载状态
+    const loading = ref(false)
+
+    // 从后端接口获取用户数据
+    const loadUserData = async () => {
+      try {
+        loading.value = true
+        console.log('开始获取个人中心用户数据...')
+        
+        // 调用后端接口获取当前用户详情
+        const response = await userAPI.getCurrentUser()
+        console.log('个人中心 API 响应:', response)
+        
+        if (response.code === 200 || response.code === '0' || response.code === 0) {
+          const userData = response.data
+          
+          // 更新表单数据
+          profileForm.username = userData.username || ''
+          profileForm.realName = userData.realName || ''
+          profileForm.email = userData.email || ''
+          profileForm.phone = userData.phone || ''
+          profileForm.department = userData.departmentName || ''
+          profileForm.position = userData.positionName || ''
+          profileForm.avatar = userData.avatarUrl || ''
+          profileForm.bio = userData.bio || '' // 如果后端有个人简介字段
+          
+          console.log('个人中心数据加载成功:', profileForm)
+        } else {
+          console.warn('获取用户数据失败:', response)
+          ElMessage.warning('获取用户信息失败，请刷新重试')
+        }
+      } catch (error) {
+        console.error('获取用户数据异常:', error)
+        ElMessage.error('获取用户信息失败')
+      } finally {
+        loading.value = false
+      }
+    }
 
     // 密码修改表单
     const passwordForm = reactive({
@@ -358,7 +424,14 @@ export default {
     }
 
     const logout = () => {
-      console.log('退出登录')
+      // 清除用户数据
+      userStore.clearUserData()
+      
+      // 显示退出成功提示
+      ElMessage.success('退出登录成功')
+      
+      // 跳转到登录页
+      router.push('/login')
     }
 
     // 菜单相关方法
@@ -392,11 +465,57 @@ export default {
     const saveProfile = async () => {
       try {
         await profileFormRef.value.validate()
-        // 保存个人信息
-        editMode.value = false
-        ElMessage.success('个人信息保存成功')
+        loading.value = true
+        
+        console.log('保存个人信息 - 表单数据:', profileForm)
+        console.log('当前用户ID:', userStore.userInfo.id)
+        
+        // 构建更新数据 - 只发送可编辑的字段
+        const updateData = {
+          realName: profileForm.realName,
+          email: profileForm.email,
+          phone: profileForm.phone,
+          bio: profileForm.bio,
+          // 注意：username 通常不允许修改，所以不包含在更新数据中
+        }
+        
+        const requestData = {
+          id: userStore.userInfo.id,
+          ...updateData
+        }
+        
+        console.log('发送给后端的数据:', requestData)
+        
+        // 调用后端接口更新用户信息
+        const response = await userAPI.updateUser(requestData)
+        
+        console.log('更新个人信息响应:', response)
+        
+        if (response.code === 200 || response.code === '0' || response.code === 0) {
+          // 更新成功后，重新获取最新数据
+          await loadUserData()
+          
+          // 同时更新 userStore 中的数据
+          userStore.setUserData({
+            ...userStore.userInfo,
+            ...updateData,
+            token: userStore.token,
+            permissions: userStore.permissions,
+            permissionDetails: userStore.permissionDetails,
+            roles: userStore.roles,
+            permissionTree: userStore.permissionTree
+          })
+          
+          editMode.value = false
+          ElMessage.success('个人信息保存成功')
+        } else {
+          ElMessage.error('保存失败：' + (response.message || '未知错误'))
+        }
       } catch (error) {
-        console.log('表单验证失败:', error)
+        console.error('保存个人信息失败:', error)
+        ElMessage.error('保存失败，请重试')
+      } finally {
+        loading.value = false
       }
     }
 
@@ -409,11 +528,46 @@ export default {
     const changePassword = async () => {
       try {
         await passwordFormRef.value.validate()
-        // 修改密码
-        resetPasswordForm()
-        ElMessage.success('密码修改成功')
+        loading.value = true
+        
+        console.log('开始修改密码...')
+        
+        // 构建密码修改请求数据
+        const passwordData = {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        }
+        
+        console.log('发送密码修改请求...')
+        
+        // 调用后端接口修改密码
+        const response = await userAPI.changePassword(passwordData)
+        
+        console.log('密码修改响应:', response)
+        
+        if (response.code === 200 || response.code === '0' || response.code === 0) {
+          resetPasswordForm()
+          ElMessage.success('密码修改成功，请重新登录')
+          
+          // 清除用户登录信息
+          userStore.clearUserData()
+          
+          // 延迟跳转到登录页，让用户看到提示信息
+          setTimeout(() => {
+            router.push('/login')
+          }, 1500)
+        } else {
+          ElMessage.error('修改失败：' + (response.message || '未知错误'))
+        }
       } catch (error) {
-        console.log('表单验证失败:', error)
+        console.error('修改密码失败:', error)
+        if (error.response && error.response.data && error.response.data.message) {
+          ElMessage.error('修改失败：' + error.response.data.message)
+        } else {
+          ElMessage.error('修改失败，请重试')
+        }
+      } finally {
+        loading.value = false
       }
     }
 
@@ -444,9 +598,15 @@ export default {
       ElMessage.success('设置已重置')
     }
 
+    // 页面加载时获取用户数据
+    onMounted(() => {
+      loadUserData()
+    })
+
     return {
       activeMenu,
       editMode,
+      loading,
       profileFormRef,
       passwordFormRef,
       profileForm,
@@ -454,6 +614,10 @@ export default {
       settingsForm,
       profileRules,
       passwordRules,
+      userStore,
+      avatarError,
+      handleAvatarError,
+      loadUserData,
       goToHome,  // 新增返回首页方法
       logout,
       setActiveMenu,

@@ -9,12 +9,35 @@
         <span class="title">首页</span>
       </div>
       <div class="header-right">
-        <div class="header-right">
-          <div class="avatar" @click="handleLogout" title="点击退出登录">
-            <el-icon size="20"><user /></el-icon>
+        <el-dropdown @command="handleUserDropdown">
+          <div class="user-info">
+            <div class="avatar">
+              <el-avatar 
+                v-if="userStore.userInfo.avatarUrl" 
+                :src="userStore.userInfo.avatarUrl"
+                :size="32"
+                @error="handleAvatarError"
+              >
+                <el-icon v-if="avatarError" size="20"><user /></el-icon>
+              </el-avatar>
+              <el-icon v-else size="20"><user /></el-icon>
+            </div>
+            <span class="username">{{ userStore.displayName }}</span>
+            <el-icon class="dropdown-arrow" size="12"><arrow-down /></el-icon>
           </div>
-        </div>
-        <span class="username">张三</span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">
+                <el-icon><user /></el-icon>
+                个人中心
+              </el-dropdown-item>
+              <el-dropdown-item command="logout" divided>
+                <el-icon><switch-button /></el-icon>
+                退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-dropdown>
           <span class="dropdown-link">
             中文
@@ -85,13 +108,20 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { addDynamicRoutes, clearDynamicRoutes } from '@/router/index'
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
+import { SwitchButton } from '@element-plus/icons-vue'
 
 export default {
   name: 'Dashboard',
   setup() {
     const router = useRouter()
     const userStore = useUserStore()
+    const avatarError = ref(false)
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
     
     // 检查用户是否有特定权限
     const hasPermission = (permissionCode) => {
@@ -315,9 +345,31 @@ export default {
       router.replace('/login')
     }
 
+    // 处理用户下拉菜单
+    const handleUserDropdown = (command) => {
+      switch (command) {
+        case 'profile':
+          goToPersonalCenter()
+          break
+        case 'logout':
+          handleLogout()
+          break
+      }
+    }
+
+    // 跳转到个人中心
+    const goToPersonalCenter = () => {
+      router.push('/personal-center')
+    }
+
     return {
       handleCardClick,
       handleLogout,
+      handleUserDropdown,
+      goToPersonalCenter,
+      handleAvatarError,
+      avatarError,
+      userStore,
       // 权限相关
       showUserManagement,
       showRoomManagement,
@@ -382,6 +434,20 @@ export default {
   gap: 15px;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.user-info:hover {
+  background: rgba(74, 144, 226, 0.1);
+}
+
 .avatar {
   width: 35px;
   height: 35px;
@@ -391,18 +457,22 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   transition: background-color 0.3s;
-}
-
-.avatar:hover {
-  background: #e0e0e0;
 }
 
 .username {
   font-size: 16px;
   font-weight: 500;
   color: #333;
+}
+
+.dropdown-arrow {
+  color: #999;
+  transition: transform 0.3s;
+}
+
+.user-info:hover .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
 .dropdown-link {

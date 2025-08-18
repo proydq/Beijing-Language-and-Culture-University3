@@ -20,6 +20,11 @@ public class LoginResponse {
     private String username;
     private String realName;
     private String customerId;
+    private String avatarUrl;
+    private String email;
+    private String phone;
+    private String departmentName;
+    private String positionName;
     
     /**
      * 用户权限编码列表（如：USER_ADD, USER_EDIT）

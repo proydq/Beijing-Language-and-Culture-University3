@@ -10,13 +10,27 @@
       </div>
       <div class="header-right">
         <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+          <el-avatar 
+            v-if="userStore.userInfo.avatarUrl" 
+            :src="userStore.userInfo.avatarUrl"
+            :size="32"
+            @error="handleAvatarError"
+          >
+            <el-icon v-if="avatarError" size="20"><user /></el-icon>
+          </el-avatar>
+          <el-icon v-else size="20"><user /></el-icon>
         </div>
-        <span class="username">系统管理员</span>
+        <span class="username">{{ userStore.displayName }}</span>
         <el-dropdown>
           <span class="dropdown-link">
             <el-icon><grid /></el-icon>
           </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="goToPersonalCenter">个人中心</el-dropdown-item>
+              <el-dropdown-item @click="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
         </el-dropdown>
       </div>
     </div>
@@ -296,6 +310,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 import { UserFilled, Document } from '@element-plus/icons-vue'
 import { searchPersonnel } from '@/api/schemeManagement'
 import { adminManagementAPI } from '@/api/adminManagement'
@@ -304,6 +319,13 @@ export default {
   name: 'AdminManagement',
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
+    const avatarError = ref(false)
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
     const activeTab = ref('admin')
     const adminFormRef = ref()
     const userTableRef = ref()
@@ -389,6 +411,21 @@ export default {
     // 返回首页
     const goToHome = () => {
       router.push('/dashboard')
+    }
+
+    const goToPersonalCenter = () => {
+      router.push('/personal-center')
+    }
+
+    const logout = () => {
+      // 清除用户数据
+      userStore.clearUserData()
+      
+      // 显示退出成功提示
+      ElMessage.success('退出登录成功')
+      
+      // 跳转到登录页
+      router.push('/login')
     }
 
     const goToRoleManagement = () => {
@@ -760,6 +797,9 @@ export default {
       isEditAdmin,
       searchForm,
       pagination,
+      userStore,
+      avatarError,
+      handleAvatarError,
       adminForm,
       adminRules,
       adminTableData,

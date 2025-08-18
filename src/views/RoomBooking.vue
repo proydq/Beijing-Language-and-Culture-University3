@@ -77,6 +77,8 @@ import { ref, onMounted, defineAsyncComponent } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import { useRoomBooking } from '@/composables/useRoomBooking'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 // 导入拆分后的组件
 import RoomBookingHeader from '@/components/RoomBooking/Layout/RoomBookingHeader.vue'
@@ -113,6 +115,9 @@ export default {
       getBookingTrend,
       getBookingTrendCustom
     } = useRoomBooking()
+    
+    const router = useRouter()
+    const userStore = useUserStore()
 
     // 主导航状态
     const activeMainTab = ref('dashboard')
@@ -353,11 +358,18 @@ export default {
 
     // 事件处理函数
     const handleProfile = () => {
-      ElMessage.info('跳转到个人中心')
+      router.push('/personal-center')
     }
 
     const handleLogout = () => {
-      ElMessage.info('退出登录')
+      // 清除用户数据
+      userStore.clearUserData()
+      
+      // 显示退出成功提示
+      ElMessage.success('退出登录成功')
+      
+      // 跳转到登录页
+      router.push('/login')
     }
 
     const handleTimeRangeChange = async (timeRange) => {

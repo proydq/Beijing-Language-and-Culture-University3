@@ -10,9 +10,23 @@
       </div>
       <div class="header-right">
         <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+          <el-avatar 
+            v-if="userStore.userInfo.avatarUrl" 
+            :src="userStore.userInfo.avatarUrl"
+            :size="32"
+            @error="handleAvatarError"
+          >
+            <el-icon v-if="avatarError" size="20"><user /></el-icon>
+          </el-avatar>
+          <el-icon v-else size="20"><user /></el-icon>
         </div>
-        <span class="username">系统管理员</span>
+        <span class="username">{{ userStore.displayName }}</span>
+        <!-- 调试信息 -->
+        <span style="display: none">
+          {{ console.log('displayName:', userStore.displayName) }}
+          {{ console.log('userInfo:', userStore.userInfo) }}
+          {{ console.log('avatarUrl:', userStore.userInfo.avatarUrl) }}
+        </span>
         <el-dropdown>
           <span class="dropdown-link">
             <el-icon><grid /></el-icon>
@@ -851,10 +865,14 @@
 
 <script>
 // 导入拆分后的逻辑
+import { ref, onMounted } from 'vue'
 import { useUserManagement } from '@/composables/useUserManagement.js'
 import { useOrganizationManagement } from '@/composables/useOrganizationManagement.js'
 import { usePositionManagement } from '@/composables/usePositionManagement.js'
 import { useTitleManagement } from '@/composables/useTitleManagement.js'
+import { useUserStore } from '@/stores/user'
+import { userAPI } from '@/api/user'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'UserManagement',
@@ -864,8 +882,73 @@ export default {
     const organizationManagement = useOrganizationManagement()
     const positionManagement = usePositionManagement()
     const titleManagement = useTitleManagement()
+    
+    // 用户store
+    const userStore = useUserStore()
+    
+    // 头像加载错误标志
+    const avatarError = ref(false)
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
+    
+    // 获取当前用户详情
+    const fetchCurrentUserInfo = async () => {
+      console.log('开始获取用户详情...')
+      console.log('用户登录状态:', userStore.isLoggedIn)
+      console.log('当前用户信息:', userStore.userInfo)
+      
+      if (userStore.isLoggedIn) {
+        try {
+          console.log('调用 getCurrentUser API...')
+          const res = await userAPI.getCurrentUser()
+          console.log('API 响应:', res)
+          
+          if (res.code === 200 || res.code === '0' || res.code === 0) {
+            console.log('更新前的用户信息:', userStore.userInfo)
+            
+            // 更新用户信息（保留原有的权限等信息）
+            const updatedData = {
+              ...res.data,
+              token: userStore.token,
+              permissions: userStore.permissions,
+              permissionDetails: userStore.permissionDetails,
+              roles: userStore.roles,
+              permissionTree: userStore.permissionTree
+            }
+            console.log('准备更新的数据:', updatedData)
+            
+            userStore.setUserData(updatedData)
+            console.log('更新后的用户信息:', userStore.userInfo)
+            
+            // 重置头像错误标志
+            avatarError.value = false
+          } else {
+            console.warn('API 返回非成功状态码:', res)
+          }
+        } catch (error) {
+          console.error('获取用户信息失败:', error)
+          console.error('错误详情:', error.response || error)
+          // 静默失败，不显示错误提示
+        }
+      } else {
+        console.log('用户未登录，跳过获取用户详情')
+      }
+    }
+    
+    // 页面加载时获取用户详情
+    onMounted(() => {
+      fetchCurrentUserInfo()
+    })
 
     return {
+      // 用户store
+      userStore,
+      avatarError,
+      handleAvatarError,
+      
       // 用户管理相关
       ...userManagement,
 
@@ -882,388 +965,537 @@ export default {
 }
 </script>
 
-<style scoped>
-/* 完全保持原始样式不变 */
+<style scoped lang="scss">
+@use 'sass:color';
+
+// 颜色变量
+$primary-color: #409EFF;
+$success-color: #67C23A;
+$warning-color: #E6A23C;
+$danger-color: #F56C6C;
+$info-color: #909399;
+
+// 文字颜色
+$text-primary: #303133;
+$text-regular: #606266;
+$text-secondary: #909399;
+$text-placeholder: #C0C4CC;
+
+// 边框颜色
+$border-base: #DCDFE6;
+$border-light: #E4E7ED;
+$border-lighter: #EBEEF5;
+$border-extra-light: #F2F6FC;
+
+// 背景颜色
+$bg-color: #F5F7FA;
+$bg-page: #F0F2F5;
+$bg-white: #FFFFFF;
+
+// 字体大小
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+
+// 间距
+$spacing-xs: 5px;
+$spacing-sm: 10px;
+$spacing-md: 15px;
+$spacing-lg: 20px;
+$spacing-xl: 30px;
+
+// 阴影
+$box-shadow-base: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
+$box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+
+// 过渡
+$transition-duration: 0.3s;
+
+// 布局尺寸
+$header-height: 60px;
+$sidebar-width: 240px;
+
 .user-management {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: $bg-page;
 }
 
+// 顶部导航
 .header {
-  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-  color: white;
-  padding: 15px 30px;
+  height: $header-height;
+  background: $bg-white;
+  border-bottom: 1px solid $border-light;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 0 $spacing-lg;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: $spacing-md;
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: white;
-  color: #4a90e2;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: $primary-color;
+  color: $bg-white;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s;
-}
-
-.logo:hover {
-  transform: scale(1.05);
+  cursor: pointer;
+  transition: all $transition-duration;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $box-shadow-base;
+  }
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: $font-size-lg;
+  font-weight: 500;
+  color: $text-primary;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: $spacing-lg;
 }
 
 .avatar {
-  width: 35px;
-  height: 35px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: $bg-color;
+  color: $text-regular;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: $font-size-base;
 }
 
 .username {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: $font-size-base;
+  color: $text-regular;
 }
 
 .dropdown-link {
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: background-color 0.3s;
+  padding: $spacing-xs;
+  border-radius: 4px;
+  color: $text-regular;
+  transition: all $transition-duration;
+  
+  &:hover {
+    background-color: $bg-color;
+    color: $primary-color;
+  }
 }
 
-.dropdown-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
+// 主容器
 .main-container {
   display: flex;
-  height: calc(100vh - 70px);
+  height: calc(100vh - #{$header-height});
 }
 
+// 侧边栏
 .sidebar {
-  width: 280px;
-  background: white;
-  border-right: 1px solid #e8e8e8;
-  padding: 20px;
+  width: $sidebar-width;
+  background: $bg-white;
+  border-right: 1px solid $border-light;
+  padding: $spacing-lg;
   flex-shrink: 0;
   overflow-y: auto;
+  
+  // 自定义滚动条
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: $border-extra-light;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: $border-light;
+    border-radius: 4px;
+    
+    &:hover {
+      background: $border-base;
+    }
+  }
 }
 
 .search-header {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
 .tree-container {
   min-height: 500px;
 }
 
+// 树形节点样式
 .tree-node {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $spacing-xs;
   width: 100%;
+  padding: $spacing-xs 0;
 }
 
 .tree-icon {
   flex-shrink: 0;
+  font-size: $font-size-md;
 }
 
 .company-icon {
-  color: #4a90e2;
+  color: $primary-color;
 }
 
 .department-icon {
-  color: #f39c12;
+  color: $warning-color;
 }
 
 .group-icon {
-  color: #27ae60;
+  color: $success-color;
 }
 
 .node-label {
   flex: 1;
-  font-size: 14px;
-  color: #333;
+  font-size: $font-size-base;
+  color: $text-primary;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .node-count {
-  color: #999;
-  font-size: 12px;
+  color: $text-secondary;
+  font-size: $font-size-xs;
   flex-shrink: 0;
 }
 
+// 主内容区
 .main-content {
   flex: 1;
-  padding: 20px;
+  padding: $spacing-lg;
   overflow-y: auto;
-  background: white;
+  background: $bg-page;
 }
 
+// 标签页容器
 .tabs {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: $bg-white;
+  border-radius: 4px;
+  padding: $spacing-lg;
+  box-shadow: $box-shadow-light;
 }
 
+// 搜索区域
 .search-area {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  background: $bg-color;
+  padding: $spacing-lg;
+  border-radius: 4px;
+  margin-bottom: $spacing-lg;
 }
 
 .search-form {
   margin-bottom: 0;
 }
 
+// 列表头部
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-lighter;
 }
 
 .list-header h3 {
   margin: 0;
-  color: #333;
-  font-size: 18px;
-  font-weight: 600;
+  color: $text-primary;
+  font-size: $font-size-lg;
+  font-weight: 500;
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: $spacing-sm;
 }
 
+// 表格容器
 .table-container {
-  margin-bottom: 20px;
+  margin-bottom: $spacing-lg;
 }
 
+// 分页容器
 .pagination-container {
   display: flex;
   justify-content: flex-end;
+  margin-top: $spacing-lg;
 }
 
+// 用户详情
 .user-detail {
-  padding: 20px 0;
+  padding: $spacing-lg 0;
 }
 
+// 对话框底部
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: $spacing-sm;
 }
 
-/* 组织架构管理样式 */
+// 组织架构管理样式
 .org-action-area {
-  margin: 15px 0;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 6px;
+  margin: $spacing-md 0;
+  padding: $spacing-sm;
+  background: $bg-color;
+  border-radius: 4px;
   display: flex;
-  gap: 10px;
+  gap: $spacing-sm;
 }
 
 .detail-area {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  padding: 20px;
-  margin-bottom: 20px;
+  background: $bg-white;
+  border: 1px solid $border-light;
+  border-radius: 4px;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $border-lighter;
 }
 
 .detail-header h3 {
   margin: 0;
-  color: #333;
-  font-size: 16px;
-  font-weight: 600;
+  color: $text-primary;
+  font-size: $font-size-md;
+  font-weight: 500;
 }
 
 .detail-actions {
   display: flex;
-  gap: 10px;
+  gap: $spacing-sm;
 }
 
 .org-form {
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
-
-/* 职务管理样式 */
+// 职务管理样式
 .position-search-area {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  background: $bg-color;
+  padding: $spacing-lg;
+  border-radius: 4px;
+  margin-bottom: $spacing-lg;
   display: flex;
   align-items: center;
 }
 
 .position-table-container {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  background: $bg-white;
+  border: 1px solid $border-light;
+  border-radius: 4px;
+  margin-bottom: $spacing-lg;
 }
 
 .position-pagination-container {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
-/* 职称管理样式 */
+// 职称管理样式
 .title-search-area {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  background: $bg-color;
+  padding: $spacing-lg;
+  border-radius: 4px;
+  margin-bottom: $spacing-lg;
   display: flex;
   align-items: center;
 }
 
 .title-table-container {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  background: $bg-white;
+  border: 1px solid $border-light;
+  border-radius: 4px;
+  margin-bottom: $spacing-lg;
 }
 
 .title-pagination-container {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: $spacing-lg;
 }
 
-/* 通用表格样式优化 */
+// 通用表格样式优化
 :deep(.el-table) {
-  border-radius: 6px;
+  border-radius: 4px;
+  font-size: $font-size-base;
 }
 
 :deep(.el-table th) {
-  background-color: #fafafa;
-  color: #333;
-  font-weight: 600;
+  background-color: $bg-color;
+  color: $text-primary;
+  font-weight: 500;
+  padding: $spacing-sm 0;
 }
 
 :deep(.el-table td) {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid $border-extra-light;
+  color: $text-regular;
 }
 
 :deep(.el-table__row:hover > td) {
-  background-color: #f5f7fa;
+  background-color: $bg-color;
 }
 
-/* 操作按钮样式 */
+// 操作按钮样式
 :deep(.el-button--text) {
-  padding: 4px 8px;
-  margin-right: 8px;
+  padding: $spacing-xs $spacing-sm;
+  margin-right: $spacing-sm;
+  color: $primary-color;
+  
+  &:last-child {
+    margin-right: 0;
+  }
+  
+  &:hover {
+    color: color.adjust($primary-color, $lightness: -10%);
+  }
 }
 
-:deep(.el-button--text:last-child) {
-  margin-right: 0;
-}
-
-/* 分页样式优化 */
+// 分页样式优化
 :deep(.el-pagination) {
-  padding: 20px 0;
+  padding: $spacing-lg 0;
+  
+  .el-select .el-input {
+    width: 100px;
+  }
 }
 
-:deep(.el-pagination .el-select .el-input) {
-  width: 100px;
+// 弹窗样式优化
+:deep(.el-dialog) {
+  border-radius: 4px;
+  
+  .el-dialog__header {
+    background-color: $bg-color;
+    padding: $spacing-lg;
+    border-bottom: 1px solid $border-light;
+    border-radius: 4px 4px 0 0;
+  }
+  
+  .el-dialog__title {
+    font-size: $font-size-lg;
+    font-weight: 500;
+    color: $text-primary;
+  }
+  
+  .el-dialog__body {
+    padding: $spacing-lg;
+  }
 }
 
-/* 弹窗样式优化 */
-:deep(.el-dialog__header) {
-  background-color: #f8f9fa;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-:deep(.el-dialog__title) {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-:deep(.el-dialog__body) {
-  padding: 24px;
-}
-
+// 表单样式
 :deep(.el-form-item__label) {
-  font-weight: 500;
-  color: #333;
+  font-weight: normal;
+  color: $text-primary;
+  font-size: $font-size-base;
 }
 
-/* Element Plus 样式覆盖 */
+// Element Plus 组件样式覆盖
 :deep(.el-tree-node__content) {
   height: 36px;
   line-height: 36px;
+  
+  &:hover {
+    background-color: $bg-color;
+  }
 }
 
 :deep(.el-tree-node__expand-icon) {
-  color: #666;
+  color: $text-secondary;
 }
 
+// 标签页样式
 :deep(.el-tabs__item) {
-  font-size: 16px;
+  font-size: $font-size-md;
   font-weight: 500;
+  color: $text-regular;
+  
+  &.is-active {
+    color: $primary-color;
+  }
+  
+  &:hover {
+    color: $primary-color;
+  }
 }
 
 :deep(.el-tabs__active-bar) {
-  background-color: #4a90e2;
+  background-color: $primary-color;
 }
 
-:deep(.el-tabs__item.is-active) {
-  color: #4a90e2;
-}
-
+// 按钮主题覆盖
 :deep(.el-button--primary) {
-  background-color: #4a90e2;
-  border-color: #4a90e2;
+  background-color: $primary-color;
+  border-color: $primary-color;
+  
+  &:hover,
+  &:focus {
+    background-color: color.adjust($primary-color, $lightness: -10%);
+    border-color: color.adjust($primary-color, $lightness: -10%);
+  }
 }
 
-:deep(.el-button--primary:hover) {
-  background-color: #357abd;
-  border-color: #357abd;
+// 响应式设计
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid $border-light;
+  }
+  
+  .search-form {
+    .el-form-item {
+      display: block;
+      margin-bottom: $spacing-sm;
+    }
+  }
+  
+  .header-actions {
+    flex-wrap: wrap;
+  }
+  
+  .dialog-footer {
+    .el-button {
+      margin-left: 0;
+      margin-right: $spacing-sm;
+    }
+  }
 }
 </style>

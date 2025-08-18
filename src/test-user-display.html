@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试用户显示</title>
+    <script>
+        // 模拟 userStore 数据
+        const userInfo = {
+            "avatarUrl": "",
+            "customerId": "demo",
+            "departmentName": "",
+            "email": "",
+            "id": "user001",
+            "phone": "",
+            "positionName": "",
+            "realName": "测试用户",
+            "username": "testuser"
+        };
+
+        // 模拟 displayName 计算
+        const displayName = userInfo.realName || userInfo.username || '用户';
+        
+        console.log('用户信息:', userInfo);
+        console.log('显示名称应该是:', displayName);
+        console.log('头像URL:', userInfo.avatarUrl);
+        console.log('头像是否应该显示:', !!userInfo.avatarUrl);
+    </script>
+</head>
+<body>
+    <h1>用户显示测试</h1>
+    <p>打开控制台查看结果</p>
+    <div>
+        <h2>预期结果：</h2>
+        <ul>
+            <li>用户名应该显示: 测试用户</li>
+            <li>头像应该显示: 默认图标（因为avatarUrl为空）</li>
+        </ul>
+    </div>
+</body>
+</html>

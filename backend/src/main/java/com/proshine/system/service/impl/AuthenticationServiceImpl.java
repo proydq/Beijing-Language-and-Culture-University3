@@ -163,6 +163,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             // 构建完整的登录响应
             LoginResponse response = new LoginResponse(token, user.getId(), user.getUsername(), 
                     user.getRealName(), user.getCustomerId());
+            response.setAvatarUrl(user.getAvatarUrl());
+            response.setEmail(user.getEmail());
+            response.setPhone(user.getPhone());
+            response.setDepartmentName(user.getDepartmentName());
+            response.setPositionName(user.getPositionName());
             response.setPermissions(permissionCodes);
             response.setPermissionDetails(permissionDetails);
             response.setRoles(roleCodes);

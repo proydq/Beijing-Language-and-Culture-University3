@@ -37,7 +37,7 @@ export const userAPI = {
    * @returns {Promise} 更新响应
    */
   updateUser(userData) {
-    return request.put(`${API_PATHS.USER}/${userData.id}`, userData)
+    return request.post(`${API_PATHS.SYSTEM_USER}/update`, userData)
   },
 
   /**
@@ -135,6 +135,23 @@ export const userAPI = {
    */
   getUserTypes() {
     return request.get(`${API_PATHS.SYSTEM_USER}/userTypes`)
+  },
+
+  /**
+   * 获取当前登录用户详情
+   * @returns {Promise}
+   */
+  getCurrentUser() {
+    return request.get(`${API_PATHS.SYSTEM_USER}/current`)
+  },
+
+  /**
+   * 修改当前用户密码
+   * @param {Object} passwordData - 密码数据
+   * @returns {Promise}
+   */
+  changePassword(passwordData) {
+    return request.post(`${API_PATHS.SYSTEM_USER}/changePassword`, passwordData)
   }
 }
 

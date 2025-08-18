@@ -248,6 +248,9 @@ public class SysUserServiceImpl implements SysUserService {
             if (StringUtils.hasText(user.getPhone())) {
                 existingUser.setPhone(user.getPhone());
             }
+            if (StringUtils.hasText(user.getEmail())) {
+                existingUser.setEmail(user.getEmail());
+            }
             if (StringUtils.hasText(user.getJobNumber())) {
                 existingUser.setJobNumber(user.getJobNumber());
             }
@@ -489,6 +492,41 @@ public class SysUserServiceImpl implements SysUserService {
         } catch (Exception e) {
             log.error("更新用户类型失败：用户ID={}, 类型={}", userId, userType, e);
             throw new RuntimeException("更新用户类型失败：" + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void changePassword(String userId, String currentPassword, String newPassword) {
+        try {
+            log.info("用户修改密码：用户ID={}", userId);
+            
+            String customerId = SecurityUtil.getCustomerId();
+            Optional<SysUser> userOpt = userRepository.findByIdAndCustomerIdAndDeletedFalse(userId, customerId);
+            
+            if (!userOpt.isPresent()) {
+                throw new RuntimeException("用户不存在或已删除：" + userId);
+            }
+            
+            SysUser user = userOpt.get();
+            
+            // 验证当前密码
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+                throw new RuntimeException("当前密码错误");
+            }
+            
+            // 加密新密码
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+            user.setPassword(encodedNewPassword);
+            user.setUpdateTime(LocalDateTime.now());
+            
+            userRepository.save(user);
+            
+            log.info("用户密码修改成功：用户ID={}", userId);
+            
+        } catch (Exception e) {
+            log.error("修改密码失败：用户ID={}", userId, e);
+            throw new RuntimeException("修改密码失败：" + e.getMessage());
         }
     }
 }

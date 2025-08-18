@@ -10,9 +10,17 @@
       </div>
       <div class="header-right">
         <div class="avatar">
-          <el-icon size="20"><user /></el-icon>
+          <el-avatar 
+            v-if="userStore.userInfo.avatarUrl" 
+            :src="userStore.userInfo.avatarUrl"
+            :size="32"
+            @error="handleAvatarError"
+          >
+            <el-icon v-if="avatarError" size="20"><user /></el-icon>
+          </el-avatar>
+          <el-icon v-else size="20"><user /></el-icon>
         </div>
-        <span class="username">系统管理员</span>
+        <span class="username">{{ userStore.displayName }}</span>
         <el-dropdown>
           <span class="dropdown-link">
             <el-icon><grid /></el-icon>
@@ -215,16 +223,24 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'OrganizationManagement',
   setup() {
     const router = useRouter()
+    const userStore = useUserStore()
+    const avatarError = ref(false)
     const formRef = ref()
     const orgDialogFormRef = ref()
     const editMode = ref(false)
     const orgDialogVisible = ref(false)
     const orgDialogMode = ref('add') // add, edit
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
 
     // 组织表单数据
     const orgForm = reactive({
@@ -441,6 +457,9 @@ export default {
       treeData,
       treeProps,
       orgDialogTitle,
+      userStore,
+      avatarError,
+      handleAvatarError,
       goToHome,  // 新增返回首页方法
       goToPersonalCenter,
       logout,

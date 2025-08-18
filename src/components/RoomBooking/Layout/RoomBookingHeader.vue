@@ -8,9 +8,17 @@
     </div>
     <div class="header-right">
       <div class="avatar">
-        <el-icon size="20"><user /></el-icon>
+        <el-avatar 
+          v-if="userStore.userInfo.avatarUrl" 
+          :src="userStore.userInfo.avatarUrl"
+          :size="32"
+          @error="handleAvatarError"
+        >
+          <el-icon v-if="avatarError" size="20"><user /></el-icon>
+        </el-avatar>
+        <el-icon v-else size="20"><user /></el-icon>
       </div>
-      <span class="username">系统管理员</span>
+      <span class="username">{{ userStore.displayName }}</span>
       <el-dropdown>
         <span class="dropdown-link">
           <el-icon><grid /></el-icon>
@@ -27,7 +35,10 @@
 </template>
 
 <script>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { HomeFilled, User, Grid } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 
 export default {
   name: 'RoomBookingHeader',
@@ -37,11 +48,27 @@ export default {
     Grid,
   },
   emits: ['profile', 'logout'],
-  methods: {
-    goToHome() {
-      this.$router.push('/dashboard') // 跳转首页
-    },
-  },
+  setup() {
+    const router = useRouter()
+    const userStore = useUserStore()
+    const avatarError = ref(false)
+    
+    // 处理头像加载错误
+    const handleAvatarError = () => {
+      avatarError.value = true
+    }
+    
+    const goToHome = () => {
+      router.push('/dashboard')
+    }
+    
+    return {
+      userStore,
+      avatarError,
+      handleAvatarError,
+      goToHome
+    }
+  }
 }
 </script>
 
